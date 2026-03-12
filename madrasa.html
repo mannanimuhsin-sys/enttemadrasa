@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>എന്റെ മദ്റസ | Smart Management</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        
+        .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        .secret-trigger { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; color: #eee; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; }
+
+        .page { display: none; animation: fadeIn 0.4s; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Executive Profile Card */
+        .profile-card { text-align: center; background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 30px 20px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,77,0,0.2); }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--gold); object-fit: cover; background: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .m-name { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; color: white; }
+        .m-place { font-size: 16px; opacity: 0.9; margin: 5px 0; color: #e0e0e0; }
+        .m-reg { display: inline-block; background: var(--gold); color: black; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px; }
+
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-dash { background: white; color: var(--primary); border: 2.5px solid var(--primary); margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; }
+        .btn-dash:hover { background: var(--primary); color: white; }
+
+        #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
+        .status-pending { color: orange; font-weight: bold; text-align: center; padding: 40px 20px; }
+    </style>
+    
+</head>
+<body>
+
+    <div class="container">
+        <div class="secret-trigger" onclick="showPage('regPage')"><i class="fa fa-plus"></i></div>
+
+        <div id="loginPage" class="page active">
+            <h1 style="text-align: center; color: var(--primary); margin-top: 50px;">എന്‍റെ മദ്റസ</h1>
+            <p style="text-align: center; color: #666;">Smart Management Portal</p>
+            <div style="margin-top: 30px;">
+                <input type="text" id="logReg" placeholder="മദ്റസ രജിസ്റ്റർ നമ്പർ">
+                <input type="password" id="logPass" placeholder="പാസ്‌വേഡ്">
+                <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">LOGIN</button>
+            </div>
+        </div>
+
+        <div id="regPage" class="page">
+            <h2 style="text-align: center; color: var(--primary);">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
+            
+            <div style="text-align: center; margin-bottom: 15px;">
+                <img id="imagePrev" src="">
+                <label for="mPhoto" style="cursor: pointer; color: var(--primary); font-weight: bold; display: block; margin-top: 10px;">
+                    <i class="fa fa-camera"></i> മദ്റസ ഫോട്ടോ ചേർക്കുക
+                </label>
+                <input type="file" id="mPhoto" accept="image/*" style="display: none;" onchange="previewImage(this)">
+            </div>
+
+            <input type="text" id="rName" placeholder="മദ്റസയുടെ പേര്">
+            <input type="text" id="rPlace" placeholder="സ്ഥലം">
+            <input type="text" id="rReg" placeholder="രജിസ്റ്റർ നമ്പർ">
+            <input type="text" id="rUser" placeholder="User ID">
+            <input type="password" id="rUsthad" placeholder="ഉസ്താദ് പാസ്‌വേഡ്">
+            <input type="password" id="rParent" placeholder="പാരന്റ് പാസ്‌വേഡ്">
+            
+            <p style="font-size: 11px; color: red; text-align: center;">*രജിസ്റ്റർ ചെയ്ത ശേഷം അഡ്മിൻ അപ്രൂവൽ ആവശ്യമാണ്.</p>
+            
+            <button class="btn btn-primary" id="regBtn" onclick="register()">REGISTER NOW</button>
+            <button class="btn" style="background: #ccc;" onclick="showPage('loginPage')">BACK</button>
+        </div>
+
+        <div id="portalPage" class="page">
+            <div id="profileArea"></div>
+            
+            <button class="btn btn-dash" onclick="openDashboard()">
+                <i class="fa fa-chart-line"></i> DASHBOARD
+            </button>
+
+            <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 50px;" onclick="location.reload()">
+                <i class="fa fa-sign-out-alt"></i> LOGOUT
+            </button>
+        </div>
+
+        <div id="pendingPage" class="page">
+            <div class="status-pending">
+                <i class="fa fa-clock" style="font-size: 60px;"></i>
+                <h3>അപ്രൂവൽ കാത്തിരിക്കുന്നു</h3>
+                <p>നിങ്ങളുടെ രജിസ്‌ട്രേഷൻ അഡ്മിൻ പരിശോധിച്ചു കൊണ്ടിരിക്കുകയാണ്. അപ്രൂവൽ ലഭിച്ച ശേഷം മാത്രം ലോഗിൻ ചെയ്യാൻ സാധിക്കൂ.</p>
+                <button class="btn btn-primary" onclick="location.reload()">BACK</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    let currentId = "";
+    let currentRole = "";
+
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // ഫോട്ടോ പ്രിവ്യൂ
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const prev = document.getElementById('imagePrev');
+                prev.src = e.target.result;
+                prev.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // രജിസ്‌ട്രേഷൻ ഫങ്ക്ഷൻ
+    async function register() {
+        const regNo = document.getElementById('rReg').value.trim();
+        const uId = document.getElementById('rUser').value.trim();
+        const photo = document.getElementById('imagePrev').src;
+        const btn = document.getElementById('regBtn');
+
+        if(!regNo || !uId) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക");
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        // ഒരു രജിസ്റ്റർ നമ്പർ ഒരു തവണ മാത്രം
+        const snap = await db.ref('madrasa_requests').once('value');
+        let exists = false;
+        snap.forEach(c => { if(c.val().reg === regNo) exists = true; });
+
+        if(exists) {
+            alert("ഈ രജിസ്റ്റർ നമ്പർ ഉപയോഗിച്ച് മുൻപ് രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്!");
+            btn.disabled = false; btn.innerText = "REGISTER NOW";
+            return;
+        }
+
+        const data = {
+            name: document.getElementById('rName').value,
+            place: document.getElementById('rPlace').value,
+            reg: regNo,
+            photo: photo || "",
+            usthadPass: document.getElementById('rUsthad').value,
+            parentPass: document.getElementById('rParent').value,
+            status: "pending",
+            classes: []
+        };
+
+        db.ref('madrasa_requests/' + uId).set(data).then(() => {
+            alert("രജിസ്ട്രേഷൻ വിജയകരമായി പൂർത്തിയായി! അപ്രൂവലിനായി കാത്തിരിക്കുക.");
+            location.reload();
+        }).catch(err => alert(err.message));
+    }
+
+    // ലോഗിൻ ഫങ്ക്ഷൻ
+    async function handleLogin() {
+        const reg = document.getElementById('logReg').value.trim();
+        const pass = document.getElementById('logPass').value.trim();
+        const btn = document.getElementById('loginBtn');
+
+        if(!reg || !pass) return alert("വിവരങ്ങൾ നൽകുക");
+        btn.disabled = true;
+
+        db.ref('madrasa_requests').once('value', snap => {
+            let foundUser = null;
+            let userId = "";
+
+            snap.forEach(c => {
+                const d = c.val();
+                if(d.reg === reg) {
+                    if(d.usthadPass === pass) {
+                        foundUser = d; userId = c.key; currentRole = "admin";
+                    } else if(d.parentPass === pass) {
+                        foundUser = d; userId = c.key; currentRole = "parent";
+                    }
+                }
+            });
+
+            if(foundUser) {
+                if(foundUser.status !== 'approved') {
+                    showPage('pendingPage');
+                } else {
+                    currentId = userId;
+                    loadProfile(foundUser);
+                }
+            } else {
+                alert("രജിസ്റ്റർ നമ്പറോ പാസ്‌വേഡോ തെറ്റാണ്!");
+            }
+            btn.disabled = false;
+        });
+    }
+
+    // പ്രൊഫൈൽ കാർഡ് ലോഡ് ചെയ്യുന്നു
+    function loadProfile(d) {
+        const img = d.photo || "https://via.placeholder.com/150";
+        document.getElementById('profileArea').innerHTML = `
+            <div class="profile-card">
+                <img src="${img}" class="profile-img">
+                <h1 class="m-name">${d.name}</h1>
+                <p class="m-place">${d.place}</p>
+                <div class="m-reg">REG NO: ${d.reg}</div>
+            </div>`;
+        showPage('portalPage');
+    }
+
+    // ഡാഷ്‌ബോർഡ് ലിങ്ക് ഓപ്പൺ ചെയ്യുന്നു
+    function openDashboard() {
+        window.location.href = `dashboard.html?id=${currentId}&role=${currentRole}`;
+    }
+</script>
+
+</body>
+</html>
