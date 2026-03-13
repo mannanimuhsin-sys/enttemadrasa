@@ -230,23 +230,19 @@
     }
 
    // ഡാഷ്‌ബോർഡ് ലിങ്ക് ഓപ്പൺ ചെയ്യുന്നു
-function openDashboard() {
-    // നിങ്ങളുടെ ഡാഷ്‌ബോർഡ് ബേസ് ലിങ്ക്
-    const baseUrl = "https://mannanimuhsin-sys.github.io/madrasa/dashbord";
-    
-    // ലോഗിൻ ചെയ്ത ആളുടെ ഐഡിയും റോോളും ലിങ്കിനൊപ്പം ചേർക്കുന്നു
-    window.location.href = `${baseUrl}?id=${currentId}&role=${currentRole}`;
-}
 function openIDPortal() {
-    // നിലവിൽ ലോഗിൻ ചെയ്തിട്ടുള്ള മദ്റസ ഐഡി എടുക്കുന്നു
-    const currentId = localStorage.getItem("loggedInUser"); // നിങ്ങളുടെ സിസ്റ്റത്തിൽ ഐഡി സേവ് ചെയ്യുന്ന രീതിക്ക് അനുസരിച്ച് ഇത് മാറ്റുക
+    // ലോഗിൻ ചെയ്ത മദ്റസയുടെ ഐഡി ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+    if (!currentId) {
+        alert("ലോഗിൻ വിവരങ്ങൾ ലഭ്യമല്ല!");
+        return;
+    }
 
-    // ഉസ്താദ് (Admin) ആണ് ലോഗിൻ ചെയ്തതെങ്കിൽ അഡ്മിൻ പേജിലേക്ക് പോകുന്നു
-    if (userType === "usthad") {
+    // currentRole "admin" ആണെങ്കിൽ (അതായത് ഉസ്താദ് പാസ്‌വേഡ് വഴി കയറിയവർ) അഡ്മിൻ പേജിലേക്ക്
+    if (currentRole === "admin") {
         window.location.href = `admin_id_portal.html?id=${currentId}`;
     } 
-    // രക്ഷിതാവ് (Parent) ആണ് ലോഗിൻ ചെയ്തതെങ്കിൽ സ്റ്റുഡന്റ് ഐഡി പേജിലേക്ക് പോകുന്നു
-    else {
+    // currentRole "parent" ആണെങ്കിൽ ഐഡി കാർഡ് ജനറേറ്റ് ചെയ്യുന്ന പേജിലേക്ക്
+    else if (currentRole === "parent") {
         window.location.href = `student_id.html?mid=${currentId}`;
     }
 }
