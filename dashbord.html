@@ -94,7 +94,6 @@
 </div>
 
 <script>
-    // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ തന്നെ ഇവിടെയും നൽകുക)
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -107,12 +106,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // URL-ൽ നിന്ന് മദ്റസ ഐഡിയും റോോളും എടുക്കുന്നു
     const urlParams = new URLSearchParams(window.location.search);
     const mId = urlParams.get('id');
     const role = urlParams.get('role');
 
-    // അഡ്മിൻ ആണെങ്കിൽ മാത്രം ഇൻപുട്ട് ബോക്സ് കാണിക്കുക
     if(role === 'admin') {
         document.getElementById('adminArea').style.display = 'block';
     }
@@ -152,13 +149,16 @@
                             <a href="https://wa.me/91${item.p}" class="whatsapp-icon" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </td>
-                    ${role === 'admin' ? `<td><i class="fa fa-trash" style="color:red;cursor:pointer" onclick="deleteClass(${index})"></i></td>` : ''}
+                    ${role === 'admin' ? `
+                    <td>
+                        <i class="fa fa-edit" style="color:blue; cursor:pointer; margin-right:15px;" onclick="editClass(${index})"></i>
+                        <i class="fa fa-trash" style="color:red; cursor:pointer;" onclick="deleteClass(${index})"></i>
+                    </td>` : ''}
                 </tr>`;
             });
 
             document.getElementById('tableBody').innerHTML = html;
             
-            // അഡ്മിൻ സെൽ ഹെഡർ കാണിക്കണോ എന്ന് തീരുമാനിക്കുന്നു
             if(role === 'admin') {
                 document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'table-cell');
             }
@@ -174,6 +174,30 @@
         });
     }
 
+    // എഡിറ്റ് ചെയ്യാനുള്ള ഫങ്ക്ഷൻ
+    async function editClass(index) {
+        const snap = await db.ref('madrasa_requests/' + mId + '/classes/' + index).once('value');
+        const data = snap.val();
+        
+        if(data) {
+            // വിവരങ്ങൾ ഇൻപുട്ട് ഫീൽഡുകളിലേക്ക് മാറ്റുന്നു
+            document.getElementById('cName').value = data.name;
+            document.getElementById('cDiv').value = data.div;
+            document.getElementById('cBoys').value = data.b;
+            document.getElementById('cGirls').value = data.g;
+            document.getElementById('cUsthad').value = data.u;
+            document.getElementById('cPhone').value = data.p;
+
+            // തിരുത്തൽ എളുപ്പമാക്കാൻ പഴയ ലിസ്റ്റ് താൽക്കാലികമായി മാറ്റുന്നു
+            // (സേവ് അടിക്കുമ്പോൾ പുതിയ ലിസ്റ്റ് അപ്ഡേറ്റ് ആകും)
+            await deleteClass(index, false);
+            
+            // ഫോക്കസ് ഇൻപുട്ടിലേക്ക് മാറ്റുന്നു
+            document.getElementById('cName').focus();
+            alert("മാറ്റങ്ങൾ വരുത്തിയ ശേഷം SAVE DATA ബട്ടൺ ക്ലിക്ക് ചെയ്യുക.");
+        }
+    }
+
     async function saveClass() {
         const name = document.getElementById('cName').value.trim();
         const div = document.getElementById('cDiv').value.trim();
@@ -187,24 +211,15 @@
         const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
         let currentClasses = snap.val() || [];
         
-        currentClasses.push({
-            name: name,
-            div: div,
-            b: b,
-            g: g,
-            u: u,
-            p: p
-        });
+        currentClasses.push({ name, div, b, g, u, p });
 
         await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
         
-        // ക്ലിയർ ഇൻപുട്ട്സ്
         document.querySelectorAll('.admin-section input').forEach(input => input.value = "");
-        alert("വിവരങ്ങൾ വിജയകരമായി ചേർത്തു!");
     }
 
-    async function deleteClass(index) {
-        if(confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
+    async function deleteClass(index, ask = true) {
+        if(!ask || confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
             const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
             let currentClasses = snap.val();
             currentClasses.splice(index, 1);
@@ -212,10 +227,8 @@
         }
     }
 
-    // പേജ് ലോഡ് ചെയ്യുമ്പോൾ ഡാറ്റ കാണിക്കുക
     loadData();
 </script>
-
 
 </body>
 </html>
