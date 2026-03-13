@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">ID Card Portal</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+:root{--green:#0b5d1e;--orange:#f39c12}
+body{margin:0;background:#e9ecef;font-family:Roboto}
+.container{max-width:430px;margin:auto;padding:15px}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,.15)}
+.tabs{display:flex;margin-bottom:15px;gap:5px}
+.tabs button{flex:1;padding:12px;border:none;font-weight:bold;cursor:pointer;border-radius:8px;background:#eee;transition:0.3s}
+.tabs .active{background:var(--green);color:#fff}
+input,select{width:100%;padding:12px;margin-top:8px;border-radius:8px;border:1px solid #ccc;box-sizing:border-box;display:block;outline:none}
+label{font-size:12px;font-weight:bold;color:var(--green);margin-top:10px;display:block}
+.main-btn{width:100%;padding:14px;margin-top:15px;border:none;border-radius:10px;background:var(--green);color:#fff;font-weight:bold;cursor:pointer;transition:0.3s}
+.main-btn:disabled{background:#ccc;cursor:not-allowed}
+
+/* ID CARD DESIGN */
+#idArea{display:none;text-align:center;padding:20px 10px}
+#idCard{
+ width:280px;background:#fff;margin:auto;border-radius:12px;
+ overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.4);border:2px solid #ddd;
+ position:relative;
+}
+.header{background:var(--green);color:#fff;padding:10px}
+.header h1{margin:0;font-size:18px;text-transform: uppercase;}
+.header p{margin:4px 0 0;font-size:11px}
+.ribbon{background:var(--orange);color:#fff;font-weight:900;width:80%;margin:10px auto;padding:6px;border-radius:20px;position:relative;z-index:2;display:block}
+.photoBox{width:100px;height:130px;margin:5px auto;border-radius:14px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.photoBox img{width:100%;height:100%;object-fit:cover}
+.details{padding:15px;text-align:left;font-size:11px}
+.row{display:flex;border-bottom:1px solid #eee;padding:3px 0}
+.row span:first-child{width:90px;color:#666;font-weight:bold}
+.row span:last-child{font-weight:bold;color:#111}
+.footer{display:flex;justify-content:space-between;align-items:center;padding:5px 15px 10px}
+.footer img#qr{width:60px;height:60px}
+.sign{text-align:center;font-size:11px}
+#signImg{width:70px;height:auto;display:block;margin:0 auto -6px;filter:grayscale(1) contrast(1.5);}
+.sign div{border-top:2px solid #333;width:90px;margin:4px auto 0}
+
+/* Cropper Modal */
+#cropBox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; align-items: center; justify-content: center; flex-direction: column; }
+.crop-container { background: #fff; padding: 10px; border-radius: 14px; width: 90%; max-width: 320px; }
+#cropImg { display: block; max-width: 100%; max-height: 350px; }
+#photoPreviewWrap { margin-top: 10px; text-align: center; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<div class="container" id="panel">
+ <div class="card">
+  <div style="text-align: center; margin-bottom: 15px;">
+    <h3 id="portalMName" style="color:var(--green); margin:0;">മദ്റസ ഐഡി പോർട്ടൽ</h3>
+    <small id="portalMPlace"></small>
+  </div>
+
+  <div class="tabs">
+   <button id="tReg" class="active" onclick="showTab('reg')">REGISTER</button>
+   <button id="tLog" onclick="showTab('log')">LOGIN</button>
+  </div>
+
+  <div id="regTab">
+   <input id="name" placeholder="Full Name">
+   <input id="regno" placeholder="Register Number">
+   <input id="classN" placeholder="Class">
+   <input id="father" placeholder="Father Name">
+   <input id="mentor" placeholder="Mentor Name">
+   <input id="phone" placeholder="Phone Number" type="tel">
+
+   <select id="gender">
+    <option value="">Select Gender</option>
+    <option>Male</option><option>Female</option>
+   </select>
+
+   <select id="blood">
+    <option value="">Select Blood Group</option>
+    <option>A+</option><option>B+</option><option>O+</option><option>AB+</option>
+    <option>A-</option><option>B-</option><option>O-</option><option>AB-</option>
+   </select>
+
+   <label>Date of Birth</label>
+   <input type="date" id="dob">
+   
+   <label>Student Photo</label>
+   <input type="file" id="photoInp" accept="image/*">
+   
+   <div id="photoPreviewWrap" style="display:none;">
+     <img id="uploadPreview" style="width:80px; height:100px; border-radius:8px; object-fit:cover; border:2px solid var(--green);">
+     <p style="font-size:11px; color:red; cursor:pointer; margin-top:5px;" onclick="document.getElementById('photoInp').click()">Change Photo</p>
+   </div>
+
+   <label>Set Password (Min 4 digits)</label>
+   <input type="password" id="regPass" placeholder="Create Password">
+   <input type="password" id="regPassConf" placeholder="Confirm Password">
+   
+   <button id="saveBtn" class="main-btn" onclick="saveStudent()">SAVE & REGISTER</button>
+  </div>
+
+  <div id="logTab" style="display:none">
+   <input id="loginReg" placeholder="Enter Register Number">
+   <input type="password" id="loginPass" placeholder="Enter Password">
+   <button id="loginBtn" class="main-btn" onclick="login()">VIEW ID CARD</button>
+  </div>
+ </div>
+</div>
+
+<div id="idArea">
+ <div id="idCard">
+  <div class="header">
+   <h1 id="cardMName">MADRASA NAME</h1>
+   <p id="cardMDetails">PLACE | REG.NO</p>
+  </div>
+  <div class="ribbon">STUDENT IDENTITY CARD</div>
+  <div class="photoBox"><img id="pImg"></div>
+  <div class="details">
+   <div class="row"><span>Name</span><span id="pName"></span></div>
+   <div class="row"><span>Father</span><span id="pFather"></span></div>
+   <div class="row"><span>Gender</span><span id="pGender"></span></div>
+   <div class="row"><span>Class</span><span id="pClass"></span></div>
+   <div class="row"><span>Mentor</span><span id="pMentor"></span></div>
+   <div class="row"><span>Blood</span><span id="pBlood"></span></div>
+   <div class="row"><span>Phone</span><span id="pPhone"></span></div>
+   <div class="row"><span>DOB</span><span id="pDob"></span></div>
+   <div class="row"><span>ID No</span><span id="pReg"></span></div>
+  </div>
+  <div class="footer">
+    <img id="qr" src="">
+    <div class="sign">
+      <img src="signature.png" id="signImg" onerror="this.style.display='none'">
+      <div></div>Sadar Muallim
+    </div>
+  </div>
+ </div>
+ <div style="max-width:360px; margin:20px auto; display:flex; gap:10px;">
+  <button class="main-btn" onclick="downloadID()">DOWNLOAD</button>
+  <button class="main-btn" style="background:#555" onclick="location.reload()">BACK</button>
+ </div>
+</div>
+
+<div id="cropBox">
+ <div class="crop-container">
+  <img id="cropImg">
+  <button class="main-btn" onclick="applyCrop()">CROP & APPLY</button>
+ </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+let cropper, photoData = "";
+
+// Firebase Config (എല്ലാ സിസ്റ്റത്തിനും ഇത് ഉപയോഗിക്കാം)
+const firebaseConfig = {
+  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+  authDomain: "mum-new-id.firebaseapp.com",
+  projectId: "mum-new-id",
+  storageBucket: "mum-new-id.firebasestorage.app",
+  messagingSenderId: "794343464244",
+  appId: "1:794343464244:web:f9083036490e3609bf1961",
+  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com" // മെയിൻ ഡാറ്റാബേസ് ലിങ്ക്
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rtdb = firebase.database();
+
+// URL-ൽ നിന്ന് മദ്റസ ഐഡി എടുക്കുന്നു
+const urlParams = new URLSearchParams(window.location.search);
+const mId = urlParams.get('mid'); 
+
+// മദ്റസ വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു
+async function loadMadrasa() {
+    if(!mId) return alert("Madrasa ID Missing!");
+    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+        const d = snap.val();
+        if(d) {
+            document.getElementById('portalMName').innerText = d.name;
+            document.getElementById('portalMPlace').innerText = d.place;
+            document.getElementById('cardMName').innerText = d.name;
+            document.getElementById('cardMDetails').innerText = d.place + " | REG.NO: " + d.reg;
+            document.getElementById('pageTitle').innerText = d.name + " | ID Portal";
+        }
+    });
+}
+loadMadrasa();
+
+function showTab(t){
+ document.getElementById('regTab').style.display = t=="reg"?"block":"none";
+ document.getElementById('logTab').style.display = t=="log"?"block":"none";
+ document.getElementById('tReg').className = t=="reg"?"active":"";
+ document.getElementById('tLog').className = t=="log"?"active":"";
+}
+
+document.getElementById('photoInp').onchange = e => {
+ const file = e.target.files[0];
+ if (file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+   document.getElementById('cropImg').src = reader.result;
+   document.getElementById('cropBox').style.display = "flex";
+   if (cropper) cropper.destroy();
+   cropper = new Cropper(document.getElementById('cropImg'), { aspectRatio: 3/4, viewMode: 1 });
+  };
+  reader.readAsDataURL(file);
+ }
+};
+
+function applyCrop(){
+ photoData = cropper.getCroppedCanvas({ width: 300, height: 400 }).toDataURL("image/jpeg", 0.7);
+ document.getElementById('uploadPreview').src = photoData;
+ document.getElementById('photoPreviewWrap').style.display = "block";
+ document.getElementById('cropBox').style.display = "none";
+}
+
+async function saveStudent(){
+ const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
+ const data = {};
+ const btn = document.getElementById('saveBtn');
+
+ for(let f of fields) {
+   const val = document.getElementById(f).value;
+   if(!val) { alert("എല്ലാ കോളങ്ങളും പൂരിപ്പിക്കുക!"); return; }
+   data[f] = val;
+ }
+
+ if(data.regPass.length < 4) { alert("പാസ്‌വേർഡിന് കുറഞ്ഞത് 4 അക്കങ്ങൾ വേണം!"); return; }
+ if(data.regPass !== data.regPassConf) { alert("പാസ്‌വേർഡുകൾ തമ്മിൽ യോജിക്കുന്നില്ല!"); return; }
+ if(!photoData) { alert("ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക!"); return; }
+ 
+ btn.disabled = true;
+
+ try {
+  const checkDoc = await db.collection("students").doc(data.regno).get();
+  if(checkDoc.exists) {
+    alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
+    btn.disabled = false; return;
+  }
+
+  const studentObj = {
+   madrasa_id: mId, // ഏത് മദ്റസയിലെ കുട്ടിയാണെന്ന് രേഖപ്പെടുത്തുന്നു
+   name: data.name,
+   number: data.regno,
+   class: data.classN,
+   father: data.father,
+   mentor: data.mentor,
+   phone: data.phone,
+   gender: data.gender,
+   blood: data.blood,
+   dob: data.dob,
+   password: data.regPass,
+   photo: photoData,
+   status: "pending",
+   timestamp: new Date().getTime()
+  };
+
+  await db.collection("students").doc(studentObj.number).set(studentObj);
+  alert("രജിസ്ട്രേഷൻ വിജയകരമായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
+  location.reload(); 
+ } catch (e) { alert("Error!"); btn.disabled = false; }
+}
+
+async function login(){
+ const rNo = document.getElementById('loginReg').value;
+ const lPass = document.getElementById('loginPass').value;
+ const lBtn = document.getElementById('loginBtn');
+
+ if(!rNo || !lPass) return alert("വിവരങ്ങൾ നൽകുക!");
+ lBtn.disabled = true;
+
+ try {
+   const doc = await db.collection("students").doc(rNo).get();
+   if(doc.exists) {
+     const s = doc.data();
+     // സ്വന്തം മദ്റസയിലെ കുട്ടിയാണോ എന്ന് കൂടി നോക്കുന്നു
+     if(s.madrasa_id === mId && s.password === lPass) {
+       if(s.status === "approved") { renderID(s); } 
+       else { alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക! ⏳"); }
+     } else { alert("തെറ്റായ വിവരങ്ങൾ!"); }
+   } else { alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!"); }
+ } catch(e) { alert("Error"); }
+ finally { lBtn.disabled = false; }
+}
+
+function renderID(s){
+ document.getElementById('pName').innerText = s.name;
+ document.getElementById('pFather').innerText = s.father;
+ document.getElementById('pGender').innerText = s.gender;
+ document.getElementById('pClass').innerText = s.class;
+ document.getElementById('pMentor').innerText = s.mentor;
+ document.getElementById('pBlood').innerText = s.blood;
+ document.getElementById('pPhone').innerText = s.phone;
+ document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
+ document.getElementById('pReg').innerText = s.number;
+ document.getElementById('pImg').src = s.photo;
+ document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.number)}`;
+ document.getElementById('panel').style.display = "none";
+ document.getElementById('idArea').style.display = "block";
+}
+
+function downloadID(){
+ const card = document.querySelector("#idCard");
+ html2canvas(card, { scale: 3, useCORS: true }).then(canvas => {
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = `ID_${document.getElementById('pReg').innerText}.png`;
+  link.click();
+ });
+}
+</script>
+</body>
+</html>
