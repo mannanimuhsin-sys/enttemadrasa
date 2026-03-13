@@ -225,10 +225,14 @@
         showPage('portalPage');
     }
 
-    // ഡാഷ്‌ബോർഡ് ലിങ്ക് ഓപ്പൺ ചെയ്യുന്നു
-    function openDashboard() {
-        window.location.href = `dashboard.html?id=${currentId}&role=${currentRole}`;
-    }
+   // ഡാഷ്‌ബോർഡ് ലിങ്ക് ഓപ്പൺ ചെയ്യുന്നു
+function openDashboard() {
+    // നിങ്ങളുടെ ഡാഷ്‌ബോർഡ് ബേസ് ലിങ്ക്
+    const baseUrl = "https://mannanimuhsin-sys.github.io/madrasa/dashbord";
+    
+    // ലോഗിൻ ചെയ്ത ആളുടെ ഐഡിയും റോോളും ലിങ്കിനൊപ്പം ചേർക്കുന്നു
+    window.location.href = `${baseUrl}?id=${currentId}&role=${currentRole}`;
+}
 </script>
 
 </body>
