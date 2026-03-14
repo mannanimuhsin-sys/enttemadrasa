@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Results & Winner Poster</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #eee; padding: 20px; text-align: center; }
+        .result-container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 15px; }
+        
+        /* Winner List Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #004d00; color: white; }
+
+        /* POSTER DESIGN */
+        #posterArea { 
+            display: none; 
+            width: 600px; 
+            height: 800px; 
+            margin: 30px auto; 
+            background: linear-gradient(135deg, #004d00, #002b00); 
+            border: 8px solid #d4af37; 
+            position: relative;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .winner-slot { display: inline-block; width: 30%; margin: 10px; vertical-align: top; }
+        .winner-slot img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #d4af37; object-fit: cover; }
+        .rank { font-weight: bold; font-size: 20px; color: #d4af37; margin-top: 10px; }
+        
+        .btn-publish { background: #ff9800; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="result-container">
+    <h2>🏆 ക്വിസ് വിജയികൾ</h2>
+    <p>മൈക്രോ സെക്കന്റ് കണക്കാക്കിയുള്ള ഫലം താഴെ കാണാം</p>
+    
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>വിദ്യാർത്ഥി</th>
+                <th>ക്ലാസ്</th>
+                <th>സമയം (MS)</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody">
+            </tbody>
+    </table>
+
+    <button class="btn-publish" onclick="generatePoster()">PUBLISH WINNER POSTER</button>
+</div>
+
+<div id="posterArea">
+    <h1 style="color:#d4af37; margin-bottom: 5px;">CONGRATULATIONS</h1>
+    <h3 id="posterHeading">SPECIAL DAY QUIZ WINNERS</h3>
+    <hr style="border:1px solid #d4af37; width: 50%;">
+    
+    <div id="winnerDisplays" style="margin-top: 50px;">
+        </div>
+
+    <div style="position: absolute; bottom: 30px; width: 100%; text-align: center;">
+        <h2 id="mNameFooter">Madrasa Name</h2>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mID = urlParams.get('id');
+
+    let topWinners = [];
+
+    // 1. ഫലങ്ങൾ ലോഡ് ചെയ്യുന്നു
+    function loadResults() {
+        db.ref('quiz_submissions/' + mID).on('value', snap => {
+            let data = [];
+            snap.forEach(child => {
+                const res = child.val();
+                if(res.isCorrect) { // ശരിയുത്തരം നൽകിയവരെ മാത്രം എടുക്കുന്നു
+                    data.push(res);
+                }
+            });
+
+            // സമയം (submitTime) അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (ഏറ്റവും കുറഞ്ഞ സമയം ആദ്യം)
+            data.sort((a, b) => a.submitTime - b.submitTime);
+
+            topWinners = data.slice(0, 3); // ആദ്യത്തെ 3 പേരെ എടുക്കുന്നു
+            renderTable(data);
+        });
+    }
+
+    // 2. ടേബിൾ നിർമ്മാണം
+    function renderTable(data) {
+        const body = document.getElementById('resultBody');
+        body.innerHTML = data.map((r, i) => `
+            <tr>
+                <td>${i+1}</td>
+                <td>${r.studentName} (${r.regNo})</td>
+                <td>${r.class}</td>
+                <td>${new Date(r.submitTime).getMilliseconds()} ms</td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. പോസ്റ്റർ ജനറേറ്റ് ചെയ്യുന്നു
+    function generatePoster() {
+        if(topWinners.length === 0) return alert("വിജയികൾ ലഭ്യമല്ല!");
+
+        document.getElementById('posterArea').style.display = 'block';
+        const display = document.getElementById('winnerDisplays');
+        
+        display.innerHTML = topWinners.map((w, i) => `
+            <div class="winner-slot">
+                <div class="rank">${i+1}<sup>st</sup> Place</div>
+                <img src="${w.photo || 'https://via.placeholder.com/100'}">
+                <h3 style="margin: 10px 0 5px 0;">${w.studentName}</h3>
+                <p style="font-size: 12px; margin: 0;">Class: ${w.class}</p>
+                <p style="font-size: 11px; color: #d4af37;">Mentor: ${w.mentor}</p>
+            </div>
+        `).join('');
+
+        // മദ്റസ പേര് ഫൂട്ടറിൽ ചേർക്കാൻ
+        db.ref('madrasa_requests/' + mID).once('value', s => {
+            document.getElementById('mNameFooter').innerText = s.val().name;
+        });
+    }
+
+    loadResults();
+</script>
+
+</body>
+</html>
