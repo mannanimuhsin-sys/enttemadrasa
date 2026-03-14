@@ -18,25 +18,20 @@
         :root { --green: #0b5d1e; --orange: #f39c12; --red: #d63031; --blue: #2980b9; }
         body { font-family: 'Roboto', sans-serif; background: #eef2f3; margin: 0; padding: 15px; }
         .header { background: var(--green); color: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
         .action-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
         button { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
         .btn-excel { background: #27ae60; }
         .btn-pdf { background: #e74c3c; }
         .btn-edit { background: var(--blue); padding: 5px 10px; font-size: 11px; }
         .btn-delete { background: var(--red); padding: 5px 10px; font-size: 11px; }
         .btn-approve { background: #f39c12; padding: 5px 10px; font-size: 11px; }
-        
         .table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; }
         th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; color: var(--green); font-size: 12px; text-transform: uppercase; }
         td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        
         .stu-img { width: 40px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
         .status-pending { color: var(--red); font-weight: bold; }
         .status-approved { color: #27ae60; font-weight: bold; }
-        
         #editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
         .modal-content { background:white; padding:25px; border-radius:15px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto; }
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 12px; color: var(--green); }
@@ -48,29 +43,21 @@
 <div class="header">
     <div>
         <h2 style="margin:0;" id="adminMName">ADMIN DASHBOARD</h2>
-        <small id="adminMPlace">Madrasa ID Portal</small>
+        <small id="adminMPlace">Loading Madrasa Details...</small>
     </div>
     <div id="stats" style="font-weight: bold; font-size: 18px;">Total: 0</div>
 </div>
 
 <div class="action-bar">
     <input type="text" id="search" placeholder="Search name, ID, or phone..." onkeyup="applyFilters()" style="flex:2; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd;">
-    
     <select id="classFilter" onchange="applyFilters()" style="padding:10px; border-radius:8px; flex:1;">
         <option value="All">All Classes</option>
         <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
         <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
     </select>
-
-    <select id="genderFilter" onchange="applyFilters()" style="padding:10px; border-radius:8px; flex:1;">
-        <option value="All">All Gender</option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-    </select>
-
     <button class="btn-excel" onclick="exportToExcel()">EXCEL</button>
     <button class="btn-pdf" onclick="exportToPDF()">PDF</button>
-    <button style="background:#555" onclick="window.history.back()">BACK</button>
+    <button style="background:#555" onclick="location.reload()">REFRESH</button>
 </div>
 
 <div class="table-container" style="overflow-x:auto;">
@@ -80,12 +67,9 @@
                 <th>Photo</th>
                 <th>Reg.No</th>
                 <th>Name</th>
-                <th>Gender</th>
                 <th>Class</th>
                 <th>Father</th>
-                <th>Mentor</th>
                 <th>Phone</th>
-                <th>Blood</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -94,32 +78,8 @@
     </table>
 </div>
 
-<div id="editModal">
-    <div class="modal-content">
-        <h3 style="color:var(--green); margin-top:0; border-bottom: 2px solid var(--green);">Update Details</h3>
-        <input type="hidden" id="editDocId">
-        
-        <label>Full Name</label><input type="text" id="editName">
-        <label>Gender</label>
-        <select id="editGender"><option>Male</option><option>Female</option></select>
-        <label>Class</label><input type="text" id="editClass">
-        <label>Father's Name</label><input type="text" id="editFather">
-        <label>Mentor Name</label><input type="text" id="editMentor">
-        <label>Phone Number</label><input type="text" id="editPhone">
-        <label>Blood Group</label><input type="text" id="editBlood">
-        <label>Date of Birth</label><input type="date" id="editDob">
-        <label>Password</label><input type="text" id="editPass">
-        
-        <label>Update Photo</label><input type="file" id="editPhotoInp" accept="image/*">
-        
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn-excel" onclick="updateData()" style="flex:1;">SAVE</button>
-            <button style="background:#666; flex:1;" onclick="closeModal()">CANCEL</button>
-        </div>
-    </div>
-</div>
-
 <script>
+// Firebase configuration (നിങ്ങളുടെ പഴയ കോഡിലുള്ളത് തന്നെ)
 const firebaseConfig = {
     apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
     authDomain: "mum-new-id.firebaseapp.com",
@@ -129,62 +89,68 @@ const firebaseConfig = {
     appId: "1:794343464244:web:f9083036490e3609bf1961",
     databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const rtdb = firebase.database();
 
-// URL-ൽ നിന്ന് മദ്റസ ഐഡി എടുക്കുന്നു
 const urlParams = new URLSearchParams(window.location.search);
-const adminMId = urlParams.get('id'); 
+// 'mid' അല്ലെങ്കിൽ 'id' ഏത് വന്നാലും വർക്ക് ആകും
+const adminMId = urlParams.get('mid') || urlParams.get('id'); 
 let allStudents = [];
 let madrasaName = "Madrasa";
 
-// മദ്റസ വിവരം ലോഡ് ചെയ്യുന്നു
 async function loadMadrasa() {
-    if(!adminMId) return alert("Admin ID Error!");
+    if(!adminMId) {
+        alert("Madrasa ID Missing in URL!");
+        return;
+    }
     rtdb.ref('madrasa_requests/' + adminMId).once('value', snap => {
         const d = snap.val();
         if(d) {
             madrasaName = d.name;
             document.getElementById('adminMName').innerText = d.name.toUpperCase();
-            document.getElementById('adminMPlace').innerText = d.place + " | ID Management";
-            document.getElementById('pageTitle').innerText = d.name + " - Admin Panel";
+            document.getElementById('adminMPlace').innerText = d.place + " | Admin Panel";
             loadData();
+        } else {
+            document.getElementById('adminMPlace').innerText = "Madrasa Not Found!";
         }
     });
 }
 
 async function loadData() {
     const tbody = document.getElementById('studentBody');
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading Students...</td></tr>';
 
     try {
-        // സ്വന്തം മദ്റസയിലെ കുട്ടികളെ മാത്രം ഫിൽട്ടർ ചെയ്യുന്നു
+        // ഇൻഡക്സ് എറർ ഒഴിവാക്കാൻ orderBy ഒഴിവാക്കി ലളിതമാക്കി
         const snapshot = await db.collection("students")
                            .where("madrasa_id", "==", adminMId)
-                           .orderBy("timestamp", "desc")
                            .get();
+        
         allStudents = [];
         snapshot.forEach(doc => {
             allStudents.push({ ...doc.data(), docId: doc.id });
         });
+        
+        // ക്ലയന്റ് സൈഡിൽ വെച്ച് സമയം അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
+        allStudents.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
         applyFilters();
     } catch (e) { 
-        console.error(e);
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:red;">ഡാറ്റാബേസ് കണക്ഷനിൽ പിശക് സംഭവിച്ചു!</td></tr>';
+        console.error("Firestore Error:", e);
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">Error: ${e.message}</td></tr>`;
     }
 }
 
 function applyFilters() {
     const classVal = document.getElementById('classFilter').value;
-    const genderVal = document.getElementById('genderFilter').value;
     const searchVal = document.getElementById('search').value.toLowerCase();
     
     const filtered = allStudents.filter(s => {
         const matchClass = (classVal === "All" || s.class == classVal);
-        const matchGender = (genderVal === "All" || s.gender == genderVal);
-        const matchSearch = (s.name.toLowerCase().includes(searchVal) || s.number.includes(searchVal) || s.phone.includes(searchVal));
-        return matchClass && matchGender && matchSearch;
+        const matchSearch = (s.name.toLowerCase().includes(searchVal) || s.number.includes(searchVal));
+        return matchClass && matchSearch;
     });
 
     renderTable(filtered);
@@ -195,7 +161,7 @@ function renderTable(data) {
     tbody.innerHTML = '';
     
     if(data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;">ലിസ്റ്റിൽ കുട്ടികൾ ആരുമില്ല!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No students found for this Madrasa.</td></tr>';
     }
 
     data.forEach(s => {
@@ -205,17 +171,13 @@ function renderTable(data) {
                 <td><img src="${s.photo}" class="stu-img"></td>
                 <td><b>${s.number}</b></td>
                 <td>${s.name}</td>
-                <td>${s.gender || '---'}</td>
                 <td>${s.class}</td>
                 <td>${s.father}</td>
-                <td>${s.mentor}</td>
                 <td>${s.phone}</td>
-                <td>${s.blood}</td>
                 <td><span class="${isApproved ? 'status-approved' : 'status-pending'}">${isApproved ? 'Approved ✅' : 'Pending ⏳'}</span></td>
                 <td>
                     <div style="display:flex; gap:5px;">
                         ${!isApproved ? `<button class="btn-approve" onclick="approveStudent('${s.docId}')">Approve</button>` : ''}
-                        <button class="btn-edit" onclick="openEditModal('${s.docId}')">Edit</button>
                         <button class="btn-delete" onclick="deleteData('${s.docId}')">Del</button>
                     </div>
                 </td>
@@ -225,139 +187,26 @@ function renderTable(data) {
     document.getElementById('stats').innerText = `Total: ${data.length}`;
 }
 
-function openEditModal(docId) {
-    const s = allStudents.find(item => item.docId === docId);
-    document.getElementById('editDocId').value = docId;
-    document.getElementById('editName').value = s.name;
-    document.getElementById('editGender').value = s.gender || "Male";
-    document.getElementById('editClass').value = s.class;
-    document.getElementById('editFather').value = s.father;
-    document.getElementById('editMentor').value = s.mentor;
-    document.getElementById('editPhone').value = s.phone;
-    document.getElementById('editBlood').value = s.blood;
-    document.getElementById('editDob').value = s.dob;
-    document.getElementById('editPass').value = s.password || "";
-    document.getElementById('editModal').style.display = 'flex';
-}
-
-async function updateData() {
-    const docId = document.getElementById('editDocId').value;
-    const updated = {
-        name: document.getElementById('editName').value,
-        gender: document.getElementById('editGender').value,
-        class: document.getElementById('editClass').value,
-        father: document.getElementById('editFather').value,
-        mentor: document.getElementById('editMentor').value,
-        phone: document.getElementById('editPhone').value,
-        blood: document.getElementById('editBlood').value,
-        dob: document.getElementById('editDob').value,
-        password: document.getElementById('editPass').value
-    };
-
-    const photoInp = document.getElementById('editPhotoInp');
-    if(photoInp.files[0]) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            updated.photo = e.target.result;
-            await saveToFirebase(docId, updated);
-        };
-        reader.readAsDataURL(photoInp.files[0]);
-    } else {
-        await saveToFirebase(docId, updated);
-    }
-}
-
-async function saveToFirebase(docId, data) {
-    try {
-        await db.collection("students").doc(docId).update(data);
-        alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു! ✅");
-        closeModal();
-        loadData();
-    } catch(e) { alert("Error!"); }
-}
-
-function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-
 async function approveStudent(id) {
-    if(confirm("ഈ വിദ്യാർത്ഥിയെ അപ്രൂവ് ചെയ്യട്ടെ?")) {
-        await db.collection("students").doc(id).update({ status: "approved" });
-        loadData();
+    if(confirm("Approve this student?")) {
+        try {
+            await db.collection("students").doc(id).update({ status: "approved" });
+            loadData();
+        } catch(e) { alert("Update failed!"); }
     }
 }
 
 async function deleteData(id) {
-    if(confirm("ഈ വിദ്യാർത്ഥിയെ ഡിലീറ്റ് ചെയ്യട്ടെ?")) {
-        await db.collection("students").doc(id).delete();
-        loadData();
+    if(confirm("Delete this student?")) {
+        try {
+            await db.collection("students").doc(id).delete();
+            loadData();
+        } catch(e) { alert("Delete failed!"); }
     }
 }
 
-function exportToExcel() {
-    const classVal = document.getElementById('classFilter').value;
-    const genderVal = document.getElementById('genderFilter').value;
-    const searchVal = document.getElementById('search').value.toLowerCase();
-    
-    const filtered = allStudents.filter(s => {
-        const matchClass = (classVal === "All" || s.class == classVal);
-        const matchGender = (genderVal === "All" || s.gender == genderVal);
-        const matchSearch = (s.name.toLowerCase().includes(searchVal) || s.number.includes(searchVal));
-        return matchClass && matchGender && matchSearch;
-    });
-
-    const excelRows = filtered.map(s => ({
-        "Reg Number": s.number,
-        "Name": s.name,
-        "Gender": s.gender || "",
-        "Class": s.class,
-        "Father": s.father,
-        "Mentor": s.mentor,
-        "Phone": s.phone,
-        "Blood": s.blood,
-        "DOB": s.dob,
-        "Status": s.status
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(excelRows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, `${madrasaName}_Students.xlsx`);
-}
-
-function exportToPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
-    
-    doc.text(madrasaName + " - Student Report", 14, 15);
-    
-    const classVal = document.getElementById('classFilter').value;
-    const genderVal = document.getElementById('genderFilter').value;
-    const searchVal = document.getElementById('search').value.toLowerCase();
-    
-    const filtered = allStudents.filter(s => {
-        const matchClass = (classVal === "All" || s.class == classVal);
-        const matchGender = (genderVal === "All" || s.gender == genderVal);
-        const matchSearch = (s.name.toLowerCase().includes(searchVal) || s.number.includes(searchVal));
-        return matchClass && matchGender && matchSearch;
-    });
-
-    const rows = filtered.map(s => [
-        s.number, s.name, s.gender || '', s.class, s.father, s.mentor, s.phone, s.blood, s.status
-    ]);
-
-    doc.autoTable({
-        head: [['Reg.No', 'Name', 'Gender', 'Class', 'Father', 'Mentor', 'Phone', 'Blood', 'Status']],
-        body: rows,
-        startY: 22,
-        theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [11, 93, 30] }
-    });
-
-    doc.save(`${madrasaName}_Report.pdf`);
-}
-
+// തുടക്കത്തിൽ ഡാറ്റ ലോഡ് ചെയ്യുന്നു
 loadMadrasa();
 </script>
-
 </body>
 </html>
