@@ -3,139 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Control Panel</title>
+    <title>മദ്റസ പെയ്‌മെന്റ് അഡ്മിൻ</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
+        :root { --primary: #004d00; --bg: #f0f2f5; --accent: #2c3e50; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .admin-box { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .student-list-container { max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; padding: 10px; margin-top: 15px; }
-        .student-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f9f9f9; gap: 10px; }
-        .student-item:hover { background: #f0f7f0; }
-        .btn-pay { background: var(--primary); color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .status-badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .paid { background: #e8f5e9; color: #2e7d32; }
-        .pending { background: #fff3e0; color: #ef6c00; }
+        .admin-box { max-width: 900px; margin: auto; }
+        
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card-header { font-weight: bold; color: var(--primary); font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 5px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .student-list-container { max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        
+        .status-badge { padding: 5px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; border: none; }
+        .pending { background: #ffeb3b; color: #856404; }
+        .paid { background: #4caf50; color: white; }
+        
+        .submit-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-monthly { background: var(--primary); color: white; }
+        .btn-other { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
 
 <div class="admin-box">
-    <h2 style="color:var(--primary); text-align:center;">പെയ്‌മെന്റ് കൺട്രോൾ പാനൽ</h2>
-    
-    <div class="filter-grid">
-        <div>
-            <label>വിഭാഗം</label>
-            <select id="genderFilter" onchange="loadStudents()">
-                <option value="All">All Students</option>
-                <option value="Male">Boys</option>
-                <option value="Female">Girls</option>
-            </select>
+    <h2 style="text-align:center; color:var(--primary);"><i class="fa fa-university"></i> മദ്റസ ഫീ മാനേജ്‌മെന്റ്</h2>
+
+    <div class="card">
+        <div class="card-header"><i class="fa fa-calendar-check"></i> 1. മാസ ഫീസ് ക്രമീകരണം</div>
+        <div class="grid-layout">
+            <div>
+                <label>വർഷം</label>
+                <select id="mYear"><option>2026</option><option>2025</option></select>
+            </div>
+            <div>
+                <label>മാസം</label>
+                <select id="mMonth">
+                    <option>January</option><option>February</option><option>March</option>
+                    <option>April</option><option>May</option><option>June</option>
+                </select>
+            </div>
+            <div>
+                <label>ഫീസ് തുക (₹)</label>
+                <input type="number" id="mAmt" placeholder="Amount">
+            </div>
         </div>
-        <div>
-            <label>ക്ലാസ്സ്</label>
-            <select id="classFilter" onchange="loadStudents()">
-                <option value="All">All Classes</option>
-                <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`)</script>
-            </select>
+        <div class="filter-row" style="display:flex; gap:10px; margin-bottom:10px;">
+            <select id="classFilterM" onchange="loadStudents('M')"><option value="All">എല്ലാ ക്ലാസും</option></select>
+            <button onclick="loadStudents('M')" style="padding:5px 15px;">Load Students</button>
         </div>
-        <div>
-            <label>തീയതി</label>
-            <input type="date" id="payDate">
+        <div class="student-list-container">
+            <table>
+                <thead><tr><th><input type="checkbox" onclick="selectAll('M', this)"></th><th>വിദ്യാർത്ഥി</th><th>സ്റ്റാറ്റസ്</th></tr></thead>
+                <tbody id="listM"></tbody>
+            </table>
         </div>
+        <button class="submit-btn btn-monthly" style="margin-top:15px;" onclick="saveFees('Monthly')">മാസ ഫീസ് രേഖപ്പെടുത്തുക</button>
     </div>
 
-    <input type="text" id="payReason" placeholder="എന്തിനുള്ള പെയ്‌മെന്റ്? (ഉദാ: May Month Fee)" style="margin-bottom: 10px;">
-    <input type="number" id="payAmount" placeholder="തുക (Amount)">
-
-    <div style="margin-top:20px; font-weight:bold;">വിദ്യാർത്ഥികളെ തിരഞ്ഞെടുക്കുക: 
-        <input type="checkbox" id="selectAll" onclick="toggleSelectAll()"> Select All
+    <div class="card">
+        <div class="card-header"><i class="fa fa-tags"></i> 2. മറ്റ് പെയ്‌മെന്റുകൾ (Uniform, Book, etc.)</div>
+        <div class="grid-layout">
+            <div>
+                <label>വിഷയം / ഐറ്റം</label>
+                <input type="text" id="oSubject" placeholder="ഉദാ: Uniform">
+            </div>
+            <div>
+                <label>തുക (₹)</label>
+                <input type="number" id="oAmt" placeholder="Amount">
+            </div>
+        </div>
+        <div class="filter-row" style="display:flex; gap:10px; margin-bottom:10px;">
+            <select id="classFilterO" onchange="loadStudents('O')"><option value="All">എല്ലാ ക്ലാസും</option></select>
+        </div>
+        <div class="student-list-container">
+            <table>
+                <thead><tr><th><input type="checkbox" onclick="selectAll('O', this)"></th><th>വിദ്യാർത്ഥി</th><th>സ്റ്റാറ്റസ്</th></tr></thead>
+                <tbody id="listO"></tbody>
+            </table>
+        </div>
+        <button class="submit-btn btn-other" style="margin-top:15px;" onclick="saveFees('Other')">ഈ പെയ്‌മെന്റ് രേഖപ്പെടുത്തുക</button>
     </div>
 
-    <div class="student-list-container" id="studentList">
+    <div class="card" id="trackingSection">
+        <div class="card-header"><i class="fa fa-search"></i> 3. പെയ്‌മെന്റ് പരിശോധന</div>
+        <p style="font-size:12px; color:#666;">വിദ്യാർത്ഥികൾ പൈസ അടച്ചോ ഇല്ലയോ എന്ന് ഇവിടെ നോക്കാം.</p>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="number" id="checkReg" placeholder="റജിസ്റ്റർ നമ്പർ">
+            <button onclick="checkStudentStatus()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:8px;">Check</button>
         </div>
-
-    <button class="btn-pay" onclick="bulkPayment()">SAVE PAYMENT DATA</button>
+        <div id="checkResult"></div>
+    </div>
 </div>
 
 <script>
+    // Firebase Initialized (നിങ്ങളുടെ ക്രെഡൻഷ്യൽസ്)
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-        authDomain: "mum-new-id.firebaseapp.com",
-        projectId: "mum-new-id",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "mum-new-id"
     };
     firebase.initializeApp(firebaseConfig);
     const fs = firebase.firestore();
     const rtdb = firebase.database();
+    const mID = new URLSearchParams(window.location.search).get('id');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const mID = urlParams.get('id');
-    document.getElementById('payDate').valueAsDate = new Date();
+    // ക്ലാസ് ലിസ്റ്റ് ഫിൽട്ടറിൽ ചേർക്കാൻ
+    const clsDropdowns = ['classFilterM', 'classFilterO'];
+    clsDropdowns.forEach(id => {
+        for(let i=1; i<=12; i++) {
+            let opt = document.createElement('option');
+            opt.value = i; opt.innerText = "Class " + i;
+            document.getElementById(id).appendChild(opt);
+        }
+    });
 
-    async function loadStudents() {
-        const gender = document.getElementById('genderFilter').value;
-        const cls = document.getElementById('classFilter').value;
-        const listDiv = document.getElementById('studentList');
-        listDiv.innerHTML = "Loading...";
+    async function loadStudents(type) {
+        const cls = document.getElementById('classFilter' + type).value;
+        const list = document.getElementById('list' + type);
+        list.innerHTML = "Loading...";
 
-        let query = fs.collection("students").where("madrasa_id", "==", mID).where("status", "==", "approved");
+        let query = fs.collection("students").where("madrasa_id", "==", mID);
+        if(cls !== "All") query = query.where("class", "==", cls);
 
         const snap = await query.get();
-        listDiv.innerHTML = "";
-        
+        list.innerHTML = "";
         snap.forEach(doc => {
             const s = doc.data();
-            // Filter Logic
-            if(gender !== 'All' && s.gender !== gender) return;
-            if(cls !== 'All' && s.class != cls) return;
-
-            listDiv.innerHTML += `
-                <div class="student-item">
-                    <input type="checkbox" class="stu-checkbox" value="${s.number}" data-name="${s.name}">
-                    <div style="flex:1">
-                        <b>${s.name}</b> <br>
-                        <small>Reg: ${s.number} | Class: ${s.class} | ${s.gender}</small>
-                    </div>
-                </div>`;
+            list.innerHTML += `
+                <tr>
+                    <td><input type="checkbox" class="check-${type}" value="${s.number}" data-name="${s.name}"></td>
+                    <td><b>${s.name}</b><br><small>Reg: ${s.number}</small></td>
+                    <td><button class="status-badge pending" onclick="toggleStatus(this)">PENDING</button></td>
+                </tr>`;
         });
     }
 
-    function toggleSelectAll() {
-        const checked = document.getElementById('selectAll').checked;
-        document.querySelectorAll('.stu-checkbox').forEach(cb => cb.checked = checked);
-    }
-
-    async function bulkPayment() {
-        const reason = document.getElementById('payReason').value;
-        const amount = document.getElementById('payAmount').value;
-        const date = document.getElementById('payDate').value;
-        const selected = document.querySelectorAll('.stu-checkbox:checked');
-
-        if(!reason || !amount || selected.length === 0) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
-
-        if(confirm(`${selected.length} വിദ്യാർത്ഥികൾക്ക് പെയ്‌മെന്റ് ചേർക്കണോ?`)) {
-            for(let cb of selected) {
-                const reg = cb.value;
-                const name = cb.getAttribute('data-name');
-                const receiptId = "RCP" + Date.now() + Math.floor(Math.random() * 1000);
-
-                await rtdb.ref('payments/' + mID + '/' + reg).push({
-                    receiptId, reg, sName: name, category: reason, 
-                    amount, date, status: 'paid', timestamp: Date.now()
-                });
-            }
-            alert("വിജയകരമായി പൂർത്തിയാക്കി!");
-            location.reload();
+    function toggleStatus(btn) {
+        if(btn.classList.contains('pending')) {
+            btn.classList.replace('pending', 'paid');
+            btn.innerText = "PAID ✅";
+        } else {
+            btn.classList.replace('paid', 'pending');
+            btn.innerText = "PENDING";
         }
     }
 
-    loadStudents();
+    function selectAll(type, main) {
+        document.querySelectorAll('.check-' + type).forEach(c => c.checked = main.checked);
+    }
+
+    async function saveFees(categoryType) {
+        let amount, subject, typeCode;
+        if(categoryType === 'Monthly') {
+            amount = document.getElementById('mAmt').value;
+            subject = "Fee: " + document.getElementById('mMonth').value + " " + document.getElementById('mYear').value;
+            typeCode = 'M';
+        } else {
+            amount = document.getElementById('oAmt').value;
+            subject = document.getElementById('oSubject').value;
+            typeCode = 'O';
+        }
+
+        const selected = document.querySelectorAll(`.check-${typeCode}:checked`);
+        if(!amount || selected.length === 0) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
+
+        for(let cb of selected) {
+            const reg = cb.value;
+            const name = cb.getAttribute('data-name');
+            const status = cb.closest('tr').querySelector('.status-badge').innerText.includes("PAID") ? "Paid" : "Pending";
+            
+            await rtdb.ref(`payments/${mID}/${reg}`).push({
+                category: subject,
+                amount: amount,
+                status: status,
+                date: new Date().toLocaleDateString(),
+                studentName: name
+            });
+        }
+        alert("വിജയകരമായി രേഖപ്പെടുത്തി!");
+    }
+
+    async function checkStudentStatus() {
+        const reg = document.getElementById('checkReg').value;
+        const res = document.getElementById('checkResult');
+        if(!reg) return;
+
+        rtdb.ref(`payments/${mID}/${reg}`).once('value', snap => {
+            if(!snap.exists()) { res.innerHTML = "വിവരങ്ങൾ ലഭ്യമല്ല"; return; }
+            let html = "<table style='width:100%; border:1px solid #eee;'>";
+            snap.forEach(child => {
+                const p = child.val();
+                let color = p.status === 'Paid' ? 'green' : 'red';
+                html += `<tr><td>${p.category}</td><td style='color:${color}; font-weight:bold;'>${p.status}</td><td>₹${p.amount}</td></tr>`;
+            });
+            res.innerHTML = html + "</table>";
+        });
+    }
 </script>
 </body>
 </html>
