@@ -3,78 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Payments</title>
+    <title>മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; margin: 0; }
-        .container { max-width: 500px; margin: auto; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .user-header { background: var(--primary); color: white; padding: 20px; text-align: center; }
-        .payment-card { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .btn-receipt { background: #d4af37; color: black; border: none; padding: 8px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        .status-tag { font-size: 10px; padding: 3px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
-        .paid { background: #c8e6c9; color: #2e7d32; }
+        :root { --primary: #004d00; --bg: #f4f7f6; --gold: #d4af37; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .container { max-width: 450px; margin: auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); min-height: 90vh; }
+        
+        /* Header Section */
+        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; }
+        .m-name { margin: 0; font-size: 22px; font-weight: 800; }
+        .m-place { margin: 5px 0 0; font-size: 13px; opacity: 0.9; }
+
+        /* Login Box */
+        .login-section { padding: 30px 20px; text-align: center; }
+        .login-section h3 { color: var(--primary); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+        .btn-login { width: 100%; padding: 13px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        
+        /* Profile & Payment Area (Hidden Initially) */
+        #portalArea { display: none; padding: 15px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .student-info { background: #e8f5e9; padding: 15px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid var(--gold); }
+        .student-info h4 { margin: 0; color: var(--primary); font-size: 18px; }
+        
+        .pay-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .pay-meta b { color: var(--primary); display: block; margin-bottom: 3px; }
+        .pay-meta small { color: #777; font-size: 12px; }
+        
+        .amount-area { text-align: right; }
+        .amount-area span { font-size: 18px; font-weight: 800; display: block; }
+        .btn-receipt { background: var(--gold); color: black; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        
+        .status-paid { background: #c8e6c9; color: #1b5e20; font-size: 10px; padding: 3px 8px; border-radius: 50px; font-weight: bold; }
+        .btn-logout { background: #f8d7da; color: #721c24; border: none; width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="user-header">
-        <h3 id="uName">Loading...</h3>
-        <p id="uDetails" style="margin:0; opacity:0.8; font-size:13px;"></p>
+    <div class="header">
+        <h1 id="mNameDisplay" class="m-name">മദ്റസ പോർട്ടൽ</h1>
+        <p id="mPlaceDisplay" class="m-place">ലോഡ് ചെയ്യുന്നു...</p>
     </div>
 
-    <div id="paymentList">
+    <div id="loginSection" class="login-section">
+        <h3>വിദ്യാർത്ഥി ലോഗിൻ</h3>
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">പെയ്‌മെന്റ് വിവരങ്ങൾക്കായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക</p>
+        <input type="number" id="regNo" placeholder="രജിസ്റ്റർ നമ്പർ">
+        <input type="password" id="pass" placeholder="പാസ്‌വേഡ്">
+        <button class="btn-login" onclick="handleLogin()">LOGIN & VIEW INFO</button>
+    </div>
+
+    <div id="portalArea">
+        <div class="student-info">
+            <h4 id="dispSName">Student Name</h4>
+            <p id="dispSReg" style="margin:5px 0 0; font-size:13px; color:#555;">Reg: 000 | Class: --</p>
         </div>
+
+        <h4 style="margin: 0 0 15px 5px; color: #333; font-size: 15px;"><i class="fa fa-history"></i> പെയ്‌മെന്റ് ചരിത്രം</h4>
+        <div id="paymentHistory">
+            </div>
+
+        <button class="btn-logout" onclick="logout()">LOGOUT</button>
+    </div>
 </div>
 
 <script>
+    // Firebase Config (നിങ്ങളുടെ അതേ ഐഡി ഉപയോഗിക്കുന്നു)
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+        authDomain: "mum-new-id.firebaseapp.com",
+        projectId: "mum-new-id",
         databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
     };
     firebase.initializeApp(firebaseConfig);
+    const fs = firebase.firestore();
     const rtdb = firebase.database();
 
-    const mID = new URLSearchParams(window.location.search).get('id');
-    const reg = localStorage.getItem("loggedStudentReg");
-    const name = localStorage.getItem("loggedStudentName");
+    const urlParams = new URLSearchParams(window.location.search);
+    const mID = urlParams.get('id') || urlParams.get('mid');
 
-    document.getElementById('uName').innerText = name;
-    document.getElementById('uDetails').innerText = "Reg No: " + reg;
-
-    rtdb.ref('payments/' + mID + '/' + reg).on('value', snap => {
-        const list = document.getElementById('paymentList');
-        list.innerHTML = "";
-        
-        if(!snap.exists()) {
-            list.innerHTML = "<p style='text-align:center; padding:20px;'>പെയ്‌മെന്റ് വിവരങ്ങൾ ലഭ്യമല്ല</p>";
-            return;
-        }
-
-        snap.forEach(child => {
-            const p = child.val();
-            list.innerHTML += `
-                <div class="payment-card">
-                    <div>
-                        <b style="color:var(--primary)">${p.category}</b><br>
-                        <small style="color:#666">${p.date}</small>
-                        <span class="status-tag paid">PAID ✅</span>
-                    </div>
-                    <div style="text-align:right">
-                        <b style="font-size:18px">₹${p.amount}</b><br>
-                        <button class="btn-receipt" onclick='viewReceipt(${JSON.stringify(p)})'>RECEIPT</button>
-                    </div>
-                </div>`;
+    // മദ്രസ വിവരങ്ങൾ മുകളിൽ കാണിക്കാൻ
+    if(mID) {
+        rtdb.ref('madrasa_requests/' + mID).once('value', snap => {
+            const d = snap.val();
+            if(d) {
+                document.getElementById('mNameDisplay').innerText = d.name;
+                document.getElementById('mPlaceDisplay').innerText = d.place + " | REG NO: " + d.reg;
+            }
         });
-    });
+    }
 
-    function viewReceipt(data) {
-        localStorage.setItem("currentReceipt", JSON.stringify(data));
-        window.location.href = "receipt_view.html?id=" + mID;
+    async function handleLogin() {
+        const reg = document.getElementById('regNo').value;
+        const pass = document.getElementById('pass').value;
+
+        if(!reg || !pass) return alert("വിവരങ്ങൾ നൽകുക");
+
+        try {
+            // ഐഡി കാർഡ് വിവരങ്ങളിൽ തിരയുന്നു
+            const doc = await fs.collection("students").doc(reg).get();
+            if(doc.exists) {
+                const s = doc.data();
+                if(s.madrasa_id === mID && s.password === pass) {
+                    showPortal(s);
+                } else {
+                    alert("പാസ്‌വേഡ് തെറ്റാണ് അല്ലെങ്കിൽ ഈ മദ്റസയിലെ കുട്ടിയല്ല!");
+                }
+            } else {
+                alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!");
+            }
+        } catch (e) { alert("Error loading student info"); }
+    }
+
+    function showPortal(student) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('portalArea').style.display = 'block';
+
+        document.getElementById('dispSName').innerText = student.name;
+        document.getElementById('dispSReg').innerText = `Reg: ${student.number} | Class: ${student.class} | ${student.gender}`;
+
+        // പെയ്‌മെന്റ് ചരിത്രം ലോഡ് ചെയ്യുന്നു
+        rtdb.ref('payments/' + mID + '/' + student.number).on('value', snap => {
+            const list = document.getElementById('paymentHistory');
+            list.innerHTML = "";
+
+            if(!snap.exists()) {
+                list.innerHTML = "<p style='text-align:center; padding:30px; color:#999;'>പെയ്‌മെന്റ് വിവരങ്ങൾ ലഭ്യമല്ല</p>";
+                return;
+            }
+
+            snap.forEach(child => {
+                const p = child.val();
+                list.innerHTML += `
+                    <div class="pay-card">
+                        <div class="pay-meta">
+                            <b>${p.category}</b>
+                            <small>${p.date}</small>
+                            <span class="status-paid">PAID ✅</span>
+                        </div>
+                        <div class="amount-area">
+                            <span>₹${p.amount}</span>
+                            <button class="btn-receipt" onclick='printReceipt(${JSON.stringify(p)})'>RECEIPT</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    function printReceipt(p) {
+        // മുമ്പ് നൽകിയ അതേ റസീറ്റ് വ്യൂ പേജിലേക്ക് പോകുന്നു
+        localStorage.setItem("currentReceipt", JSON.stringify(p));
+        window.location.href = `receipt_view.html?id=${mID}`;
+    }
+
+    function logout() {
+        location.reload();
     }
 </script>
+
 </body>
 </html>
