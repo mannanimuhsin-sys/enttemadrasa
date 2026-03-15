@@ -245,12 +245,13 @@
         window.location.href = url;
     }
 
-   function openPaymentPortal() {
-    if(currentRole === 'admin') {
-        // അഡ്മിൻ ആണെങ്കിൽ നേരിട്ട് അഡ്മിൻ പേജിലേക്ക്
+  function openPaymentPortal() {
+    // currentRole, currentId എന്നിവ ലോഗിൻ സമയത്ത് നമ്മൾ സേവ് ചെയ്തവയാണ്
+    if (currentRole === 'admin') {
+        // ഉസ്താദുമാർക്ക് നേരിട്ട് പെയ്‌മെന്റ് മാനേജ്‌മെന്റ് പേജിലേക്ക് പോകാം
         window.location.href = `payment_admin.html?id=${currentId}`;
     } else {
-        // രക്ഷിതാവാണെങ്കിൽ ആദ്യം ലോഗിൻ പേജിലേക്ക്
+        // രക്ഷിതാക്കൾക്ക് ആദ്യം കുട്ടിയുടെ ലോഗിൻ പേജ് വരും
         window.location.href = `payment_login.html?id=${currentId}`;
     }
 }
