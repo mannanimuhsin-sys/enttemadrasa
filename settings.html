@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>മദ്റസ സെറ്റിംഗ്സ്</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #004d00; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .settings-box { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-top: 0; }
+        .control-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .toggle-btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; min-width: 90px; }
+        .btn-on { background: #4caf50; color: white; }
+        .btn-off { background: #f44336; color: white; }
+        .back-btn { width: 100%; margin-top: 20px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="settings-box">
+    <h2>കൺട്രോൾ പാനൽ</h2>
+    <p style="text-align: center; font-size: 13px; color: #666;">രക്ഷിതാക്കളുടെ പേജിലെ ബട്ടണുകൾ നിയന്ത്രിക്കുക</p>
+    
+    <div class="control-item">
+        <span>Dashboard</span>
+        <button id="btn_dash" class="toggle-btn" onclick="toggleFeature('dash')">Loading...</button>
+    </div>
+
+    <div class="control-item">
+        <span>ID Card Portal</span>
+        <button id="btn_id" class="toggle-btn" onclick="toggleFeature('id')">Loading...</button>
+    </div>
+
+    <div class="control-item">
+        <span>Special Quiz</span>
+        <button id="btn_quiz" class="toggle-btn" onclick="toggleFeature('quiz')">Loading...</button>
+    </div>
+
+    <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
+</div>
+
+<script>
+    // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ ഇവിടെ നൽകുക)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mID = urlParams.get('id'); // അഡ്മിൻ പേജിൽ നിന്ന് വരുന്ന മദ്റസ ഐഡി
+
+    let currentSettings = { dash: true, id: true, quiz: true };
+
+    // സെറ്റിംഗ്സ് ലോഡ് ചെയ്യുന്നു
+    if (mID) {
+        db.ref('settings/' + mID).on('value', snap => {
+            if (snap.exists()) {
+                currentSettings = snap.val();
+            }
+            updateUI();
+        });
+    }
+
+    function updateUI() {
+        updateBtn('btn_dash', currentSettings.dash);
+        updateBtn('btn_id', currentSettings.id);
+        updateBtn('btn_quiz', currentSettings.quiz);
+    }
+
+    function updateBtn(elementId, state) {
+        const btn = document.getElementById(elementId);
+        btn.innerText = state ? "SHOWING" : "HIDDEN";
+        btn.className = state ? "toggle-btn btn-on" : "toggle-btn btn-off";
+    }
+
+    function toggleFeature(feature) {
+        currentSettings[feature] = !currentSettings[feature];
+        db.ref('settings/' + mID).set(currentSettings);
+    }
+</script>
+</body>
+</html>
