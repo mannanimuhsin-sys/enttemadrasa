@@ -20,21 +20,25 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         
+        /* Secret Trigger for Registration */
         .secret-trigger { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; color: #ddd; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; }
         
+        /* Page Transitions */
         .page { display: none; animation: fadeIn 0.4s; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Profile Section */
         .profile-card { text-align: center; background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 30px 20px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,77,0,0.2); }
         .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--gold); object-fit: cover; background: white; margin-bottom: 15px; }
         .m-name { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; color: white; }
         .m-reg { display: inline-block; background: var(--gold); color: black; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px; }
 
+        /* UI Elements */
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; }
+        .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; border-radius: 10px; }
 
         .m-title-area { text-align: center; margin-bottom: 25px; margin-top: 30px; }
         .m-logo-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; }
@@ -122,6 +126,7 @@
     </div>
 
 <script>
+    // Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -153,7 +158,7 @@
         }
     }
 
-    // വേഗതയേറിയ ലോഗിൻ (Optimized Login)
+    // പവർഫുൾ ലോഗിൻ ഫങ്ക്ഷൻ (Fast & Accurate)
     async function handleLogin() {
         const reg = document.getElementById('logReg').value.trim();
         const pass = document.getElementById('logPass').value.trim();
@@ -163,7 +168,7 @@
         btn.disabled = true;
         btn.innerText = "CHECKING...";
 
-        // എല്ലാ ഡാറ്റയും വലിച്ചെടുക്കാതെ ഫിൽട്ടർ ചെയ്ത് മാത്രം എടുക്കുന്നു
+        // Indexing ഉപയോഗിച്ച് കൃത്യമായ റെക്കോർഡ് മാത്രം തിരയുന്നു (Speed++)
         db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).once('value', snap => {
             let foundUser = null; 
             let userId = "";
@@ -175,14 +180,17 @@
             });
 
             if(foundUser) {
-                if(foundUser.status !== 'approved') { showPage('pendingPage'); } 
-                else {
+                if(foundUser.status !== 'approved') { 
+                    showPage('pendingPage'); 
+                } else {
                     currentId = userId;
                     localStorage.setItem("madrasaId", userId);
                     localStorage.setItem("userRole", currentRole);
                     loadProfile(foundUser);
                 }
-            } else { alert("രജിസ്റ്റർ നമ്പറോ പാസ്‌വേഡോ തെറ്റാണ്!"); }
+            } else { 
+                alert("രജിസ്റ്റർ നമ്പറോ പാസ്‌വേഡോ തെറ്റാണ്!"); 
+            }
             btn.disabled = false;
             btn.innerText = "LOGIN";
         });
@@ -198,27 +206,31 @@
                 <div class="m-reg">REG NO: ${d.reg}</div>
             </div>`;
         
-        // Settings & Payment Visibility Control
+        // Settings & Button Visibility Logic
         db.ref('settings/' + currentId).on('value', snap => {
             const s = snap.val() || { dash: true, id: true, quiz: true, payment: true };
             
-            document.getElementById('btnDash').style.display = (s.dash !== false) ? 'flex' : 'none';
-            document.getElementById('btnID').style.display = (s.id !== false) ? 'flex' : 'none';
-            document.getElementById('btnQuiz').style.display = (s.quiz !== false) ? 'flex' : 'none';
-            document.getElementById('btnPayment').style.display = (s.payment !== false) ? 'flex' : 'none';
-
-            if(currentRole === 'admin') {
+            // രക്ഷിതാക്കൾക്ക് (Parent) സെറ്റിംഗ്സ് അനുസരിച്ച് മാത്രം ബട്ടണുകൾ
+            if(currentRole === 'parent') {
+                document.getElementById('btnDash').style.display = (s.dash !== false) ? 'flex' : 'none';
+                document.getElementById('btnID').style.display = (s.id !== false) ? 'flex' : 'none';
+                document.getElementById('btnQuiz').style.display = (s.quiz !== false) ? 'flex' : 'none';
+                document.getElementById('btnPayment').style.display = (s.payment !== false) ? 'flex' : 'none';
+                document.getElementById('adminPanelSection').style.display = 'none';
+            } 
+            // ഉസ്താദുമാർക്ക് (Admin) എല്ലാ ബട്ടണുകളും, പെയ്‌മെന്റ് ബട്ടൺ അഡ്മിൻ പാനലിൽ മാത്രമാക്കി ചുരുക്കി.
+            else {
                 document.getElementById('adminPanelSection').style.display = 'block';
-                // ഉസ്താദിന് എല്ലാ ബട്ടണുകളും എപ്പോഴും കാണിക്കും
                 document.getElementById('btnDash').style.display = 'flex';
                 document.getElementById('btnID').style.display = 'flex';
                 document.getElementById('btnQuiz').style.display = 'flex';
-                document.getElementById('btnPayment').style.display = 'flex';
+                document.getElementById('btnPayment').style.display = 'none'; // Duplicate ഒഴിവാക്കി
             }
         });
         showPage('portalPage');
     }
 
+    // All Redirect Functions (All links maintained)
     function openDashboard() {
         window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashbord?id=${currentId}&role=${currentRole}`;
     }
@@ -237,6 +249,7 @@
         window.location.href = `payment_view.html?id=${currentId}&role=${currentRole}`;
     }
 
+    // Auto Login on Refresh
     window.onload = function() {
         const savedId = localStorage.getItem("madrasaId");
         const savedRole = localStorage.getItem("userRole");
