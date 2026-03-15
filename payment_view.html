@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>പെയ്‌മെന്റ് ഹിസ്റ്ററി | എന്‍റെ മദ്റസ</title>
+    <title>പെയ്‌മെന്റ് റിപ്പോർട്ട്</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); min-height: 90vh; }
         .header { text-align: center; margin-bottom: 20px; }
         .student-card { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--primary); }
         .student-card h3 { margin: 0; color: var(--primary); }
@@ -20,8 +20,8 @@
         th { background: #f9f9f9; color: #666; }
         
         .status-paid { color: #2e7d32; font-weight: bold; font-size: 11px; background: #c8e6c9; padding: 3px 6px; border-radius: 4px; }
-        .btn-print { border: none; background: var(--primary); color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .back-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 5px; }
+        .btn-print { border: none; background: var(--primary); color: white; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+        .back-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 5px; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
         <h2 style="color: var(--primary); margin: 0;">പെയ്‌മെന്റ് റിപ്പോർട്ട്</h2>
     </div>
 
-    <div class="student-card" id="studentDisplay">
+    <div class="student-card">
         <h3 id="dispName">വിദ്യാർത്ഥി പേര്</h3>
         <p id="dispReg" style="margin: 5px 0 0 0; opacity: 0.8;">Reg No: --</p>
     </div>
@@ -55,6 +55,7 @@
 </div>
 
 <script>
+    // Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -69,7 +70,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id');
     
-    // ലോഗിൻ ചെയ്ത കുട്ടിയുടെ വിവരം LocalStorage-ൽ നിന്ന് എടുക്കുന്നു
     const savedReg = localStorage.getItem("loggedStudentReg");
     const savedName = localStorage.getItem("loggedStudentName");
 
@@ -77,7 +77,6 @@
         document.getElementById('dispName').innerText = savedName;
         document.getElementById('dispReg').innerText = "Reg No: " + savedReg;
 
-        // ആ കുട്ടിയുടെ പെയ്‌മെന്റ് മാത്രം ഫിൽട്ടർ ചെയ്യുന്നു
         db.ref('payments/' + mID).orderByChild('reg').equalTo(savedReg).on('value', snap => {
             const list = document.getElementById('paymentTable');
             list.innerHTML = "";
@@ -85,6 +84,7 @@
             if (snap.exists()) {
                 snap.forEach(child => {
                     const p = child.val();
+                    // Creating row with data
                     const row = `<tr>
                         <td><b>${p.category}</b><br><small>${p.remark || ''}</small></td>
                         <td>₹${p.amount}</td>
@@ -98,40 +98,47 @@
                     list.innerHTML += row;
                 });
             } else {
-                list.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>പെയ്‌മെന്റ് വിവരങ്ങൾ ഒന്നും ലഭ്യമല്ല.</td></tr>";
+                list.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:30px; color:#999;'>വിവരങ്ങൾ ലഭ്യമല്ല</td></tr>";
             }
         });
     }
 
-    // റസീറ്റ് പ്രിന്റ് ചെയ്യാനുള്ള ഫങ്ക്ഷൻ
     function printReceipt(p) {
+        const studentName = localStorage.getItem("loggedStudentName") || "Student";
         const printContent = `
             <html>
-            <head><title>Receipt</title></head>
-            <body style="font-family: sans-serif; display: flex; justify-content: center; padding: 20px;">
-                <div style="border: 2px solid #004d00; padding: 20px; width: 350px; border-radius: 10px;">
-                    <h2 style="text-align: center; color: #004d00; margin-bottom: 5px;">മദ്റസ പെയ്‌മെന്റ് റസീറ്റ്</h2>
-                    <p style="text-align: center; font-size: 12px; margin-top: 0;">Smart Management Portal</p>
+            <head>
+                <style>
+                    body { font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; justify-content: center; }
+                    .receipt { border: 2px solid #004d00; padding: 20px; width: 350px; border-radius: 10px; }
+                    h2 { text-align: center; color: #004d00; margin: 0; }
+                    hr { border: 1px dashed #ccc; margin: 15px 0; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+                    .total { text-align: center; background: #f4f4f4; padding: 10px; font-size: 20px; font-weight: bold; margin-top: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="receipt">
+                    <h2>മദ്റസ പെയ്‌മെന്റ് റസീറ്റ്</h2>
+                    <p style="text-align:center; font-size:11px; color:#666;">Smart Management Portal</p>
                     <hr>
-                    <p><b>വിദ്യാർത്ഥി:</b> ${savedName}</p>
-                    <p><b>Reg No:</b> ${p.reg}</p>
-                    <p><b>ആവശ്യം:</b> ${p.category}</p>
-                    <p><b>വിവരണം:</b> ${p.remark || '-'}</p>
-                    <p><b>തിയ്യതി:</b> ${p.date}</p>
-                    <h3 style="text-align: center; background: #f4f4f4; padding: 10px;">തുക: ₹${p.amount}</h3>
+                    <div class="row"><span>പേര്:</span> <b>${studentName}</b></div>
+                    <div class="row"><span>Reg No:</span> <b>${p.reg}</b></div>
+                    <div class="row"><span>ആവശ്യം:</span> <b>${p.category}</b></div>
+                    <div class="row"><span>തിയ്യതി:</span> <b>${p.date}</b></div>
+                    <div class="row"><span>വിവരണം:</span> <b>${p.remark || '-'}</b></div>
+                    <div class="total">₹${p.amount}</div>
                     <hr>
-                    <p style="text-align: center; color: green; font-weight: bold;">STATUS: PAID ✅</p>
-                    <p style="text-align: center; font-size: 10px; color: #666;">ഈ റസീറ്റ് കമ്പ്യൂട്ടർ ജനറേറ്റ് ചെയ്തതാണ്.</p>
+                    <p style="text-align:center; color:green; font-weight:bold; margin-bottom:0;">STATUS: PAID ✅</p>
                 </div>
-                <script>window.print();<\/script>
             </body>
             </html>
         `;
         const win = window.open('', '_blank');
         win.document.write(printContent);
         win.document.close();
+        setTimeout(() => { win.print(); }, 500);
     }
 </script>
-
 </body>
 </html>
