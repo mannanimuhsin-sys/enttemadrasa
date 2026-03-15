@@ -12,7 +12,7 @@
         .settings-box { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: var(--primary); margin-top: 0; }
         .control-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .toggle-btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; min-width: 90px; }
+        .toggle-btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; min-width: 90px; transition: 0.3s; }
         .btn-on { background: #4caf50; color: white; }
         .btn-off { background: #f44336; color: white; }
         .back-btn { width: 100%; margin-top: 20px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
@@ -39,11 +39,16 @@
         <button id="btn_quiz" class="toggle-btn" onclick="toggleFeature('quiz')">Loading...</button>
     </div>
 
+    <div class="control-item">
+        <span>Payment & Receipts</span>
+        <button id="btn_payment" class="toggle-btn" onclick="toggleFeature('payment')">Loading...</button>
+    </div>
+
     <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
 </div>
 
 <script>
-    // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ ഇവിടെ നൽകുക)
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -56,15 +61,17 @@
     const db = firebase.database();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const mID = urlParams.get('id'); // അഡ്മിൻ പേജിൽ നിന്ന് വരുന്ന മദ്റസ ഐഡി
+    const mID = urlParams.get('id');
 
-    let currentSettings = { dash: true, id: true, quiz: true };
+    // ഡിഫോൾട്ട് സെറ്റിംഗ്സിൽ 'payment' കൂടി ഉൾപ്പെടുത്തി
+    let currentSettings = { dash: true, id: true, quiz: true, payment: true };
 
-    // സെറ്റിംഗ്സ് ലോഡ് ചെയ്യുന്നു
     if (mID) {
         db.ref('settings/' + mID).on('value', snap => {
             if (snap.exists()) {
                 currentSettings = snap.val();
+                // ഒരുപക്ഷേ പഴയ ഡാറ്റയിൽ പെയ്‌മെന്റ് ഇല്ലെങ്കിൽ അത് ട്രൂ ആക്കി വെക്കുന്നു
+                if (currentSettings.payment === undefined) currentSettings.payment = true;
             }
             updateUI();
         });
@@ -74,17 +81,29 @@
         updateBtn('btn_dash', currentSettings.dash);
         updateBtn('btn_id', currentSettings.id);
         updateBtn('btn_quiz', currentSettings.quiz);
+        updateBtn('btn_payment', currentSettings.payment); // പെയ്‌മെന്റ് ബട്ടൺ അപ്‌ഡേറ്റ്
     }
 
     function updateBtn(elementId, state) {
         const btn = document.getElementById(elementId);
-        btn.innerText = state ? "SHOWING" : "HIDDEN";
-        btn.className = state ? "toggle-btn btn-on" : "toggle-btn btn-off";
+        if (btn) {
+            btn.innerText = (state !== false) ? "SHOWING" : "HIDDEN";
+            btn.className = (state !== false) ? "toggle-btn btn-on" : "toggle-btn btn-off";
+        }
     }
 
     function toggleFeature(feature) {
-        currentSettings[feature] = !currentSettings[feature];
-        db.ref('settings/' + mID).set(currentSettings);
+        // നിലവിലുള്ള അവസ്ഥ മാറ്റുന്നു (True -> False / False -> True)
+        if (currentSettings[feature] === undefined) {
+            currentSettings[feature] = false;
+        } else {
+            currentSettings[feature] = !currentSettings[feature];
+        }
+        
+        // Firebase-ലേക്ക് സേവ് ചെയ്യുന്നു
+        db.ref('settings/' + mID).set(currentSettings).then(() => {
+            console.log(feature + " updated successfully");
+        });
     }
 </script>
 </body>
