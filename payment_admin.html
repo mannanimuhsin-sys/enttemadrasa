@@ -3,111 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>മദ്റസ പെയ്‌മെന്റ് അഡ്മിൻ</title>
+    <title>മദ്റസ പെയ്‌മെന്റ് മാസ്റ്റർ അഡ്മിൻ</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #004d00; --bg: #f0f2f5; --accent: #2c3e50; }
+        :root { --primary: #004d00; --bg: #f4f7f6; --dark: #2c3e50; --danger: #e74c3c; --success: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .admin-box { max-width: 900px; margin: auto; }
+        .container { max-width: 1000px; margin: auto; }
         
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-header { font-weight: bold; color: var(--primary); font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-top: 5px solid var(--primary); }
+        .header-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
         
-        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        label { font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 5px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         
-        .student-list-container { max-height: 300px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-add { background: var(--primary); color: white; width: 100%; }
+        .btn-track { background: var(--dark); color: white; width: 100%; margin-top: 10px; }
         
-        .status-badge { padding: 5px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; border: none; }
-        .pending { background: #ffeb3b; color: #856404; }
-        .paid { background: #4caf50; color: white; }
+        /* Stats Dashboard */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .stat-card { padding: 20px; border-radius: 12px; color: white; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .stat-total { background: #3498db; }
+        .stat-paid { background: var(--success); }
+        .stat-pending { background: #e67e22; }
+        .stat-card h2 { margin: 10px 0 0; font-size: 24px; }
+
+        /* Tables */
+        .scroll-area { max-height: 300px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; border-radius: 10px; background: #fafafa; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f1f1f1; padding: 12px; text-align: left; font-size: 13px; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #f1f1f1; font-size: 14px; }
         
-        .submit-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-monthly { background: var(--primary); color: white; }
-        .btn-other { background: var(--accent); color: white; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bg-paid { background: #e8f5e9; color: #2e7d32; }
+        .bg-pending { background: #ffebee; color: #c62828; }
+        
+        .btn-change { background: #eee; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <h2 style="text-align:center; color:var(--primary);"><i class="fa fa-university"></i> മദ്റസ ഫീ മാനേജ്‌മെന്റ്</h2>
+<div class="container">
+    <h2 style="text-align:center; color:var(--primary);"><i class="fa fa-university"></i> മദ്റസ പെയ്‌മെന്റ് കൺട്രോൾ</h2>
 
     <div class="card">
-        <div class="card-header"><i class="fa fa-calendar-check"></i> 1. മാസ ഫീസ് ക്രമീകരണം</div>
-        <div class="grid-layout">
-            <div>
-                <label>വർഷം</label>
-                <select id="mYear"><option>2026</option><option>2025</option></select>
-            </div>
-            <div>
-                <label>മാസം</label>
-                <select id="mMonth">
-                    <option>January</option><option>February</option><option>March</option>
-                    <option>April</option><option>May</option><option>June</option>
-                </select>
-            </div>
-            <div>
-                <label>ഫീസ് തുക (₹)</label>
-                <input type="number" id="mAmt" placeholder="Amount">
-            </div>
+        <div class="header-title"><i class="fa fa-plus-circle"></i> പുതിയ പെയ്‌മെന്റ് അറിയിപ്പ് നൽകുക</div>
+        
+        <div class="grid-inputs">
+            <select id="payType">
+                <option value="Monthly">മാസ ഫീസ് (Monthly Fee)</option>
+                <option value="Special">മറ്റുള്ളവ (Exam/Book/Tour)</option>
+            </select>
+            <input type="text" id="payTitle" placeholder="വിഷയം (ഉദാ: April Fee 2026)">
+            <input type="number" id="payAmt" placeholder="തുക (₹)">
+            <select id="classSel" onchange="loadStudents()">
+                <option value="All">എല്ലാ ക്ലാസ്സും</option>
+                <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`)</script>
+            </select>
         </div>
-        <div class="filter-row" style="display:flex; gap:10px; margin-bottom:10px;">
-            <select id="classFilterM" onchange="loadStudents('M')"><option value="All">എല്ലാ ക്ലാസും</option></select>
-            <button onclick="loadStudents('M')" style="padding:5px 15px;">Load Students</button>
-        </div>
-        <div class="student-list-container">
+        
+        <p style="font-size: 12px; color: #666; margin: 0 0 10px 5px;">താഴെ കാണുന്ന ലിസ്റ്റിൽ നിന്നും കുട്ടികളെ തിരഞ്ഞെടുക്കുക:</p>
+        <div class="scroll-area">
             <table>
-                <thead><tr><th><input type="checkbox" onclick="selectAll('M', this)"></th><th>വിദ്യാർത്ഥി</th><th>സ്റ്റാറ്റസ്</th></tr></thead>
-                <tbody id="listM"></tbody>
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="masterCheck" onclick="toggleSelectAll(this)" checked></th>
+                        <th>വിദ്യാർത്ഥിയുടെ പേര്</th>
+                        <th>ക്ലാസ്സ്</th>
+                    </tr>
+                </thead>
+                <tbody id="stuList"></tbody>
             </table>
         </div>
-        <button class="submit-btn btn-monthly" style="margin-top:15px;" onclick="saveFees('Monthly')">മാസ ഫീസ് രേഖപ്പെടുത്തുക</button>
+        <button class="btn btn-add" style="margin-top:15px;" onclick="requestPayment()">
+            <i class="fa fa-paper-plane"></i> പെയ്‌മെന്റ് റിക്വസ്റ്റ് സെറ്റ് ചെയ്യുക
+        </button>
     </div>
 
-    <div class="card">
-        <div class="card-header"><i class="fa fa-tags"></i> 2. മറ്റ് പെയ്‌മെന്റുകൾ (Uniform, Book, etc.)</div>
-        <div class="grid-layout">
-            <div>
-                <label>വിഷയം / ഐറ്റം</label>
-                <input type="text" id="oSubject" placeholder="ഉദാ: Uniform">
-            </div>
-            <div>
-                <label>തുക (₹)</label>
-                <input type="number" id="oAmt" placeholder="Amount">
-            </div>
+    <button class="btn btn-track" onclick="toggleDashboard()">
+        <i class="fa fa-chart-bar"></i> പെയ്‌മെന്റ് ട്രാക്കർ & റിപ്പോർട്ട്
+    </button>
+
+    <div id="dashboardSection" class="card" style="display:none; margin-top:20px; border-top-color: var(--dark);">
+        <div class="header-title"><i class="fa fa-file-invoice-dollar"></i> കളക്ഷൻ ഡാഷ്‌ബോർഡ്</div>
+        
+        <div class="grid-inputs">
+            <select id="trackProgram" onchange="calculateStats()">
+                <option value="">പ്രോഗ്രാം തിരഞ്ഞെടുക്കുക...</option>
+            </select>
+            <select id="trackClass" onchange="calculateStats()">
+                <option value="All">എല്ലാ ക്ലാസ്സും</option>
+                <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`)</script>
+            </select>
         </div>
-        <div class="filter-row" style="display:flex; gap:10px; margin-bottom:10px;">
-            <select id="classFilterO" onchange="loadStudents('O')"><option value="All">എല്ലാ ക്ലാസും</option></select>
+
+        <div class="stats-grid">
+            <div class="stat-card stat-total">ആകെ വേണ്ടത് <h2><span id="totalNeeded">0</span></h2></div>
+            <div class="stat-card stat-paid">ലഭിച്ചത് <h2><span id="totalCollected">0</span></h2></div>
+            <div class="stat-card stat-pending">ബാക്കിയുള്ളത് <h2><span id="totalPending">0</span></h2></div>
         </div>
-        <div class="student-list-container">
-            <table>
-                <thead><tr><th><input type="checkbox" onclick="selectAll('O', this)"></th><th>വിദ്യാർത്ഥി</th><th>സ്റ്റാറ്റസ്</th></tr></thead>
-                <tbody id="listO"></tbody>
+
+        <div style="overflow-x:auto;">
+            <table class="report-table" style="margin-top:20px; width:100%;">
+                <thead>
+                    <tr>
+                        <th>പേര്</th>
+                        <th>ക്ലാസ്</th>
+                        <th>സ്റ്റാറ്റസ്</th>
+                        <th>മാറ്റുക</th>
+                    </tr>
+                </thead>
+                <tbody id="reportList"></tbody>
             </table>
         </div>
-        <button class="submit-btn btn-other" style="margin-top:15px;" onclick="saveFees('Other')">ഈ പെയ്‌മെന്റ് രേഖപ്പെടുത്തുക</button>
-    </div>
-
-    <div class="card" id="trackingSection">
-        <div class="card-header"><i class="fa fa-search"></i> 3. പെയ്‌മെന്റ് പരിശോധന</div>
-        <p style="font-size:12px; color:#666;">വിദ്യാർത്ഥികൾ പൈസ അടച്ചോ ഇല്ലയോ എന്ന് ഇവിടെ നോക്കാം.</p>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="number" id="checkReg" placeholder="റജിസ്റ്റർ നമ്പർ">
-            <button onclick="checkStudentStatus()" style="background:var(--primary); color:white; border:none; padding:10px 20px; border-radius:8px;">Check</button>
-        </div>
-        <div id="checkResult"></div>
     </div>
 </div>
 
 <script>
-    // Firebase Initialized (നിങ്ങളുടെ ക്രെഡൻഷ്യൽസ്)
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
         databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
@@ -116,100 +132,131 @@
     firebase.initializeApp(firebaseConfig);
     const fs = firebase.firestore();
     const rtdb = firebase.database();
+    
+    // Madrasa ID URL-ൽ നിന്ന് എടുക്കുന്നു
     const mID = new URLSearchParams(window.location.search).get('id');
 
-    // ക്ലാസ് ലിസ്റ്റ് ഫിൽട്ടറിൽ ചേർക്കാൻ
-    const clsDropdowns = ['classFilterM', 'classFilterO'];
-    clsDropdowns.forEach(id => {
-        for(let i=1; i<=12; i++) {
-            let opt = document.createElement('option');
-            opt.value = i; opt.innerText = "Class " + i;
-            document.getElementById(id).appendChild(opt);
-        }
-    });
-
-    async function loadStudents(type) {
-        const cls = document.getElementById('classFilter' + type).value;
-        const list = document.getElementById('list' + type);
-        list.innerHTML = "Loading...";
-
-        let query = fs.collection("students").where("madrasa_id", "==", mID);
-        if(cls !== "All") query = query.where("class", "==", cls);
-
-        const snap = await query.get();
+    // വിദ്യാർത്ഥികളെ ലോഡ് ചെയ്യാൻ
+    async function loadStudents() {
+        const cls = document.getElementById('classSel').value;
+        const list = document.getElementById('stuList');
+        list.innerHTML = "<tr><td colspan='3' style='text-align:center'>Loading...</td></tr>";
+        
+        let q = fs.collection("students").where("madrasa_id", "==", mID);
+        if(cls !== "All") q = q.where("class", "==", cls);
+        
+        const snap = await q.get();
         list.innerHTML = "";
         snap.forEach(doc => {
             const s = doc.data();
             list.innerHTML += `
                 <tr>
-                    <td><input type="checkbox" class="check-${type}" value="${s.number}" data-name="${s.name}"></td>
-                    <td><b>${s.name}</b><br><small>Reg: ${s.number}</small></td>
-                    <td><button class="status-badge pending" onclick="toggleStatus(this)">PENDING</button></td>
+                    <td><input type="checkbox" class="sc" value="${s.number}" data-name="${s.name}" data-cls="${s.class}" checked></td>
+                    <td>${s.name} <br><small style="color:#888">Reg: ${s.number}</small></td>
+                    <td>${s.class}</td>
                 </tr>`;
         });
     }
 
-    function toggleStatus(btn) {
-        if(btn.classList.contains('pending')) {
-            btn.classList.replace('pending', 'paid');
-            btn.innerText = "PAID ✅";
-        } else {
-            btn.classList.replace('paid', 'pending');
-            btn.innerText = "PENDING";
+    function toggleSelectAll(master) {
+        document.querySelectorAll('.sc').forEach(c => c.checked = master.checked);
+    }
+
+    // പെയ്‌മെന്റ് റിക്വസ്റ്റ് അയക്കാൻ
+    async function requestPayment() {
+        const title = document.getElementById('payTitle').value;
+        const amt = document.getElementById('payAmt').value;
+        const checks = document.querySelectorAll('.sc:checked');
+        
+        if(!title || !amt || checks.length === 0) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
+
+        if(confirm(`${checks.length} വിദ്യാർത്ഥികൾക്ക് ഈ ഫീസ് സെറ്റ് ചെയ്യണോ?`)) {
+            for(let c of checks) {
+                const reg = c.value;
+                const name = c.getAttribute('data-name');
+                const cls = c.getAttribute('data-cls');
+                
+                await rtdb.ref(`payments/${mID}/${reg}`).push({
+                    title: title,
+                    amount: amt,
+                    status: "Pending", // തുടക്കത്തിൽ പെൻഡിംഗ് ആയിരിക്കും
+                    date: new Date().toLocaleDateString(),
+                    sName: name,
+                    sClass: cls
+                });
+            }
+            alert("വിജയകരമായി രേഖപ്പെടുത്തി!");
+            updateProgramList();
         }
     }
 
-    function selectAll(type, main) {
-        document.querySelectorAll('.check-' + type).forEach(c => c.checked = main.checked);
+    function toggleDashboard() {
+        const d = document.getElementById('dashboardSection');
+        d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        updateProgramList();
     }
 
-    async function saveFees(categoryType) {
-        let amount, subject, typeCode;
-        if(categoryType === 'Monthly') {
-            amount = document.getElementById('mAmt').value;
-            subject = "Fee: " + document.getElementById('mMonth').value + " " + document.getElementById('mYear').value;
-            typeCode = 'M';
-        } else {
-            amount = document.getElementById('oAmt').value;
-            subject = document.getElementById('oSubject').value;
-            typeCode = 'O';
-        }
-
-        const selected = document.querySelectorAll(`.check-${typeCode}:checked`);
-        if(!amount || selected.length === 0) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
-
-        for(let cb of selected) {
-            const reg = cb.value;
-            const name = cb.getAttribute('data-name');
-            const status = cb.closest('tr').querySelector('.status-badge').innerText.includes("PAID") ? "Paid" : "Pending";
-            
-            await rtdb.ref(`payments/${mID}/${reg}`).push({
-                category: subject,
-                amount: amount,
-                status: status,
-                date: new Date().toLocaleDateString(),
-                studentName: name
+    // പെയ്‌മെന്റ് ലിസ്റ്റ് (Dropdown) പുതുക്കാൻ
+    function updateProgramList() {
+        rtdb.ref(`payments/${mID}`).once('value', snap => {
+            const programs = new Set();
+            snap.forEach(student => {
+                student.forEach(pay => { programs.add(pay.val().title); });
             });
-        }
-        alert("വിജയകരമായി രേഖപ്പെടുത്തി!");
-    }
-
-    async function checkStudentStatus() {
-        const reg = document.getElementById('checkReg').value;
-        const res = document.getElementById('checkResult');
-        if(!reg) return;
-
-        rtdb.ref(`payments/${mID}/${reg}`).once('value', snap => {
-            if(!snap.exists()) { res.innerHTML = "വിവരങ്ങൾ ലഭ്യമല്ല"; return; }
-            let html = "<table style='width:100%; border:1px solid #eee;'>";
-            snap.forEach(child => {
-                const p = child.val();
-                let color = p.status === 'Paid' ? 'green' : 'red';
-                html += `<tr><td>${p.category}</td><td style='color:${color}; font-weight:bold;'>${p.status}</td><td>₹${p.amount}</td></tr>`;
-            });
-            res.innerHTML = html + "</table>";
+            const sel = document.getElementById('trackProgram');
+            sel.innerHTML = '<option value="">പ്രോഗ്രാം തിരഞ്ഞെടുക്കുക...</option>';
+            programs.forEach(p => sel.innerHTML += `<option value="${p}">${p}</option>`);
         });
     }
+
+    // കണക്കുകൾ കണക്കാക്കാൻ
+    async function calculateStats() {
+        const prog = document.getElementById('trackProgram').value;
+        const cls = document.getElementById('trackClass').value;
+        if(!prog) return;
+
+        let totalNeed = 0, totalGot = 0;
+        const list = document.getElementById('reportList');
+        list.innerHTML = "";
+
+        rtdb.ref(`payments/${mID}`).once('value', snap => {
+            snap.forEach(student => {
+                const reg = student.key;
+                student.forEach(paySnap => {
+                    const p = paySnap.val();
+                    if(p.title === prog) {
+                        if(cls !== "All" && p.sClass !== cls) return;
+
+                        totalNeed += parseInt(p.amount);
+                        const isPaid = p.status === "Paid";
+                        if(isPaid) totalGot += parseInt(p.amount);
+
+                        list.innerHTML += `
+                            <tr>
+                                <td>${p.sName}</td>
+                                <td>${p.sClass}</td>
+                                <td><span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span></td>
+                                <td><button class="btn-change" onclick="changeStatus('${reg}', '${paySnap.key}', '${p.status}')">Change</button></td>
+                            </tr>`;
+                    }
+                });
+            });
+            document.getElementById('totalNeeded').innerText = "₹" + totalNeed;
+            document.getElementById('totalCollected').innerText = "₹" + totalGot;
+            document.getElementById('totalPending').innerText = "₹" + (totalNeed - totalGot);
+        });
+    }
+
+    // Status മാറ്റാൻ (Paid <-> Pending)
+    async function changeStatus(reg, payId, current) {
+        const newStatus = current === "Paid" ? "Pending" : "Paid";
+        await rtdb.ref(`payments/${mID}/${reg}/${payId}`).update({ status: newStatus });
+        calculateStats(); // കണക്കുകൾ പുതുക്കുന്നു
+    }
+
+    // പേജ് ലോഡ് ആകുമ്പോൾ കുട്ടികളെ കാണിക്കാൻ
+    loadStudents();
 </script>
+
 </body>
 </html>
