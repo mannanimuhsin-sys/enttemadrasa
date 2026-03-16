@@ -1,16 +1,31 @@
+const CACHE_NAME = 'madrasa-store-v1';
+const ASSETS = [
+  './index.html',
+  './logo.png',
+  './manifest.json'
+];
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open('madrasa-store').then((cache) => cache.addAll([
-      './index.html',
-      './style.css', // നിങ്ങളുടെ സി.എസ്.എസ് ഫയൽ പേര്
-      './script.js'  // നിങ്ങളുടെ ജാവാസ്ക്രിപ്റ്റ് ഫയൽ പേര്
-    ]))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting(); 
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
+    })
   );
 });
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
+    caches.match(e.request).then((response) => {
+      return response || fetch(e.request);
+    })
   );
-  
 });
