@@ -45,6 +45,10 @@
         .m-title { font-size: 28px; font-weight: 800; color: var(--primary); margin: 0; }
         
         #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
+        /* Play Store Button Styling */
+     .playstore-container { text-align: center; margin-top: 30px; padding: 15px; border-top: 1px solid #eee; display: none; }
+     .playstore-btn img { width: 180px; transition: transform 0.2s; }
+     .playstore-btn:active img { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -64,7 +68,12 @@
                 <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">LOGIN</button>
             </div>
         </div>
-
+<div id="pwaInstallArea" class="playstore-container">
+    <p style="font-size: 12px; color: #888; margin-bottom: 10px;">മികച്ച അനുഭവത്തിനായി ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യൂ</p>
+    <a href="javascript:void(0)" class="playstore-btn" id="pwaInstallBtn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play">
+    </a>
+</div>
         <div id="regPage" class="page">
             <h2 style="text-align: center; color: var(--primary);">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
             <div style="text-align: center; margin-bottom: 15px;">
@@ -140,7 +149,32 @@
     
     let currentId = "";
     let currentRole = "";
+// PWA Install Logic
+let deferredPrompt;
+const installArea = document.getElementById('pwaInstallArea');
+const installBtn = document.getElementById('pwaInstallBtn');
 
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installArea.style.display = 'block'; // ഇൻസ്റ്റാൾ ചെയ്യാൻ സാധിക്കുമെങ്കിൽ മാത്രം ബട്ടൺ കാണിക്കും
+});
+
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            installArea.style.display = 'none';
+        }
+        deferredPrompt = null;
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    installArea.style.display = 'none';
+    deferredPrompt = null;
+});
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const target = document.getElementById(id);
