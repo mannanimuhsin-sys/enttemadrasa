@@ -149,16 +149,43 @@
     
     let currentId = "";
     let currentRole = "";
-// PWA Install Logic
+// PWA Install Logic for Android & iOS
 let deferredPrompt;
 const installArea = document.getElementById('pwaInstallArea');
 const installBtn = document.getElementById('pwaInstallBtn');
 
+// ഐഫോൺ ആണോ എന്ന് പരിശോധിക്കാനുള്ള ഫങ്ക്ഷൻ
+const isIos = () => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent);
+}
+
+// ഇൻസ്റ്റാൾ ചെയ്തിട്ടുണ്ടോ എന്ന് പരിശോധിക്കാനുള്ള ഫങ്ക്ഷൻ
+const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+
 window.addEventListener('beforeinstallprompt', (e) => {
+    // ആൻഡ്രോയിഡ് ഉപയോക്താക്കൾക്ക് പ്ലേ സ്റ്റോർ ബട്ടൺ കാണിക്കാൻ
     e.preventDefault();
     deferredPrompt = e;
-    installArea.style.display = 'block'; // ഇൻസ്റ്റാൾ ചെയ്യാൻ സാധിക്കുമെങ്കിൽ മാത്രം ബട്ടൺ കാണിക്കും
+    if (!isIos()) {
+        installArea.style.display = 'block';
+    }
 });
+
+// ഐഫോൺ ഉപയോക്താക്കൾക്ക് മാത്രമുള്ള നിർദ്ദേശം
+if (isIos() && !isInStandaloneMode()) {
+    installArea.style.display = 'block';
+    // ഐഫോൺ ആണെങ്കിൽ ബട്ടണിന്റെ ഉള്ളടക്കം മാറ്റുന്നു
+    installArea.innerHTML = `
+        <div style="background: #e9ecef; padding: 15px; border-radius: 10px; border: 1px solid #ddd;">
+            <p style="font-size: 14px; color: #333; margin: 0;">ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ:</p>
+            <p style="font-size: 13px; color: #666; margin: 5px 0;">
+                താഴെയുള്ള <b>'Share'</b> ബട്ടൺ <i class="fa fa-share-square"></i> ക്ലിക്ക് ചെയ്ത് 
+                <b>'Add to Home Screen'</b> <i class="fa fa-plus-square"></i> സെലക്ട് ചെയ്യുക.
+            </p>
+        </div>
+    `;
+}
 
 installBtn.addEventListener('click', async () => {
     if (deferredPrompt) {
