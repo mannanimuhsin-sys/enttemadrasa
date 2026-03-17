@@ -3,217 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>പെയ്‌മെന്റ് മാനേജ്‌മെന്റ്</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>Madrasa Admin Panel | Manage ID Cards</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 10px; margin: 0; }
-        .box { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-top: 0; }
-        .section { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fafafa; }
-        .section-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; display: block; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
-        label { font-weight: bold; font-size: 13px; display: block; margin-top: 10px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-top: 5px; }
-        .btn-row { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-save { background: var(--primary); }
+        :root { --primary: #004d00; --accent: #f39c12; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .header { background: var(--primary); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stat-card h3 { margin: 5px 0; color: var(--primary); }
+        
+        .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        select, input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
         .btn-excel { background: #1d6f42; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; background: white; }
-        th, td { padding: 10px; border: 1px solid #eee; text-align: left; }
-        th { background: #f4f4f4; color: var(--primary); }
-        .status-paid { background: #e8f5e9; color: #2e7d32; padding: 3px 7px; border-radius: 4px; font-weight: bold; }
+        .btn-pdf { background: #b30000; }
+        
+        .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f1f1f1; color: var(--primary); }
+        .student-img { width: 40px; height: 50px; border-radius: 4px; object-fit: cover; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .pending { background: #fff3cd; color: #856404; }
+        .approved { background: #d4edda; color: #155724; }
+        
+        .action-btns { display: flex; gap: 5px; }
+        .btn-small { padding: 5px 10px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; color: white; }
+        .btn-approve { background: #28a745; }
+        .btn-edit { background: #007bff; }
+        .btn-delete { background: #dc3545; }
+
+        /* Modal for Editing */
+        #editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
+        .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; max-height: 80vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <button onclick="window.history.back()" style="border:none; background:none; cursor:pointer; font-weight:bold; color:var(--primary);"><i class="fa fa-arrow-left"></i> BACK</button>
-        <button class="btn btn-excel" onclick="downloadExcel()" style="padding: 5px 15px; font-size: 12px; flex:none;"><i class="fa fa-file-excel"></i> Excel Download</button>
-    </div>
+<div class="header">
+    <h2 id="mName">മദ്റസ അഡ്മിൻ പാനൽ</h2>
+    <p id="mPlace">ID CARD MANAGEMENT</p>
+</div>
 
-    <h2>മദ്റസ പെയ്‌മെന്റ് പാനൽ</h2>
+<div class="stats-grid">
+    <div class="stat-card">Total<h3 id="statTotal">0</h3></div>
+    <div class="stat-card">Pending<h3 id="statPending">0</h3></div>
+    <div class="stat-card">Boys<h3 id="statBoys">0</h3></div>
+    <div class="stat-card">Girls<h3 id="statGirls">0</h3></div>
+</div>
 
-    <div class="section">
-        <span class="section-title">വിദ്യാർത്ഥികളെ തിരഞ്ഞെടുക്കുക</span>
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>ക്ലാസ്സ്</label>
-                <select id="classFilter" onchange="loadStudentsByClass()">
-                    <option value="">ക്ലാസ്സ് തിരഞ്ഞെടുക്കുക</option>
-                    <option value="All">മൊത്തം കുട്ടികൾ (All Students)</option>
-                    <option value="1">ക്ലാസ്സ് 1</option><option value="2">ക്ലാസ്സ് 2</option>
-                    <option value="3">ക്ലാസ്സ് 3</option><option value="4">ക്ലാസ്സ് 4</option>
-                    <option value="5">ക്ലാസ്സ് 5</option><option value="6">ക്ലാസ്സ് 6</option>
-                    <option value="7">ക്ലാസ്സ് 7</option><option value="8">ക്ലാസ്സ് 8</option>
-                    <option value="9">ക്ലാസ്സ് 9</option><option value="10">ക്ലാസ്സ് 10</option>
-                </select>
-            </div>
-            <div style="flex: 2;">
-                <label>വിദ്യാർത്ഥി (ഒരാൾക്ക് മാത്രമെങ്കിൽ)</label>
-                <select id="studentSelect">
-                    <option value="All">ക്ലാസ്സിലെ എല്ലാവരും</option>
-                </select>
-            </div>
-        </div>
-    </div>
+<div class="controls">
+    <select id="filterClass" onchange="loadStudents()">
+        <option value="">All Classes</option>
+        <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+    </select>
+    <select id="filterGender" onchange="loadStudents()">
+        <option value="">All Genders</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+    </select>
+    <button class="btn btn-excel" onclick="exportExcel()"><i class="fa fa-file-excel"></i> EXCEL</button>
+    <button class="btn btn-pdf" onclick="exportPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
+</div>
 
-    <div class="section">
-        <span class="section-title">പെയ്‌മെന്റ് വിവരങ്ങൾ</span>
-        <label>എന്ത് പ്രോഗ്രാം / എന്തിനുള്ള പെയ്‌മെന്റ്?</label>
-        <input type="text" id="payReason" placeholder="ഉദാഹരണത്തിന്: May Month Fees, പ്രോഗ്രാം ഫണ്ട്...">
+<div class="table-container">
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th>Photo</th>
+                <th>Reg No</th>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Gender</th>
+                <th>Phone</th>
+                <th>Password</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="studentData">
+            </tbody>
+    </table>
+</div>
 
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>തുക (Amount)</label>
-                <input type="number" id="amount" placeholder="0.00">
-            </div>
-            <div style="flex: 1;">
-                <label>തിയ്യതി</label>
-                <input type="date" id="payDate">
-            </div>
-        </div>
-        
-        <button class="btn btn-save" style="margin-top: 15px; width: 100%;" onclick="savePayment()">
-            <i class="fa fa-check-circle"></i> SAVE PAYMENT
-        </button>
-    </div>
-
-    <div style="overflow-x: auto;">
-        <table id="paymentLog">
-            <thead>
-                <tr>
-                    <th>Reg.No</th>
-                    <th>വിദ്യാർത്ഥി</th>
-                    <th>വിഷയം</th>
-                    <th>തുക</th>
-                    <th>തിയ്യതി</th>
-                </tr>
-            </thead>
-            <tbody id="logBody"></tbody>
-        </table>
+<div id="editModal">
+    <div class="modal-content">
+        <h3>വിവരങ്ങൾ മാറ്റുക</h3>
+        <input type="hidden" id="editKey">
+        <label>Name</label><input type="text" id="editName">
+        <label>Class</label><input type="text" id="editClass">
+        <label>Password</label><input type="text" id="editPass">
+        <label>Status</label>
+        <select id="editStatus">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+        </select>
+        <button class="btn btn-approve" style="width:100%; margin-top:15px;" onclick="updateStudent()">UPDATE DATA</button>
+        <button class="btn" style="width:100%; background:#888; margin-top:5px;" onclick="document.getElementById('editModal').style.display='none'">CANCEL</button>
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-    // Firebase Configuration (ID Card-ൽ ഉപയോഗിച്ച അതേ Config)
-    const firebaseConfig = {
-        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-        authDomain: "mum-new-id.firebaseapp.com",
-        projectId: "mum-new-id",
-        storageBucket: "mum-new-id.firebasestorage.app",
-        messagingSenderId: "794343464244",
-        appId: "1:794343464244:web:f9083036490e3609bf1961",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+// Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ തന്നെ)
+const firebaseConfig = {
+  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+  authDomain: "mum-new-id.firebaseapp.com",
+  projectId: "mum-new-id",
+  storageBucket: "mum-new-id.firebasestorage.app",
+  messagingSenderId: "794343464244",
+  appId: "1:794343464244:web:f9083036490e3609bf1961",
+  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rtdb = firebase.database();
+
+const urlParams = new URLSearchParams(window.location.search);
+const mId = urlParams.get('id'); // Madrasa ID
+
+let allStudents = [];
+
+// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
+rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+    if(snap.val()) {
+        document.getElementById('mName').innerText = snap.val().name;
+        document.getElementById('mPlace').innerText = snap.val().place;
+    }
+});
+
+async function loadStudents() {
+    if(!mId) return alert("Madrasa ID Missing!");
+    
+    const query = db.collection("students").where("madrasa_id", "==", mId);
+    const snap = await query.get();
+    
+    allStudents = [];
+    let html = "";
+    let stats = { total: 0, pending: 0, male: 0, female: 0 };
+    
+    const filterClass = document.getElementById('filterClass').value;
+    const filterGender = document.getElementById('filterGender').value;
+
+    snap.forEach(doc => {
+        const s = doc.data();
+        
+        // Filters
+        if(filterClass && s.class != filterClass) return;
+        if(filterGender && s.gender != filterGender) return;
+
+        allStudents.push(s);
+        stats.total++;
+        if(s.status === 'pending') stats.pending++;
+        if(s.gender === 'Male') stats.male++;
+        if(s.gender === 'Female') stats.female++;
+
+        html += `
+            <tr>
+                <td><img src="${s.photo}" class="student-img"></td>
+                <td>${s.number}</td>
+                <td><b>${s.name}</b></td>
+                <td>${s.class}</td>
+                <td>${s.gender}</td>
+                <td>${s.phone}</td>
+                <td><code>${s.password}</code></td>
+                <td><span class="status-badge ${s.status}">${s.status.toUpperCase()}</span></td>
+                <td>
+                    <div class="action-btns">
+                        ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${doc.id}')">Approve</button>` : ''}
+                        <button class="btn-small btn-edit" onclick="openEdit('${doc.id}', '${s.name}', '${s.class}', '${s.password}', '${s.status}')"><i class="fa fa-edit"></i></button>
+                        <button class="btn-small btn-delete" onclick="deleteStudent('${doc.id}')"><i class="fa fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('studentData').innerHTML = html;
+    document.getElementById('statTotal').innerText = stats.total;
+    document.getElementById('statPending').innerText = stats.pending;
+    document.getElementById('statBoys').innerText = stats.male;
+    document.getElementById('statGirls').innerText = stats.female;
+}
+
+// Quick Approve
+async function quickApprove(id) {
+    await db.collection("students").doc(id).update({ status: "approved" });
+    loadStudents();
+}
+
+// Edit Modal Open
+function openEdit(id, name, cls, pass, status) {
+    document.getElementById('editKey').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editClass').value = cls;
+    document.getElementById('editPass').value = pass;
+    document.getElementById('editStatus').value = status;
+    document.getElementById('editModal').style.display = 'flex';
+}
+
+// Update Database
+async function updateStudent() {
+    const id = document.getElementById('editKey').value;
+    const updateObj = {
+        name: document.getElementById('editName').value,
+        class: document.getElementById('editClass').value,
+        password: document.getElementById('editPass').value,
+        status: document.getElementById('editStatus').value
     };
-    firebase.initializeApp(firebaseConfig);
-    const fs = firebase.firestore(); // Firestore for Student List
-    const rtdb = firebase.database(); // RTDB for Payments
+    await db.collection("students").doc(id).update(updateObj);
+    document.getElementById('editModal').style.display = 'none';
+    loadStudents();
+}
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const mID = urlParams.get('id') || urlParams.get('mid');
-    let currentClassStudents = [];
-
-    // ഇന്ന് പെയ്‌മെന്റ് നൽകുന്ന ദിവസം ഡിഫോൾട്ടായി നൽകുന്നു
-    document.getElementById('payDate').valueAsDate = new Date();
-
-    // 1. ക്ലാസ്സ് മാറുമ്പോൾ ആ ക്ലാസ്സിലെ കുട്ടികളെ ലോഡ് ചെയ്യുന്നു
-    async function loadStudentsByClass() {
-        const classVal = document.getElementById('classFilter').value;
-        const stuSel = document.getElementById('studentSelect');
-        stuSel.innerHTML = '<option value="All">ക്ലാസ്സിലെ എല്ലാവരും</option>';
-        currentClassStudents = [];
-
-        if(!classVal || !mID) return;
-
-        let query = fs.collection("students").where("madrasa_id", "==", mID);
-        if(classVal !== "All") {
-            query = query.where("class", "==", classVal);
-        }
-
-        const snapshot = await query.get();
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            currentClassStudents.push({ id: doc.id, ...s });
-            stuSel.innerHTML += `<option value="${s.number}" data-name="${s.name}">${s.number} - ${s.name}</option>`;
-        });
+// Delete
+async function deleteStudent(id) {
+    if(confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) {
+        await db.collection("students").doc(id).delete();
+        loadStudents();
     }
+}
 
-    // 2. പെയ്‌മെന്റ് സേവ് ചെയ്യുന്നു
-    async function savePayment() {
-        const studentType = document.getElementById('studentSelect').value;
-        const reason = document.getElementById('payReason').value;
-        const amt = document.getElementById('amount').value;
-        const date = document.getElementById('payDate').value;
+// Excel Export
+function exportExcel() {
+    const data = allStudents.map(s => ({
+        "Reg No": s.number,
+        "Name": s.name,
+        "Class": s.class,
+        "Gender": s.gender,
+        "Father": s.father,
+        "Phone": s.phone,
+        "Password": s.password,
+        "Status": s.status,
+        "Photo Link": s.photo // ഫോട്ടോയുടെ ഡാറ്റ ലിങ്ക് എക്സലിൽ വരും
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, "Student_List.xlsx");
+}
 
-        if(!reason || !amt || !date) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
+// PDF Export
+function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Madrasa Student List", 14, 15);
+    const rows = allStudents.map(s => [s.number, s.name, s.class, s.gender, s.phone, s.status]);
+    doc.autoTable({
+        head: [['Reg', 'Name', 'Class', 'Gender', 'Phone', 'Status']],
+        body: rows,
+        startY: 20
+    });
+    doc.save("Student_List.pdf");
+}
 
-        if(studentType === "All") {
-            if(currentClassStudents.length === 0) return alert("തിരഞ്ഞെടുത്ത ക്ലാസ്സിൽ വിദ്യാർത്ഥികൾ ഇല്ല!");
-            if(confirm(`${currentClassStudents.length} കുട്ടികൾക്ക് ഒന്നിച്ച് പെയ്‌മെന്റ് ചേർക്കണോ?`)) {
-                for(let s of currentClassStudents) {
-                    await pushToDB(s.number, s.name, reason, amt, date);
-                }
-                alert("എല്ലാവർക്കും പെയ്‌മെന്റ് ചേർത്തു.");
-            }
-        } else {
-            const sel = document.getElementById('studentSelect');
-            const sName = sel.options[sel.selectedIndex].getAttribute('data-name');
-            await pushToDB(studentType, sName, reason, amt, date);
-            alert("പെയ്‌മെന്റ് രേഖപ്പെടുത്തി.");
-        }
-        loadPaymentLogs();
-    }
-
-    function pushToDB(reg, name, cat, amount, date) {
-        return rtdb.ref('payments/' + mID).push({
-            reg: reg,
-            sName: name,
-            category: cat,
-            amount: amount,
-            date: date,
-            status: 'paid',
-            timestamp: Date.now()
-        });
-    }
-
-    // 3. പെയ്‌മെന്റ് ലിസ്റ്റ് കാണിക്കുന്നു
-    function loadPaymentLogs() {
-        if(!mID) return;
-        rtdb.ref('payments/' + mID).limitToLast(20).on('value', snap => {
-            const body = document.getElementById('logBody');
-            body.innerHTML = "";
-            let rows = [];
-            snap.forEach(c => { rows.push(c.val()); });
-            rows.reverse().forEach(p => {
-                body.innerHTML += `<tr>
-                    <td>${p.reg}</td>
-                    <td>${p.sName}</td>
-                    <td>${p.category}</td>
-                    <td>₹${p.amount}</td>
-                    <td><span class="status-paid">${p.date}</span></td>
-                </tr>`;
-            });
-        });
-    }
-
-    function downloadExcel() {
-        rtdb.ref('payments/' + mID).once('value', snap => {
-            let data = [];
-            snap.forEach(c => { data.push(c.val()); });
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
-            XLSX.writeFile(workbook, "Madrasa_Payments_Report.xlsx");
-        });
-    }
-
-    loadPaymentLogs();
+window.onload = loadStudents;
 </script>
 </body>
 </html>
