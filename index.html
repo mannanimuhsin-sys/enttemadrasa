@@ -341,27 +341,74 @@ window.addEventListener('appinstalled', () => {
         }
     }
 
-    async function register() {
-        const regNo = document.getElementById('rReg').value.trim();
-        const uId = document.getElementById('rUser').value.trim();
-        const photo = document.getElementById('imagePrev').src;
-        if(!regNo || !uId) return alert("വിവരങ്ങൾ നൽകുക");
+   async function register() {
+    const regNo = document.getElementById('rReg').value.trim();
+    const uId = document.getElementById('rUser').value.trim();
+    const name = document.getElementById('rName').value.trim();
+    const place = document.getElementById('rPlace').value.trim();
+    const uPass = document.getElementById('rUsthad').value.trim();
+    const pPass = document.getElementById('rParent').value.trim();
+    const photoInput = document.getElementById('mPhoto');
+    const regBtn = document.getElementById('regBtn');
 
-        const data = {
-            name: document.getElementById('rName').value,
-            place: document.getElementById('rPlace').value,
-            reg: regNo,
-            photo: photo || "",
-            usthadPass: document.getElementById('rUsthad').value,
-            parentPass: document.getElementById('rParent').value,
-            status: "pending"
+    if (!regNo || !uId || !name || !uPass || !pPass) {
+        return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
+    }
+
+    // ബട്ടൺ ഡിസേബിൾ ചെയ്യുന്നു (രണ്ടാം വട്ടം ക്ലിക്ക് ചെയ്യുന്നത് തടയാൻ)
+    regBtn.disabled = true;
+    regBtn.innerText = "REGISTERING...";
+
+    let photoData = "";
+    if (photoInput.files && photoInput.files[0]) {
+        // ഇമേജ് സൈസ് ഒരുപാട് കൂടുതലാണെങ്കിൽ ഫയർബേസിൽ എറർ വരാം
+        // അതിനാൽ ഇമേജ് ഡാറ്റ എടുക്കുന്നത് ശ്രദ്ധിച്ചു വേണം
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            photoData = e.target.result;
+            saveToFirebase(uId, {
+                name: name,
+                place: place,
+                reg: regNo,
+                photo: photoData,
+                usthadPass: uPass,
+                parentPass: pPass,
+                status: "pending",
+                createdAt: new Date().toISOString()
+            });
         };
-
-        db.ref('madrasa_requests/' + uId).set(data).then(() => {
-            alert("രജിസ്ട്രേഷൻ വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക.");
-            location.reload();
+        reader.readAsDataURL(photoInput.files[0]);
+    } else {
+        // ഫോട്ടോ ഇല്ലെങ്കിലും രജിസ്റ്റർ ചെയ്യാൻ
+        saveToFirebase(uId, {
+            name: name,
+            place: place,
+            reg: regNo,
+            photo: "",
+            usthadPass: uPass,
+            parentPass: pPass,
+            status: "pending",
+            createdAt: new Date().toISOString()
         });
     }
+}
+
+// ഡാറ്റ സേവ് ചെയ്യാനുള്ള ഫങ്ക്ഷൻ
+function saveToFirebase(uId, data) {
+    const regBtn = document.getElementById('regBtn');
+    
+    db.ref('madrasa_requests/' + uId).set(data)
+    .then(() => {
+        alert("രജിസ്ട്രേഷൻ വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക.");
+        location.reload();
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        alert("രജിസ്ട്രേഷനിൽ പിശക് സംഭവിച്ചു! (User ID നേരത്തെ ഉപയോഗിച്ചതാകാം)");
+        regBtn.disabled = false;
+        regBtn.innerText = "REGISTER NOW";
+    });
+}
 </script>
 
 </body>
