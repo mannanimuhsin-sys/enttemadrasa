@@ -110,11 +110,14 @@
     const mId = urlParams.get('id');
     const role = urlParams.get('role');
 
+    // അഡ്മിൻ ആണെങ്കിൽ മാത്രം എൻട്രി ബോക്സ് കാണിക്കുക
     if(role === 'admin') {
         document.getElementById('adminArea').style.display = 'block';
     }
 
+    // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
     function loadData() {
+        if (!mId) return;
         db.ref('madrasa_requests/' + mId).on('value', snap => {
             const data = snap.val();
             if(!data) return;
@@ -135,10 +138,13 @@
                 totalGirls += g;
                 totalAll += rowTotal;
 
+                // ഡിവിഷൻ നൽകിയിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+                let divDisplay = (item.div && item.div.trim() !== "") ? `<b>${item.div}</b>` : "";
+
                 html += `
                 <tr>
                     <td><b>${item.name}</b></td>
-                    <td><b>${item.div || '-'}</b></td>
+                    <td>${divDisplay}</td>
                     <td class="boys">${b}</td>
                     <td class="girls">${g}</td>
                     <td class="total-cell">${rowTotal}</td>
@@ -174,54 +180,63 @@
         });
     }
 
-    // എഡിറ്റ് ചെയ്യാനുള്ള ഫങ്ക്ഷൻ
+    // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
+    async function saveClass() {
+        const name = document.getElementById('cName').value.trim();
+        const div = document.getElementById('cDiv').value.trim();
+        const b = document.getElementById('cBoys').value || 0;
+        const g = document.getElementById('cGirls').value || 0;
+        const u = document.getElementById('cUsthad').value.trim();
+        const p = document.getElementById('cPhone').value.trim();
+
+        if(!name || !u || !p) return alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
+
+        try {
+            const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
+            let currentClasses = snap.val() || [];
+            
+            currentClasses.push({ name, div, b, g, u, p });
+
+            await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
+            
+            // ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
+            document.getElementById('cName').value = "";
+            document.getElementById('cDiv').value = "";
+            document.getElementById('cBoys').value = "";
+            document.getElementById('cGirls').value = "";
+            document.getElementById('cUsthad').value = "";
+            document.getElementById('cPhone').value = "";
+            
+            alert("വിവരങ്ങൾ വിജയകരമായി ചേർത്തു!");
+        } catch (error) {
+            alert("പിശക് സംഭവിച്ചു: " + error.message);
+        }
+    }
+
+    // എഡിറ്റ് ചെയ്യാൻ
     async function editClass(index) {
         const snap = await db.ref('madrasa_requests/' + mId + '/classes/' + index).once('value');
         const data = snap.val();
         
         if(data) {
-            // വിവരങ്ങൾ ഇൻപുട്ട് ഫീൽഡുകളിലേക്ക് മാറ്റുന്നു
             document.getElementById('cName').value = data.name;
-            document.getElementById('cDiv').value = data.div;
+            document.getElementById('cDiv').value = data.div || "";
             document.getElementById('cBoys').value = data.b;
             document.getElementById('cGirls').value = data.g;
             document.getElementById('cUsthad').value = data.u;
             document.getElementById('cPhone').value = data.p;
 
-            // തിരുത്തൽ എളുപ്പമാക്കാൻ പഴയ ലിസ്റ്റ് താൽക്കാലികമായി മാറ്റുന്നു
-            // (സേവ് അടിക്കുമ്പോൾ പുതിയ ലിസ്റ്റ് അപ്ഡേറ്റ് ആകും)
+            // എഡിറ്റ് ചെയ്യുമ്പോൾ ലിസ്റ്റിൽ നിന്ന് താൽക്കാലികമായി മാറ്റുന്നു
             await deleteClass(index, false);
-            
-            // ഫോക്കസ് ഇൻപുട്ടിലേക്ക് മാറ്റുന്നു
             document.getElementById('cName').focus();
-            alert("മാറ്റങ്ങൾ വരുത്തിയ ശേഷം SAVE DATA ബട്ടൺ ക്ലിക്ക് ചെയ്യുക.");
         }
     }
 
-    async function saveClass() {
-        const name = document.getElementById('cName').value.trim();
-        const div = document.getElementById('cDiv').value.trim();
-        const b = document.getElementById('cBoys').value;
-        const g = document.getElementById('cGirls').value;
-        const u = document.getElementById('cUsthad').value.trim();
-        const p = document.getElementById('cPhone').value.trim();
-
-        if(!name || !u || !p) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
-
-        const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-        let currentClasses = snap.val() || [];
-        
-        currentClasses.push({ name, div, b, g, u, p });
-
-        await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
-        
-        document.querySelectorAll('.admin-section input').forEach(input => input.value = "");
-    }
-
+    // ഡിലീറ്റ് ചെയ്യാൻ
     async function deleteClass(index, ask = true) {
         if(!ask || confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
             const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-            let currentClasses = snap.val();
+            let currentClasses = snap.val() || [];
             currentClasses.splice(index, 1);
             await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
         }
@@ -229,6 +244,5 @@
 
     loadData();
 </script>
-
 </body>
 </html>
