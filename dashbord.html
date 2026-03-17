@@ -115,7 +115,7 @@
         document.getElementById('adminArea').style.display = 'block';
     }
 
-    // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
+  // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
     function loadData() {
         if (!mId) return;
         db.ref('madrasa_requests/' + mId).on('value', snap => {
@@ -125,7 +125,30 @@
             document.getElementById('mNameHead').innerText = data.name;
             document.getElementById('mPlaceHead').innerText = data.place;
 
-            const classes = data.classes || [];
+            let classes = data.classes || [];
+
+            // --- സോർട്ടിങ് ലോജിക് ഇവിടെ തുടങ്ങുന്നു ---
+            classes.sort((a, b) => {
+                // റോമൻ അക്കങ്ങളോ (I, II) സാധാരണ അക്കങ്ങളോ (1, 2) ആയാലും തരംതിരിക്കാൻ വേണ്ടി
+                const getVal = (name) => {
+                    const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
+                    return roman[name.toUpperCase()] || parseInt(name) || 0;
+                };
+
+                let valA = getVal(a.name);
+                let valB = getVal(b.name);
+
+                if (valA !== valB) {
+                    return valA - valB; // ക്ലാസ് അടിസ്ഥാനത്തിൽ തരംതിരിക്കുന്നു (1, 2, 3...)
+                } else {
+                    // ക്ലാസ് ഒന്നാണെങ്കിൽ ഡിവിഷൻ (A, B, C) അടിസ്ഥാനത്തിൽ തരംതിരിക്കുന്നു
+                    let divA = (a.div || "").toUpperCase();
+                    let divB = (b.div || "").toUpperCase();
+                    return divA.localeCompare(divB);
+                }
+            });
+            // --- സോർട്ടിങ് ലോജിക് അവസാനിക്കുന്നു ---
+
             let html = "";
             let totalBoys = 0, totalGirls = 0, totalAll = 0;
 
@@ -138,7 +161,6 @@
                 totalGirls += g;
                 totalAll += rowTotal;
 
-                // ഡിവിഷൻ നൽകിയിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
                 let divDisplay = (item.div && item.div.trim() !== "") ? `<b>${item.div}</b>` : "";
 
                 html += `
@@ -179,7 +201,6 @@
                 </tr>`;
         });
     }
-
     // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
     async function saveClass() {
         const name = document.getElementById('cName').value.trim();
