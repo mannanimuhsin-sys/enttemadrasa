@@ -351,46 +351,77 @@ window.addEventListener('appinstalled', () => {
     const photoInput = document.getElementById('mPhoto');
     const regBtn = document.getElementById('regBtn');
 
+    // 1. എല്ലാ വിവരങ്ങളും നൽകിയിട്ടുണ്ടോ എന്ന് നോക്കുന്നു
     if (!regNo || !uId || !name || !uPass || !pPass) {
         return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
     }
 
-    // ബട്ടൺ ഡിസേബിൾ ചെയ്യുന്നു (രണ്ടാം വട്ടം ക്ലിക്ക് ചെയ്യുന്നത് തടയാൻ)
+    // 2. രണ്ട് പാസ്‌വേഡുകളും ഒന്നാണോ എന്ന് പരിശോധിക്കുന്നു (പുതിയ മാറ്റം)
+    if (uPass === pPass) {
+        return alert("ഉസ്താദ് പാസ്‌വേഡും പാരന്റ് പാസ്‌വേഡും വ്യത്യസ്തമായിരിക്കണം!");
+    }
+
+    // ബട്ടൺ ലോഡിംഗ് സ്റ്റേറ്റിലേക്ക് മാറ്റുന്നു
     regBtn.disabled = true;
     regBtn.innerText = "REGISTERING...";
 
-    let photoData = "";
-    if (photoInput.files && photoInput.files[0]) {
-        // ഇമേജ് സൈസ് ഒരുപാട് കൂടുതലാണെങ്കിൽ ഫയർബേസിൽ എറർ വരാം
-        // അതിനാൽ ഇമേജ് ഡാറ്റ എടുക്കുന്നത് ശ്രദ്ധിച്ചു വേണം
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            photoData = e.target.result;
-            saveToFirebase(uId, {
-                name: name,
-                place: place,
-                reg: regNo,
-                photo: photoData,
-                usthadPass: uPass,
-                parentPass: pPass,
-                status: "pending",
-                createdAt: new Date().toISOString()
-            });
-        };
-        reader.readAsDataURL(photoInput.files[0]);
-    } else {
-        // ഫോട്ടോ ഇല്ലെങ്കിലും രജിസ്റ്റർ ചെയ്യാൻ
-        saveToFirebase(uId, {
-            name: name,
-            place: place,
-            reg: regNo,
-            photo: "",
-            usthadPass: uPass,
-            parentPass: pPass,
-            status: "pending",
-            createdAt: new Date().toISOString()
-        });
+    // 3. യൂസർ ഐഡി നേരത്തെ ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+    try {
+        const snapshot = await db.ref('madrasa_requests/' + uId).once('value');
+        if (snapshot.exists()) {
+            regBtn.disabled = false;
+            regBtn.innerText = "REGISTER NOW";
+            return alert("ഈ User ID നേരത്തെ നിലവിലുണ്ട്. മറ്റൊരു ഐഡി പരീക്ഷിക്കുക.");
+        }
+
+        let photoData = "";
+        if (photoInput.files && photoInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoData = e.target.result;
+                // ഫോട്ടോ ഉൾപ്പെടെ സേവ് ചെയ്യുന്നു
+                saveFinalData(uId, name, place, regNo, photoData, uPass, pPass);
+            };
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            // ഫോട്ടോ ഇല്ലാതെ സേവ് ചെയ്യുന്നു
+            saveFinalData(uId, name, place, regNo, "", uPass, pPass);
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("പിശക് സംഭവിച്ചു! ദയവായി ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക.");
+        regBtn.disabled = false;
+        regBtn.innerText = "REGISTER NOW";
     }
+}
+
+// ഡാറ്റാബേസിലേക്ക് നേരിട്ട് ഡാറ്റ അയക്കുന്ന ഭാഗം
+function saveFinalData(uId, name, place, reg, photo, uPass, pPass) {
+    const regBtn = document.getElementById('regBtn');
+    
+    const formData = {
+        name: name,
+        place: place,
+        reg: reg,
+        photo: photo,
+        usthadPass: uPass,
+        parentPass: pPass,
+        status: "pending",
+        createdAt: new Date().toISOString()
+    };
+
+    db.ref('madrasa_requests/' + uId).set(formData)
+    .then(() => {
+        alert("രജിസ്ട്രേഷൻ വിജയകരമായി പൂർത്തിയായി!");
+        location.reload();
+    })
+    .catch((error) => {
+        console.error(error);
+        alert("സേവ് ചെയ്യുന്നതിൽ പിശക്: " + error.message);
+        regBtn.disabled = false;
+        regBtn.innerText = "REGISTER NOW";
+    });
 }
 
 // ഡാറ്റ സേവ് ചെയ്യാനുള്ള ഫങ്ക്ഷൻ
