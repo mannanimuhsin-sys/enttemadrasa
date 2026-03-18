@@ -40,9 +40,12 @@
         .btn-edit { background: #007bff; }
         .btn-delete { background: #dc3545; }
 
-        /* Modal for Editing */
         #editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
         .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; max-height: 80vh; overflow-y: auto; }
+.settings-box {  background: white; padding: 20px; border-radius: 10px;   margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--accent);}
+.settings-box h3 { margin-top: 0; color: var(--primary); font-size: 16px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; }
+@media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -51,7 +54,14 @@
     <h2 id="mName">മദ്റസ അഡ്മിൻ പാനൽ</h2>
     <p id="mPlace">ID CARD MANAGEMENT</p>
 </div>
-
+<div class="settings-box">
+    <h3><i class="fa fa-user-tie"></i> സദർ മുഅല്ലിം വിവരങ്ങൾ</h3>
+    <div class="settings-grid">
+        <input type="text" id="sadarName" placeholder="സദർ മുഅല്ലിമിന്റെ പേര്">
+        <input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ">
+        <button class="btn btn-approve" onclick="saveSadarDetails()">UPDATE</button>
+    </div>
+</div>
 <div class="stats-grid">
     <div class="stat-card">Total<h3 id="statTotal">0</h3></div>
     <div class="stat-card">Pending<h3 id="statPending">0</h3></div>
@@ -142,7 +152,41 @@ rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
         document.getElementById('mPlace').innerText = snap.val().place;
     }
 });
+// സദർ മുഅല്ലിം വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു
+async function loadSadarDetails() {
+    if(!mId) return;
+    const doc = await db.collection("madrasa_settings").doc(mId).get();
+    if(doc.exists) {
+        document.getElementById('sadarName').value = doc.data().sadar_name || "";
+        document.getElementById('sadarPhone').value = doc.data().sadar_phone || "";
+    }
+}
 
+// വിവരങ്ങൾ ഫയർബേസിലേക്ക് സേവ് ചെയ്യുന്നു
+async function saveSadarDetails() {
+    const sName = document.getElementById('sadarName').value;
+    const sPhone = document.getElementById('sadarPhone').value;
+    
+    if(!sName) return alert("ദയവായി പേര് നൽകുക!");
+
+    try {
+        await db.collection("madrasa_settings").doc(mId).set({
+            sadar_name: sName,
+            sadar_phone: sPhone,
+            updated_at: new Date()
+        }, { merge: true });
+        alert("വിവരങ്ങൾ വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു!");
+    } catch (error) {
+        console.error("Error saving:", error);
+        alert("സേവ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു!");
+    }
+}
+
+// വിൻഡോ ലോഡ് ചെയ്യുമ്പോൾ ഈ ഫങ്ക്ഷനും കൂടി പ്രവർത്തിപ്പിക്കുക
+window.onload = () => {
+    loadStudents();
+    loadSadarDetails();
+};
 async function loadStudents() {
     if(!mId) return alert("Madrasa ID Missing!");
     
