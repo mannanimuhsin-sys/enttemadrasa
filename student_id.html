@@ -133,9 +133,11 @@ label{font-size:12px;font-weight:bold;color:var(--green);margin-top:10px;display
   <div class="footer">
     <img id="qr" src="">
     <div class="sign">
-      <img src="signature.png" id="signImg" onerror="this.style.display='none'">
-      <div></div>Sadar Muallim
-    </div>
+  <img src="signature.png" id="signImg" onerror="this.style.display='none'">
+  <span id="sadarNameDisplay" style="font-weight: bold; display: block; margin-bottom: 2px;"></span>
+  <div></div>
+  <b style="font-size: 11px;">Sadar Muallim</b>
+</div>
   </div>
  </div>
  <div style="max-width:360px; margin:20px auto; display:flex; gap:10px;">
@@ -292,20 +294,36 @@ async function login(){
  finally { lBtn.disabled = false; }
 }
 
-function renderID(s){
- document.getElementById('pName').innerText = s.name;
- document.getElementById('pFather').innerText = s.father;
- document.getElementById('pGender').innerText = s.gender;
- document.getElementById('pClass').innerText = s.class;
- document.getElementById('pMentor').innerText = s.mentor;
- document.getElementById('pBlood').innerText = s.blood;
- document.getElementById('pPhone').innerText = s.phone;
- document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
- document.getElementById('pReg').innerText = s.number;
- document.getElementById('pImg').src = s.photo;
- document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.number)}`;
- document.getElementById('panel').style.display = "none";
- document.getElementById('idArea').style.display = "block";
+async function renderID(s) {
+    // വിദ്യാർത്ഥിയുടെ വിവരങ്ങൾ സെറ്റ് ചെയ്യുന്നു
+    document.getElementById('pName').innerText = s.name;
+    document.getElementById('pFather').innerText = s.father;
+    document.getElementById('pGender').innerText = s.gender;
+    document.getElementById('pClass').innerText = s.class;
+    document.getElementById('pMentor').innerText = s.mentor;
+    document.getElementById('pBlood').innerText = s.blood;
+    document.getElementById('pPhone').innerText = s.phone;
+    document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
+    document.getElementById('pReg').innerText = s.number;
+    document.getElementById('pImg').src = s.photo;
+
+    // സദർ മുഅല്ലിം പേര് ഡാറ്റാബേസിൽ നിന്ന് എടുക്കുന്നു
+    try {
+        const settingsDoc = await db.collection("madrasa_settings").doc(mId).get();
+        if(settingsDoc.exists) {
+            const settingsData = settingsDoc.data();
+            document.getElementById('sadarNameDisplay').innerText = settingsData.sadar_name || "";
+        } else {
+            document.getElementById('sadarNameDisplay').innerText = "";
+        }
+    } catch (err) {
+        console.error("Sadar info error:", err);
+    }
+
+    // ക്യുആർ കോഡും മറ്റ് ഡിസ്‌പ്ലേ സെറ്റിംഗ്സും
+    document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.number)}`;
+    document.getElementById('panel').style.display = "none";
+    document.getElementById('idArea').style.display = "block";
 }
 
 function downloadID(){
