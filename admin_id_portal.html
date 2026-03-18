@@ -162,24 +162,18 @@ async function loadSadarDetails() {
     }
 }
 
-// വിവരങ്ങൾ ഫയർബേസിലേക്ക് സേവ് ചെയ്യുന്നു
 async function saveSadarDetails() {
     const sName = document.getElementById('sadarName').value;
     const sPhone = document.getElementById('sadarPhone').value;
     
     if(!sName) return alert("ദയവായി പേര് നൽകുക!");
 
-    try {
-        await db.collection("madrasa_settings").doc(mId).set({
-            sadar_name: sName,
-            sadar_phone: sPhone,
-            updated_at: new Date()
-        }, { merge: true });
-        alert("വിവരങ്ങൾ വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു!");
-    } catch (error) {
-        console.error("Error saving:", error);
-        alert("സേവ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു!");
-    }
+    await db.collection("madrasa_settings").doc(mId).set({
+        sadar_name: sName,
+        sadar_phone: sPhone,
+        updated_at: new Date()
+    }, { merge: true });
+    alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
 }
 
 // വിൻഡോ ലോഡ് ചെയ്യുമ്പോൾ ഈ ഫങ്ക്ഷനും കൂടി പ്രവർത്തിപ്പിക്കുക
