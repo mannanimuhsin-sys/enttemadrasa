@@ -4,57 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>സലാഹ് ലീഡർബോർഡ്</title>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <style>
-        :root { --primary: #004d00; --gold: #ffd700; --bg: #f4f7f6; }
+        :root { --primary: #004d00; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
         .container { max-width: 500px; margin: auto; }
-        
         .header-card { 
             background: linear-gradient(135deg, #004d00, #002b00); 
-            color: white; padding: 30px 20px; border-radius: 20px; 
-            text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            color: white; padding: 25px 15px; border-radius: 20px; 
+            text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
-        
         .rank-item { 
             display: flex; justify-content: space-between; align-items: center; 
-            background: white; padding: 15px; margin-bottom: 12px; 
+            background: white; padding: 12px 15px; margin-bottom: 10px; 
             border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-left: 5px solid transparent; transition: 0.3s;
+            transition: 0.3s; position: relative; overflow: hidden;
         }
+        .rank-1 { background: #fffdf0; border: 1px solid var(--gold); }
+        .rank-2 { background: #f8f9fa; border: 1px solid var(--silver); }
+        .rank-3 { background: #fff9f5; border: 1px solid var(--bronze); }
+
+        .rank-badge { width: 40px; text-align: center; font-size: 24px; }
+        .rank-number { font-size: 16px; font-weight: bold; color: #888; }
         
-        /* ടോപ്പ് 3 റാങ്ക് സ്റ്റൈലുകൾ */
-        .rank-1 { border-left-color: var(--gold); background: #fffdf0; }
-        .rank-2 { border-left-color: #c0c0c0; }
-        .rank-3 { border-left-color: #cd7f32; }
+        .student-info { flex-grow: 1; margin-left: 12px; }
+        .student-name { font-weight: bold; color: #333; display: block; text-transform: capitalize; }
+        .student-meta { font-size: 11px; color: #666; margin-top: 2px; }
 
-        .rank-number { width: 30px; font-weight: bold; color: #888; }
-        .student-info { flex-grow: 1; margin-left: 10px; }
-        .student-name { font-weight: bold; color: #333; display: block; }
-        .student-meta { font-size: 11px; color: #777; }
-
-        .score-badge { 
+        .score-box { 
             background: var(--primary); color: white; 
-            padding: 6px 15px; border-radius: 20px; 
-            font-weight: bold; font-size: 14px; min-width: 40px; text-align: center;
+            padding: 5px 12px; border-radius: 12px; 
+            text-align: center; min-width: 45px;
         }
+        .score-val { font-size: 16px; font-weight: bold; display: block; }
+        .score-label { font-size: 9px; opacity: 0.8; }
         
-        .medal { font-size: 20px; margin-right: 10px; }
+        .loading { text-align: center; padding: 50px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-card">
-        <i class="fa fa-trophy" style="font-size: 50px; color: var(--gold); margin-bottom: 10px;"></i>
+        <i class="fa fa-trophy" style="font-size: 40px; color: var(--gold); margin-bottom: 10px;"></i>
         <h2 style="margin:0;">സലാഹ് ലീഡർബോർഡ്</h2>
-        <p id="mName" style="opacity: 0.8; font-size: 14px; margin: 5px 0 0;">Loading Madrasa...</p>
+        <p id="mName" style="opacity: 0.8; font-size: 13px; margin: 5px 0 0;">Loading...</p>
     </div>
 
     <div id="display">
-        <div style="text-align:center; color:#666; padding:20px;">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+        <div class="loading">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
     </div>
 </div>
 
@@ -78,7 +76,7 @@ const db = firebase.firestore();
 const rtdb = firebase.database();
 
 const urlParams = new URLSearchParams(window.location.search);
-const mId = urlParams.get('mid'); // Main page-ൽ നിന്ന് വരുന്നത് 'mid' ആണ്
+const mId = urlParams.get('mid'); 
 
 // മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
 if(mId) {
@@ -88,9 +86,15 @@ if(mId) {
 }
 
 async function loadRank() {
-    // ... പഴയ മുകൾഭാഗം (if(!mId) etc.) അതുപോലെ വെക്കുക ...
+    if(!mId) {
+        document.getElementById('display').innerHTML = "Madrasa ID Missing!";
+        return;
+    }
 
+    const display = document.getElementById('display');
+    
     try {
+        // ആൺകുട്ടികളെ മാത്രം എടുക്കുന്നു
         const snapshot = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
                                  .where("gender", "==", "Male")
@@ -98,46 +102,69 @@ async function loadRank() {
         
         display.innerHTML = "";
         let students = [];
-        snapshot.forEach(doc => students.push(doc.data()));
+        snapshot.forEach(doc => {
+            let data = doc.data();
+            // മാർക്ക് ഇല്ലാത്തവർക്ക് 0 നൽകുന്നു
+            data.totalSalahMark = data.totalSalahMark || 0;
+            students.push(data);
+        });
 
-        // മാർക്ക് അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
-        students.sort((a, b) => (b.totalSalahMark || 0) - (a.totalSalahMark || 0));
+        // മാർക്ക് അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (കൂടിയ മാർക്ക് മുകളിൽ)
+        students.sort((a, b) => b.totalSalahMark - a.totalSalahMark);
 
-        let currentRank = 1;
+        if (students.length === 0) {
+            display.innerHTML = "<div style='text-align:center; padding:20px;'>വിവരങ്ങൾ ലഭ്യമല്ല.</div>";
+            return;
+        }
+
+        let currentRank = 0;
         let lastMark = -1;
+        let rankToDisplay = 0;
 
         students.forEach((s, index) => {
-            const m = s.totalSalahMark || 0;
-
-            // ഒരേ മാർക്ക് അല്ലെങ്കിൽ മാത്രം റാങ്ക് നമ്പർ കൂട്ടുക
-            if (m !== lastMark) {
+            // ഒരേ മാർക്ക് ആണെങ്കിൽ റാങ്ക് മാറില്ല
+            if (s.totalSalahMark !== lastMark) {
                 currentRank = index + 1;
             }
-            lastMark = m;
+            lastMark = s.totalSalahMark;
 
             let rankClass = "";
-            let medal = "";
+            let medalIcon = "";
 
-            if(currentRank === 1 && m > 0) { rankClass = "rank-1"; medal = "🥇"; }
-            else if(currentRank === 2 && m > 0) { rankClass = "rank-2"; medal = "🥈"; }
-            else if(currentRank === 3 && m > 0) { rankClass = "rank-3"; medal = "🥉"; }
-            else { medal = `<span class="rank-number">${currentRank}</span>`; }
+            if(currentRank === 1 && s.totalSalahMark > 0) { 
+                rankClass = "rank-1"; 
+                medalIcon = "🥇"; 
+            } else if(currentRank === 2 && s.totalSalahMark > 0) { 
+                rankClass = "rank-2"; 
+                medalIcon = "🥈"; 
+            } else if(currentRank === 3 && s.totalSalahMark > 0) { 
+                rankClass = "rank-3"; 
+                medalIcon = "🥉"; 
+            } else { 
+                medalIcon = `<span class="rank-number">${currentRank}</span>`; 
+            }
 
             display.innerHTML += `
                 <div class="rank-item ${rankClass}">
-                    <div class="medal">${medal}</div>
+                    <div class="rank-badge">${medalIcon}</div>
                     <div class="student-info">
                         <span class="student-name">${s.name}</span>
                         <span class="student-meta">Reg: ${s.number} | Class: ${s.class}</span>
                     </div>
-                    <div class="score-badge">${m}</div>
+                    <div class="score-box">
+                        <span class="score-val">${s.totalSalahMark}</span>
+                        <span class="score-label">POINTS</span>
+                    </div>
                 </div>`;
         });
-    } catch (e) { /* error handling */ }
+
+    } catch (error) {
+        console.error(error);
+        display.innerHTML = "<div style='text-align:center;'>ഡാറ്റ ലോഡ് ചെയ്യുന്നതിൽ പിശക്!</div>";
+    }
 }
 
 window.onload = loadRank;
 </script>
-
 </body>
 </html>
