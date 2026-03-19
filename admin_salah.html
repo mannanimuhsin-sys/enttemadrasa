@@ -3,34 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>സലാഹ് ട്രാക്കർ | അഡ്മിൻ പാനൽ</title>
+    <title>സലാഹ് അഡ്മിൻ പാനൽ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #004d00; --accent: #f39c12; --bg: #f4f7f6; }
+        :root { --primary: #004d00; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
-        .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        select, input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; }
+        .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: var(--primary); }
-        .student-info { display: flex; align-items: center; gap: 10px; text-align: left; }
-        .student-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        .chk-box { width: 20px; height: 20px; cursor: pointer; }
-        .save-btn { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        th { background: #f8f9fa; color: var(--primary); font-size: 13px; }
+        
+        .student-name-cell { text-align: left; display: flex; align-items: center; gap: 10px; }
+        .chk-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
+        
+        .save-btn { 
+            background: #1976d2; color: white; border: none; 
+            padding: 8px 15px; border-radius: 5px; cursor: pointer; 
+            font-weight: bold; width: 100px; transition: 0.3s;
+        }
+        .save-btn:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 id="mName" style="margin:0;">സലാഹ് ട്രാക്കർ</h2>
-    <p id="mPlace" style="margin:5px 0 0; font-size: 13px; opacity: 0.8;">മദ്റസ വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു...</p>
+    <h2 id="mName">സലാഹ് ട്രാക്കർ അഡ്മിൻ</h2>
+    <p id="mPlace">മദ്റസ ലോഡിംഗ്...</p>
 </div>
 
 <div class="filter-box">
-    <input type="date" id="attDate" onchange="updateDateDisp(); loadStudents();">
-    
+    <input type="date" id="attDate" onchange="loadStudents()">
     <select id="filterClass" onchange="loadStudents()">
         <option value="">എല്ലാ ക്ലാസ്സും</option>
         <script>
@@ -50,7 +56,7 @@
                 <th>അസർ</th>
                 <th>മഗ്രിബ്</th>
                 <th>ഇശാഅ്</th>
-                <th>Action</th>
+                <th>സേവ്</th>
             </tr>
         </thead>
         <tbody id="studentRows"></tbody>
@@ -81,22 +87,20 @@ const mId = urlParams.get('id');
 
 document.getElementById('attDate').valueAsDate = new Date();
 
-function updateDateDisp() { /* optional: display date in header */ }
-
+// മദ്റസ വിവരങ്ങൾ
 rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-    if(snap.val()) {
+    if(snap.exists()){
         document.getElementById('mName').innerText = snap.val().name;
         document.getElementById('mPlace').innerText = snap.val().place;
     }
 });
 
-// പുതുക്കിയ loadStudents ഫങ്ക്ഷൻ
 async function loadStudents() {
     const tableBody = document.getElementById('studentRows');
     const selClass = document.getElementById('filterClass').value;
     const selDate = document.getElementById('attDate').value;
     
-    tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan='7'>വിവരങ്ങൾ ശേഖരിക്കുന്നു...</td></tr>";
 
     let query = db.collection("students").where("madrasa_id", "==", mId).where("gender", "==", "Male");
     if (selClass) query = query.where("class", "==", selClass);
@@ -108,6 +112,7 @@ async function loadStudents() {
         const s = doc.data();
         const sId = doc.id;
 
+        // നേരത്തെ സേവ് ചെയ്ത മാർക്ക് ഉണ്ടോ എന്ന് നോക്കുന്നു
         const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
         let savedMarks = logDoc.exists ? (logDoc.data().marks || 0) : 0;
 
@@ -119,11 +124,8 @@ async function loadStudents() {
 
         tableBody.innerHTML += `
             <tr>
-                <td>
-                    <div class="student-info">
-                        <img src="${s.photo || 'https://via.placeholder.com/50'}" class="student-img">
-                        <div><b>${s.name}</b><br><small>Reg: ${s.number}</small></div>
-                    </div>
+                <td class="student-name-cell">
+                    <div><b>${s.name}</b><br><small>Reg: ${s.number}</small></div>
                 </td>
                 ${checkHTML}
                 <td><button id="btn-${sId}" class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
@@ -131,35 +133,50 @@ async function loadStudents() {
     }
 }
 
-// പുതുക്കിയ saveSalahData ഫങ്ക്ഷൻ
 async function saveSalahData(id, reg, name) {
     const date = document.getElementById('attDate').value;
     const checks = document.querySelectorAll(`.chk-${id}`);
     const btn = document.getElementById(`btn-${id}`);
     
-    let dailyMark = 0;
-    checks.forEach(c => { if(c.checked) dailyMark += 1; });
+    let currentMark = 0;
+    checks.forEach(c => { if(c.checked) currentMark += 1; });
 
     const logRef = db.collection("salah_daily_logs").doc(`${id}_${date}`);
-    const logSnap = await logRef.get();
-    let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
-    const diff = dailyMark - oldMark;
-
+    
     try {
+        btn.disabled = true;
         btn.innerText = "SAVING...";
+
+        const logSnap = await logRef.get();
+        let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
+        const diff = currentMark - oldMark;
+
+        // ദിവസേനയുള്ള ലോഗ് സേവ് ചെയ്യുന്നു
         await logRef.set({
-            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: dailyMark
+            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: currentMark
         });
 
+        // ടോട്ടൽ മാർക്ക് അപ്‌ഡേറ്റ് ചെയ്യുന്നു
         if (diff !== 0) {
             await db.collection("students").doc(id).update({
                 totalSalahMark: firebase.firestore.FieldValue.increment(diff)
             });
         }
+
+        // സേവ് ആയതിന്റെ അടയാളം
         btn.innerText = "SAVED ✅";
         btn.style.background = "#4caf50";
-        setTimeout(() => { btn.innerText="SAVE"; btn.style.background="#1976d2"; }, 2000);
-    } catch (e) { alert("Error!"); btn.innerText="SAVE"; }
+        setTimeout(() => { 
+            btn.innerText = "SAVE"; 
+            btn.style.background = "#1976d2";
+            btn.disabled = false;
+        }, 2000);
+
+    } catch (e) {
+        alert("Error!");
+        btn.disabled = false;
+        btn.innerText = "SAVE";
+    }
 }
 
 window.onload = loadStudents;
