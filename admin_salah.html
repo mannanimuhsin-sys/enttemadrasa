@@ -25,7 +25,7 @@
 
 <div class="header">
     <h2 id="mName">സലാഹ് ട്രാക്കർ അഡ്മിൻ</h2>
-    <p id="mPlace">മദ്റസ ലോഡിംഗ്...</p>
+    <p id="mPlace">മദ്റസ വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു...</p>
 </div>
 
 <div class="filter-box">
@@ -80,12 +80,15 @@ const mId = urlParams.get('id');
 
 document.getElementById('attDate').valueAsDate = new Date();
 
-rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-    if(snap.exists()){
-        document.getElementById('mName').innerText = snap.val().name;
-        document.getElementById('mPlace').innerText = snap.val().place;
-    }
-});
+// മദ്റസ വിവരങ്ങൾ റിയൽടൈം ഡാറ്റാബേസിൽ നിന്ന് എടുക്കുന്നു
+if (mId) {
+    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+        if(snap.exists()){
+            document.getElementById('mName').innerText = snap.val().name;
+            document.getElementById('mPlace').innerText = snap.val().place;
+        }
+    });
+}
 
 async function loadStudents() {
     const tableBody = document.getElementById('studentRows');
@@ -93,34 +96,46 @@ async function loadStudents() {
     const selDate = document.getElementById('attDate').value;
     tableBody.innerHTML = "<tr><td colspan='7'>വിവരങ്ങൾ ശേഖരിക്കുന്നു...</td></tr>";
 
-    let query = db.collection("students").where("madrasa_id", "==", mId).where("gender", "==", "Male");
+    // ലിസ്റ്റ് വരുന്നില്ലെങ്കിൽ gender ഫിൽട്ടർ ഒഴിവാക്കിയാണ് ഇവിടെ നൽകുന്നത്
+    let query = db.collection("students").where("madrasa_id", "==", mId);
     if (selClass) query = query.where("class", "==", selClass);
 
-    const snapshot = await query.get();
-    tableBody.innerHTML = "";
+    try {
+        const snapshot = await query.get();
+        tableBody.innerHTML = "";
 
-    for (const doc of snapshot.docs) {
-        const s = doc.data();
-        const sId = doc.id;
-        const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
-        
-        // തിരുത്തൽ: logDoc.exists()
-        let savedMarks = logDoc.exists() ? (logDoc.data().marks || 0) : 0;
-
-        let checkHTML = "";
-        for(let i=1; i<=5; i++) {
-            let isChecked = (i <= savedMarks) ? "checked" : ""; 
-            checkHTML += `<td><input type="checkbox" class="chk-${sId} chk-box" ${isChecked}></td>`;
+        if (snapshot.empty) {
+            tableBody.innerHTML = "<tr><td colspan='7'>വിദ്യാർത്ഥികളെ കണ്ടെത്തിയില്ല!</td></tr>";
+            return;
         }
 
-        tableBody.innerHTML += `
-            <tr>
-                <td class="student-name-cell">
-                    <div><b>${s.name}</b><br><small>Reg: ${s.number}</small></div>
-                </td>
-                ${checkHTML}
-                <td><button id="btn-${sId}" class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
-            </tr>`;
+        for (const doc of snapshot.docs) {
+            const s = doc.data();
+            const sId = doc.id;
+            
+            // ആൺകുട്ടികളെ മാത്രം കാണിക്കാൻ (നിങ്ങളുടെ ഡാറ്റയിൽ gender ഉണ്ടെങ്കിൽ)
+            if (s.gender && s.gender !== "Male") continue;
+
+            const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
+            let savedMarks = logDoc.exists() ? (logDoc.data().marks || 0) : 0;
+
+            let checkHTML = "";
+            for(let i=1; i<=5; i++) {
+                let isChecked = (i <= savedMarks) ? "checked" : ""; 
+                checkHTML += `<td><input type="checkbox" class="chk-${sId} chk-box" ${isChecked}></td>`;
+            }
+
+            tableBody.innerHTML += `
+                <tr>
+                    <td class="student-name-cell">
+                        <div><b>${s.name}</b><br><small>Reg: ${s.number}</small></div>
+                    </td>
+                    ${checkHTML}
+                    <td><button id="btn-${sId}" class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
+                </tr>`;
+        }
+    } catch (e) {
+        tableBody.innerHTML = "<tr><td colspan='7'>Error: " + e.message + "</td></tr>";
     }
 }
 
@@ -138,7 +153,7 @@ async function saveSalahData(id, reg, name) {
         btn.innerText = "SAVING...";
         const logSnap = await logRef.get();
         
-        // തിരുത്തൽ: logSnap.exists()
+        // ശരിയായ രീതി: .exists()
         let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
         const diff = currentMark - oldMark;
 
@@ -161,7 +176,7 @@ async function saveSalahData(id, reg, name) {
         }, 2000);
     } catch (e) {
         console.error(e);
-        alert("പിശക്: " + e.message);
+        alert("Error: " + e.message);
         btn.disabled = false;
         btn.innerText = "SAVE";
     }
