@@ -88,41 +88,40 @@ if(mId) {
 }
 
 async function loadRank() {
-    if(!mId) {
-        document.getElementById('display').innerHTML = "Madrasa ID Missing!";
-        return;
-    }
+    // ... പഴയ മുകൾഭാഗം (if(!mId) etc.) അതുപോലെ വെക്കുക ...
 
-    const display = document.getElementById('display');
-    
     try {
-        // ഈ മദ്റസയിലെ ആൺകുട്ടികളെ മാത്രം എടുക്കുന്നു
         const snapshot = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
                                  .where("gender", "==", "Male")
                                  .get();
         
         display.innerHTML = "";
-        
-        if (snapshot.empty) {
-            display.innerHTML = "<div style='text-align:center; padding:20px;'>വിവരങ്ങൾ ലഭ്യമല്ല.</div>";
-            return;
-        }
-
-        // ഡാറ്റ കിട്ടിയ ശേഷം മാനുവലായി സോർട്ട് ചെയ്യുന്നു (താൽക്കാലികമായി)
         let students = [];
         snapshot.forEach(doc => students.push(doc.data()));
+
+        // മാർക്ക് അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
         students.sort((a, b) => (b.totalSalahMark || 0) - (a.totalSalahMark || 0));
 
-        let rank = 1;
-        students.forEach(s => {
+        let currentRank = 1;
+        let lastMark = -1;
+
+        students.forEach((s, index) => {
+            const m = s.totalSalahMark || 0;
+
+            // ഒരേ മാർക്ക് അല്ലെങ്കിൽ മാത്രം റാങ്ക് നമ്പർ കൂട്ടുക
+            if (m !== lastMark) {
+                currentRank = index + 1;
+            }
+            lastMark = m;
+
             let rankClass = "";
             let medal = "";
 
-            if(rank === 1) { rankClass = "rank-1"; medal = "🥇"; }
-            else if(rank === 2) { rankClass = "rank-2"; medal = "🥈"; }
-            else if(rank === 3) { rankClass = "rank-3"; medal = "🥉"; }
-            else { medal = `<span class="rank-number">${rank}</span>`; }
+            if(currentRank === 1 && m > 0) { rankClass = "rank-1"; medal = "🥇"; }
+            else if(currentRank === 2 && m > 0) { rankClass = "rank-2"; medal = "🥈"; }
+            else if(currentRank === 3 && m > 0) { rankClass = "rank-3"; medal = "🥉"; }
+            else { medal = `<span class="rank-number">${currentRank}</span>`; }
 
             display.innerHTML += `
                 <div class="rank-item ${rankClass}">
@@ -131,15 +130,10 @@ async function loadRank() {
                         <span class="student-name">${s.name}</span>
                         <span class="student-meta">Reg: ${s.number} | Class: ${s.class}</span>
                     </div>
-                    <div class="score-badge">${s.totalSalahMark || 0}</div>
+                    <div class="score-badge">${m}</div>
                 </div>`;
-            rank++;
         });
-
-    } catch (error) {
-        console.error(error);
-        display.innerHTML = "Error: " + error.message;
-    }
+    } catch (e) { /* error handling */ }
 }
 
 window.onload = loadRank;
