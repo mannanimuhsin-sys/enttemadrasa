@@ -110,18 +110,17 @@ rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
     }
 });
 
-async function loadStudents() {
+asasync function loadStudents() {
     if(!mId) return alert("Madrasa ID Missing!");
     
     const tableBody = document.getElementById('studentRows');
     const selClass = document.getElementById('filterClass').value;
-    document.getElementById('currentClassDisp').innerText = selClass || "All";
+    const selDate = document.getElementById('attDate').value; // തിരഞ്ഞെടുത്ത ഡേറ്റ്
     
+    document.getElementById('currentClassDisp').innerText = selClass || "All";
     tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
-    // ഐഡി കാർഡ് പാനലിലെ പോലെ ക്വറി ചെയ്യുന്നു (Male മാത്രം)
     let query = db.collection("students").where("madrasa_id", "==", mId).where("gender", "==", "Male");
-    
     if (selClass) query = query.where("class", "==", selClass);
 
     const snapshot = await query.get();
@@ -132,9 +131,26 @@ async function loadStudents() {
         return;
     }
 
-    snapshot.forEach(doc => {
+    // ഓരോ കുട്ടിയുടെയും ഈ ദിവസത്തെ മാർക്ക് ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+    for (const doc of snapshot.docs) {
         const s = doc.data();
         const sId = doc.id;
+
+        // ഡാറ്റാബേസിൽ നിന്ന് ഈ ദിവസത്തെ ലോഗ് എടുക്കുന്നു
+        const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
+        let marks = 0;
+        if(logDoc.exists) {
+            marks = logDoc.data().marks || 0;
+        }
+
+        // മാർക്ക് അനുസരിച്ച് ചെക്ക് ബോക്സുകൾ ടിക്ക് ചെയ്യണോ എന്ന് തീരുമാനിക്കുന്നു
+        // ഉദാഹരണത്തിന് 5 വഖ്തും ഉണ്ടെങ്കിൽ അഞ്ച് ബോക്സും ടിക്ക് ആകും
+        let checkHTML = "";
+        for(let i=1; i<=5; i++) {
+            let checked = (i <= marks) ? "checked" : ""; 
+            checkHTML += `<td><input type="checkbox" class="chk-${sId} chk-box" ${checked}></td>`;
+        }
+
         tableBody.innerHTML += `
             <tr>
                 <td>
@@ -146,14 +162,10 @@ async function loadStudents() {
                         </div>
                     </div>
                 </td>
-                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
-                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
-                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
-                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
-                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
-                <td><button class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
+                ${checkHTML}
+                <td><button id="btn-${sId}" class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
             </tr>`;
-    });
+    }
 }
 
 async function saveSalahData(id, reg, name) {
