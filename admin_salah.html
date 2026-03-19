@@ -171,12 +171,12 @@ async function saveSalahData(id, reg, name) {
             btn.style.background = "#1976d2";
             btn.disabled = false;
         }, 2000);
-
-    } catch (e) {
-        alert("Error!");
-        btn.disabled = false;
-        btn.innerText = "SAVE";
-    }
+} catch (e) {
+    console.error("Firebase Error:", e);
+    alert("Error Details: " + e.message); // ഇത് മാറ്റുക
+    btn.disabled = false;
+    btn.innerText = "SAVE";
+}
 }
 
 window.onload = loadStudents;
