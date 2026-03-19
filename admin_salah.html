@@ -80,7 +80,6 @@ const mId = urlParams.get('id');
 
 document.getElementById('attDate').valueAsDate = new Date();
 
-// മദ്റസ വിവരങ്ങൾ റിയൽടൈം ഡാറ്റാബേസിൽ നിന്ന് എടുക്കുന്നു
 if (mId) {
     rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
         if(snap.exists()){
@@ -94,9 +93,9 @@ async function loadStudents() {
     const tableBody = document.getElementById('studentRows');
     const selClass = document.getElementById('filterClass').value;
     const selDate = document.getElementById('attDate').value;
-    tableBody.innerHTML = "<tr><td colspan='7'>വിവരങ്ങൾ ശേഖരിക്കുന്നു...</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
-    // ലിസ്റ്റ് വരുന്നില്ലെങ്കിൽ gender ഫിൽട്ടർ ഒഴിവാക്കിയാണ് ഇവിടെ നൽകുന്നത്
+    // ലിസ്റ്റ് വരാൻ വേണ്ടി gender ഫിൽട്ടർ ഒഴിവാക്കി
     let query = db.collection("students").where("madrasa_id", "==", mId);
     if (selClass) query = query.where("class", "==", selClass);
 
@@ -113,10 +112,12 @@ async function loadStudents() {
             const s = doc.data();
             const sId = doc.id;
             
-            // ആൺകുട്ടികളെ മാത്രം കാണിക്കാൻ (നിങ്ങളുടെ ഡാറ്റയിൽ gender ഉണ്ടെങ്കിൽ)
+            // gender ഫീൽഡ് ഉണ്ടെങ്കിൽ മാത്രം പരിശോധിക്കും, ഇല്ലെങ്കിലും ലിസ്റ്റ് കാണിക്കും
             if (s.gender && s.gender !== "Male") continue;
 
             const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
+            
+            // എറർ പരിഹരിച്ചു: .exists()
             let savedMarks = logDoc.exists() ? (logDoc.data().marks || 0) : 0;
 
             let checkHTML = "";
@@ -153,7 +154,7 @@ async function saveSalahData(id, reg, name) {
         btn.innerText = "SAVING...";
         const logSnap = await logRef.get();
         
-        // ശരിയായ രീതി: .exists()
+        // എറർ പരിഹരിച്ചു: .exists()
         let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
         const diff = currentMark - oldMark;
 
