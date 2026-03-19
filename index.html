@@ -81,7 +81,7 @@
         <button class="btn btn-dash" id="btnPayment" onclick="openPaymentPortal()"><i class="fa fa-file-invoice-dollar"></i> PAYMENTS</button>
         <button class="btn btn-dash" onclick="openIDPortal()"><i class="fa fa-id-badge"></i> ID CARD PORTAL</button>
         <button class="btn btn-dash" onclick="openQuizPortal()"><i class="fa fa-question-circle"></i> SPECIAL QUIZ</button>
-        <button class="btn btn-dash" onclick="openSalahTracker()" style="background: #e8f5e9; border: 2px solid #2e7d32;">
+      <button id="btn_salah" class="btn btn-dash" onclick="openSalahTracker()" style="display: none; background: #e8f5e9; border: 2px solid #2e7d32;">
     <i class="fa fa-mosque"></i> SALAH TRACKER (Leaderboard)
 </button>
 
@@ -220,13 +220,28 @@
         });
     }
 
-    function loadProfile(d) {
+  function loadProfile(d) {
         document.getElementById('profileArea').innerHTML = `
             <div class="profile-card"><img src="${d.photo || 'logo.png'}" class="profile-img">
             <h1 style="margin:0; font-size:22px;">${d.name}</h1>
             <div class="m-reg">REG NO: ${d.reg}</div></div>`;
+
+        // സെറ്റിംഗ്സ് അനുസരിച്ച് സലാഹ് ബട്ടൺ നിയന്ത്രിക്കാൻ
+        db.ref('settings/' + currentId).on('value', snap => {
+            const settings = snap.val() || {};
+            const sBtn = document.getElementById('btn_salah');
+            
+            // സെറ്റിംഗ്സിൽ 'salah' ഓൺ ആണെങ്കിൽ മാത്രം ബട്ടൺ കാണിക്കും
+            if (settings.salah === true) {
+                sBtn.style.display = 'flex';
+            } else {
+                sBtn.style.display = 'none';
+            }
+        });
+
         if(currentRole === 'admin') {
             document.getElementById('adminPanelSection').style.display = 'block';
+            document.getElementById('adminSalahSection').style.display = 'block'; // അഡ്മിന് മാർക്ക് ചെയ്യാനുള്ള ബട്ടൺ
             document.getElementById('btnPayment').style.display = 'none';
         }
         showPage('portalPage');
