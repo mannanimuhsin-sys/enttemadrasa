@@ -11,20 +11,13 @@
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
         .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         input, select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: var(--primary); font-size: 13px; }
-        
         .student-name-cell { text-align: left; display: flex; align-items: center; gap: 10px; }
         .chk-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
-        
-        .save-btn { 
-            background: #1976d2; color: white; border: none; 
-            padding: 8px 15px; border-radius: 5px; cursor: pointer; 
-            font-weight: bold; width: 100px; transition: 0.3s;
-        }
+        .save-btn { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100px; transition: 0.3s; }
         .save-btn:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
@@ -87,7 +80,6 @@ const mId = urlParams.get('id');
 
 document.getElementById('attDate').valueAsDate = new Date();
 
-// മദ്റസ വിവരങ്ങൾ
 rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
     if(snap.exists()){
         document.getElementById('mName').innerText = snap.val().name;
@@ -99,7 +91,6 @@ async function loadStudents() {
     const tableBody = document.getElementById('studentRows');
     const selClass = document.getElementById('filterClass').value;
     const selDate = document.getElementById('attDate').value;
-    
     tableBody.innerHTML = "<tr><td colspan='7'>വിവരങ്ങൾ ശേഖരിക്കുന്നു...</td></tr>";
 
     let query = db.collection("students").where("madrasa_id", "==", mId).where("gender", "==", "Male");
@@ -111,10 +102,10 @@ async function loadStudents() {
     for (const doc of snapshot.docs) {
         const s = doc.data();
         const sId = doc.id;
-
-        // നേരത്തെ സേവ് ചെയ്ത മാർക്ക് ഉണ്ടോ എന്ന് നോക്കുന്നു
         const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
-        let savedMarks = logDoc.exists ? (logDoc.data().marks || 0) : 0;
+        
+        // തിരുത്തൽ: logDoc.exists()
+        let savedMarks = logDoc.exists() ? (logDoc.data().marks || 0) : 0;
 
         let checkHTML = "";
         for(let i=1; i<=5; i++) {
@@ -137,7 +128,6 @@ async function saveSalahData(id, reg, name) {
     const date = document.getElementById('attDate').value;
     const checks = document.querySelectorAll(`.chk-${id}`);
     const btn = document.getElementById(`btn-${id}`);
-    
     let currentMark = 0;
     checks.forEach(c => { if(c.checked) currentMark += 1; });
 
@@ -146,14 +136,14 @@ async function saveSalahData(id, reg, name) {
     try {
         btn.disabled = true;
         btn.innerText = "SAVING...";
-
         const logSnap = await logRef.get();
-        // ഇവിടെ .exists() എന്ന് മാറ്റം വരുത്തിയിട്ടുണ്ട്
+        
+        // തിരുത്തൽ: logSnap.exists()
         let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
         const diff = currentMark - oldMark;
 
         await logRef.set({
-            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: currentMark
+            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: currentMark, updatedAt: new Date()
         });
 
         if (diff !== 0) {
@@ -169,15 +159,13 @@ async function saveSalahData(id, reg, name) {
             btn.style.background = "#1976d2";
             btn.disabled = false;
         }, 2000);
-
     } catch (e) {
         console.error(e);
-        alert("Error Details: " + e.message);
+        alert("പിശക്: " + e.message);
         btn.disabled = false;
         btn.innerText = "SAVE";
     }
 }
-
 window.onload = loadStudents;
 </script>
 </body>
