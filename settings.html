@@ -44,11 +44,15 @@
         <button id="btn_payment" class="toggle-btn" onclick="toggleFeature('payment')">Loading...</button>
     </div>
 
+    <div class="control-item" style="background: #e8f5e9; border-radius: 8px;">
+        <span style="font-weight: bold; color: #2e7d32;">Salah Tracker</span>
+        <button id="btn_salah" class="toggle-btn" onclick="toggleFeature('salah')">Loading...</button>
+    </div>
+
     <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
 </div>
 
 <script>
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -63,15 +67,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id');
 
-    // ഡിഫോൾട്ട് സെറ്റിംഗ്സിൽ 'payment' കൂടി ഉൾപ്പെടുത്തി
-    let currentSettings = { dash: true, id: true, quiz: true, payment: true };
+    // Default settings including 'salah'
+    let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: false };
 
     if (mID) {
         db.ref('settings/' + mID).on('value', snap => {
             if (snap.exists()) {
                 currentSettings = snap.val();
-                // ഒരുപക്ഷേ പഴയ ഡാറ്റയിൽ പെയ്‌മെന്റ് ഇല്ലെങ്കിൽ അത് ട്രൂ ആക്കി വെക്കുന്നു
                 if (currentSettings.payment === undefined) currentSettings.payment = true;
+                if (currentSettings.salah === undefined) currentSettings.salah = false;
             }
             updateUI();
         });
@@ -81,7 +85,8 @@
         updateBtn('btn_dash', currentSettings.dash);
         updateBtn('btn_id', currentSettings.id);
         updateBtn('btn_quiz', currentSettings.quiz);
-        updateBtn('btn_payment', currentSettings.payment); // പെയ്‌മെന്റ് ബട്ടൺ അപ്‌ഡേറ്റ്
+        updateBtn('btn_payment', currentSettings.payment);
+        updateBtn('btn_salah', currentSettings.salah); // സലാഹ് ബട്ടൺ അപ്‌ഡേറ്റ്
     }
 
     function updateBtn(elementId, state) {
@@ -93,17 +98,8 @@
     }
 
     function toggleFeature(feature) {
-        // നിലവിലുള്ള അവസ്ഥ മാറ്റുന്നു (True -> False / False -> True)
-        if (currentSettings[feature] === undefined) {
-            currentSettings[feature] = false;
-        } else {
-            currentSettings[feature] = !currentSettings[feature];
-        }
-        
-        // Firebase-ലേക്ക് സേവ് ചെയ്യുന്നു
-        db.ref('settings/' + mID).set(currentSettings).then(() => {
-            console.log(feature + " updated successfully");
-        });
+        currentSettings[feature] = !currentSettings[feature];
+        db.ref('settings/' + mID).set(currentSettings);
     }
 </script>
 </body>
