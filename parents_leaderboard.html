@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>സലാഹ് ലീഡർബോർഡ്</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #eceff1; padding: 15px; }
+        .card { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #eee; }
+        .gold { background: linear-gradient(to right, #ffd700, #fff9c4); border: 2px solid #fbc02d; font-weight: bold; }
+        .silver { background: #e0e0e0; border: 2px solid #bdbdbd; }
+        .bronze { background: #ffccbc; border: 2px solid #ff8a65; }
+        .score { background: #2e7d32; color: white; padding: 5px 15px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="text-align:center; color:#1b5e20;">🏆 ലീഡർബോർഡ് 🏆</h2>
+    <div id="display">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+</div>
+
+<script>
+    // ഹിയർ: നിങ്ങളുടെ Firebase കോൺഫിഗറേഷൻ നൽകുക
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function loadRank() {
+        const display = document.getElementById('display');
+        const snapshot = await db.collection("students")
+                                 .where("gender", "==", "Male")
+                                 .orderBy("totalSalahMark", "desc").limit(20).get();
+        
+        display.innerHTML = "";
+        let students = [];
+        snapshot.forEach(doc => students.push(doc.data()));
+
+        if (students.length === 0) { display.innerHTML = "വിവരങ്ങൾ ലഭ്യമല്ല."; return; }
+
+        let topMark = students[0].totalSalahMark;
+
+        students.forEach((s, i) => {
+            let cls = "";
+            if(s.totalSalahMark === topMark && topMark > 0) cls = "gold";
+            else if(i === 1) cls = "silver";
+            else if(i === 2) cls = "bronze";
+
+            display.innerHTML += `
+                <div class="rank-item ${cls}">
+                    <div><span>${s.name}</span><br><small>Reg: ${s.number}</small></div>
+                    <div class="score">${s.totalSalahMark || 0}</div>
+                </div>`;
+        });
+    }
+    loadRank();
+</script>
+</body>
+</html>
