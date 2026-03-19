@@ -96,12 +96,10 @@ async function loadRank() {
     const display = document.getElementById('display');
     
     try {
-        // ഈ മദ്റസയിലെ ആൺകുട്ടികളെ മാത്രം മാർക്കിന്റെ അടിസ്ഥാനത്തിൽ എടുക്കുന്നു
+        // ഈ മദ്റസയിലെ ആൺകുട്ടികളെ മാത്രം എടുക്കുന്നു
         const snapshot = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
                                  .where("gender", "==", "Male")
-                                 .orderBy("totalSalahMark", "desc")
-                                 .limit(30)
                                  .get();
         
         display.innerHTML = "";
@@ -111,9 +109,13 @@ async function loadRank() {
             return;
         }
 
+        // ഡാറ്റ കിട്ടിയ ശേഷം മാനുവലായി സോർട്ട് ചെയ്യുന്നു (താൽക്കാലികമായി)
+        let students = [];
+        snapshot.forEach(doc => students.push(doc.data()));
+        students.sort((a, b) => (b.totalSalahMark || 0) - (a.totalSalahMark || 0));
+
         let rank = 1;
-        snapshot.forEach(doc => {
-            const s = doc.data();
+        students.forEach(s => {
             let rankClass = "";
             let medal = "";
 
@@ -136,7 +138,7 @@ async function loadRank() {
 
     } catch (error) {
         console.error(error);
-        display.innerHTML = "Error loading data.";
+        display.innerHTML = "Error: " + error.message;
     }
 }
 
