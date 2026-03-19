@@ -159,32 +159,32 @@ async function loadStudents() {
 async function saveSalahData(id, reg, name) {
     const date = document.getElementById('attDate').value;
     const checks = document.querySelectorAll(`.chk-${id}`);
-    
     let dailyMark = 0;
     checks.forEach(c => { if(c.checked) dailyMark += 1; });
 
-    try {
-        // ഓരോ ദിവസത്തെയും ലോഗ് സേവ് ചെയ്യുന്നു
-        await db.collection("salah_daily_logs").doc(`${id}_${date}`).set({
-            studentId: id,
-            madrasa_id: mId,
-            regNo: reg,
-            name: name,
-            date: date,
-            marks: dailyMark,
-            updatedAt: new Date()
-        });
+    const logRef = db.collection("salah_daily_logs").doc(`${id}_${date}`);
+    const logSnap = await logRef.get();
 
-        // വിദ്യാർത്ഥിയുടെ ടോട്ടൽ പോയിന്റ് അപ്‌ഡേറ്റ് ചെയ്യുന്നു
-        await db.collection("students").doc(id).update({
-            totalSalahMark: firebase.firestore.FieldValue.increment(dailyMark)
-        });
-
-        alert(name + "-ന്റെ വിവരങ്ങൾ സേവ് ചെയ്തു!");
-    } catch (e) {
-        console.error(e);
-        alert("സേവ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
+    let oldMark = 0;
+    if (logSnap.exists()) {
+        oldMark = logSnap.data().marks || 0;
     }
+
+    // പുതിയ മാർക്കും പഴയ മാർക്കും തമ്മിലുള്ള വ്യത്യാസം മാത്രം കൂട്ടുന്നു/കുറയ്ക്കുന്നു
+    const diff = dailyMark - oldMark;
+
+    try {
+        await logRef.set({
+            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: dailyMark
+        });
+
+        if (diff !== 0) {
+            await db.collection("students").doc(id).update({
+                totalSalahMark: firebase.firestore.FieldValue.increment(diff)
+            });
+        }
+        alert("Saved!");
+    } catch (e) { alert("Error!"); }
 }
 
 // ആദ്യ ലോഡിംഗിൽ തന്നെ കുട്ടികളെ കാണിക്കാൻ
