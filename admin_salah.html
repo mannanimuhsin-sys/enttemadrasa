@@ -3,120 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>മദ്റസ സലാഹ് ട്രാക്കർ - അഡ്മിൻ</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <title>സലാഹ് ട്രാക്കർ | അഡ്മിൻ പാനൽ</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2e7d32; }
-        .filter-sec { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
-        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
-        th { background: #2e7d32; color: white; }
-        tr:nth-child(even) { background: #f9f9f9; }
-        .save-btn { background: #1976d2; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        :root { --primary: #004d00; --accent: #f39c12; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
+        
+        .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        select, input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; }
+        
+        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: var(--primary); font-size: 13px; }
+        
+        .student-info { display: flex; align-items: center; gap: 10px; text-align: left; }
+        .student-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
+        
+        .chk-box { width: 20px; height: 20px; cursor: pointer; }
+        .save-btn { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .save-btn:hover { background: #1565c0; }
+        
+        .stats-strip { display: flex; justify-content: space-around; background: white; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>സലാഹ് ട്രാക്കർ - അഡ്മിൻ പാനൽ</h2>
-    
-    <div class="filter-sec">
-        <input type="date" id="attDate">
-        <select id="classFilter" onchange="fetchStudents()">
-            <option value="all">എല്ലാ ക്ലാസ്സും</option>
-            <option value="1">Class 1</option>
-            <option value="2">Class 2</option>
-            <option value="3">Class 3</option>
-            <option value="4">Class 4</option>
-            <option value="5">Class 5</option>
-        </select>
-    </div>
-
-    <div style="overflow-x:auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Reg No</th>
-                    <th>പേര്</th>
-                    <th>Subahi</th>
-                    <th>Luhr</th>
-                    <th>Asr</th>
-                    <th>Magrib</th>
-                    <th>Isha</th>
-                    <th>Save</th>
-                </tr>
-            </thead>
-            <tbody id="studentRows"></tbody>
-        </table>
-    </div>
+<div class="header">
+    <h2 id="mName" style="margin:0; font-size: 18px;">സലാഹ് ട്രാക്കർ അഡ്മിൻ</h2>
+    <p id="mPlace" style="margin:5px 0 0; font-size: 13px; opacity: 0.8;">മദ്റസ ലോഡിംഗ്...</p>
 </div>
 
+<div class="stats-strip">
+    <span>ക്ലാസ്സ്: <span id="currentClassDisp">All</span></span>
+    <span>തിയതി: <span id="currentDateDisp"></span></span>
+</div>
+
+<div class="filter-box">
+    <input type="date" id="attDate" onchange="updateDateDisp()">
+    <select id="filterClass" onchange="loadStudents()">
+        <option value="">എല്ലാ ക്ലാസ്സും</option>
+        <script>
+            for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`);
+            document.write(`<option value="Plus Two">Plus Two</option>`);
+        </script>
+    </select>
+    <button class="btn" style="background:var(--primary); color:white; padding:10px; border:none; border-radius:8px;" onclick="loadStudents()"><i class="fa fa-sync"></i></button>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>വിദ്യാർത്ഥി</th>
+                <th>സുബഹി</th>
+                <th>ളുഹർ</th>
+                <th>അസർ</th>
+                <th>മഗ്രിബ്</th>
+                <th>ഇശാഅ്</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="studentRows">
+            <tr><td colspan="7">വിദ്യാർത്ഥികളെ തിരയുന്നു...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-    // ഹിയർ: നിങ്ങളുടെ Firebase കോൺഫിഗറേഷൻ നൽകുക
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+const firebaseConfig = {
+  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+  authDomain: "mum-new-id.firebaseapp.com",
+  projectId: "mum-new-id",
+  storageBucket: "mum-new-id.firebasestorage.app",
+  messagingSenderId: "794343464244",
+  appId: "1:794343464244:web:f9083036490e3609bf1961",
+  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+};
 
-    document.getElementById('attDate').valueAsDate = new Date();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rtdb = firebase.database();
 
-    async function fetchStudents() {
-        const selClass = document.getElementById('classFilter').value;
-        const tableBody = document.getElementById('studentRows');
-        tableBody.innerHTML = "<tr><td colspan='8'>Loading...</td></tr>";
+const urlParams = new URLSearchParams(window.location.search);
+const mId = urlParams.get('id'); // Madrasa ID
 
-        let query = db.collection("students").where("gender", "==", "Male");
-        if (selClass !== "all") query = query.where("class", "==", selClass);
+document.getElementById('attDate').valueAsDate = new Date();
+updateDateDisp();
 
-        const snapshot = await query.get();
-        tableBody.innerHTML = "";
+function updateDateDisp() {
+    document.getElementById('currentDateDisp').innerText = document.getElementById('attDate').value;
+}
 
-        snapshot.forEach(doc => {
-            const s = doc.data();
-            const sId = doc.id;
-            tableBody.innerHTML += `
-                <tr>
-                    <td>${s.number}</td>
-                    <td style="text-align:left;">${s.name}</td>
-                    <td><input type="checkbox" class="chk-${sId}"></td>
-                    <td><input type="checkbox" class="chk-${sId}"></td>
-                    <td><input type="checkbox" class="chk-${sId}"></td>
-                    <td><input type="checkbox" class="chk-${sId}"></td>
-                    <td><input type="checkbox" class="chk-${sId}"></td>
-                    <td><button class="save-btn" onclick="saveData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
-                </tr>`;
+// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
+rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+    if(snap.val()) {
+        document.getElementById('mName').innerText = snap.val().name;
+        document.getElementById('mPlace').innerText = snap.val().place;
+    }
+});
+
+async function loadStudents() {
+    if(!mId) return alert("Madrasa ID Missing!");
+    
+    const tableBody = document.getElementById('studentRows');
+    const selClass = document.getElementById('filterClass').value;
+    document.getElementById('currentClassDisp').innerText = selClass || "All";
+    
+    tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+
+    // ഐഡി കാർഡ് പാനലിലെ പോലെ ക്വറി ചെയ്യുന്നു (Male മാത്രം)
+    let query = db.collection("students").where("madrasa_id", "==", mId).where("gender", "==", "Male");
+    
+    if (selClass) query = query.where("class", "==", selClass);
+
+    const snapshot = await query.get();
+    tableBody.innerHTML = "";
+
+    if (snapshot.empty) {
+        tableBody.innerHTML = "<tr><td colspan='7'>വിദ്യാർത്ഥികളെ കണ്ടെത്തിയില്ല.</td></tr>";
+        return;
+    }
+
+    snapshot.forEach(doc => {
+        const s = doc.data();
+        const sId = doc.id;
+        tableBody.innerHTML += `
+            <tr>
+                <td>
+                    <div class="student-info">
+                        <img src="${s.photo || 'https://via.placeholder.com/50'}" class="student-img">
+                        <div>
+                            <div style="font-weight:bold; font-size:14px;">${s.name}</div>
+                            <div style="font-size:11px; color:#666;">Reg: ${s.number} | Cls: ${s.class}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
+                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
+                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
+                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
+                <td><input type="checkbox" class="chk-${sId} chk-box"></td>
+                <td><button class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
+            </tr>`;
+    });
+}
+
+async function saveSalahData(id, reg, name) {
+    const date = document.getElementById('attDate').value;
+    const checks = document.querySelectorAll(`.chk-${id}`);
+    
+    let dailyMark = 0;
+    checks.forEach(c => { if(c.checked) dailyMark += 1; });
+
+    try {
+        // ഓരോ ദിവസത്തെയും ലോഗ് സേവ് ചെയ്യുന്നു
+        await db.collection("salah_daily_logs").doc(`${id}_${date}`).set({
+            studentId: id,
+            madrasa_id: mId,
+            regNo: reg,
+            name: name,
+            date: date,
+            marks: dailyMark,
+            updatedAt: new Date()
         });
-    }
 
-    async function saveData(id, reg, name) {
-        const date = document.getElementById('attDate').value;
-        const checks = document.querySelectorAll(`.chk-${id}`);
-        let dailyMark = 0;
-        checks.forEach(c => { if(c.checked) dailyMark += 1; });
+        // വിദ്യാർത്ഥിയുടെ ടോട്ടൽ പോയിന്റ് അപ്‌ഡേറ്റ് ചെയ്യുന്നു
+        await db.collection("students").doc(id).update({
+            totalSalahMark: firebase.firestore.FieldValue.increment(dailyMark)
+        });
 
-        try {
-            await db.collection("salah_daily_logs").doc(`${id}_${date}`).set({
-                studentId: id, regNo: reg, name: name, date: date, marks: dailyMark
-            });
-            await db.collection("students").doc(id).update({
-                totalSalahMark: firebase.firestore.FieldValue.increment(dailyMark)
-            });
-            alert(name + " - Saved!");
-        } catch (e) { alert("Error!"); }
+        alert(name + "-ന്റെ വിവരങ്ങൾ സേവ് ചെയ്തു!");
+    } catch (e) {
+        console.error(e);
+        alert("സേവ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
     }
-    fetchStudents();
+}
+
+// ആദ്യ ലോഡിംഗിൽ തന്നെ കുട്ടികളെ കാണിക്കാൻ
+window.onload = loadStudents;
 </script>
+
 </body>
 </html>
