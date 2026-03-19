@@ -110,7 +110,7 @@ rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
     }
 });
 
-asasync function loadStudents() {
+async function loadStudents() {
     if(!mId) return alert("Madrasa ID Missing!");
     
     const tableBody = document.getElementById('studentRows');
