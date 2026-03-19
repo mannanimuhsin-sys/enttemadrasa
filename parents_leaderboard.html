@@ -4,66 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>സലാഹ് ലീഡർബോർഡ്</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        body { font-family: sans-serif; background: #eceff1; padding: 15px; }
-        .card { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #eee; }
-        .gold { background: linear-gradient(to right, #ffd700, #fff9c4); border: 2px solid #fbc02d; font-weight: bold; }
-        .silver { background: #e0e0e0; border: 2px solid #bdbdbd; }
-        .bronze { background: #ffccbc; border: 2px solid #ff8a65; }
-        .score { background: #2e7d32; color: white; padding: 5px 15px; border-radius: 20px; }
+        :root { --primary: #004d00; --gold: #ffd700; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: auto; }
+        
+        .header-card { 
+            background: linear-gradient(135deg, #004d00, #002b00); 
+            color: white; padding: 30px 20px; border-radius: 20px; 
+            text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .rank-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; padding: 15px; margin-bottom: 12px; 
+            border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 5px solid transparent; transition: 0.3s;
+        }
+        
+        /* ടോപ്പ് 3 റാങ്ക് സ്റ്റൈലുകൾ */
+        .rank-1 { border-left-color: var(--gold); background: #fffdf0; }
+        .rank-2 { border-left-color: #c0c0c0; }
+        .rank-3 { border-left-color: #cd7f32; }
+
+        .rank-number { width: 30px; font-weight: bold; color: #888; }
+        .student-info { flex-grow: 1; margin-left: 10px; }
+        .student-name { font-weight: bold; color: #333; display: block; }
+        .student-meta { font-size: 11px; color: #777; }
+
+        .score-badge { 
+            background: var(--primary); color: white; 
+            padding: 6px 15px; border-radius: 20px; 
+            font-weight: bold; font-size: 14px; min-width: 40px; text-align: center;
+        }
+        
+        .medal { font-size: 20px; margin-right: 10px; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="text-align:center; color:#1b5e20;">🏆 ലീഡർബോർഡ് 🏆</h2>
-    <div id="display">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+<div class="container">
+    <div class="header-card">
+        <i class="fa fa-trophy" style="font-size: 50px; color: var(--gold); margin-bottom: 10px;"></i>
+        <h2 style="margin:0;">സലാഹ് ലീഡർബോർഡ്</h2>
+        <p id="mName" style="opacity: 0.8; font-size: 14px; margin: 5px 0 0;">Loading Madrasa...</p>
+    </div>
+
+    <div id="display">
+        <div style="text-align:center; color:#666; padding:20px;">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+    </div>
 </div>
 
-<script>
-    // ഹിയർ: നിങ്ങളുടെ Firebase കോൺഫിഗറേഷൻ നൽകുക
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-    async function loadRank() {
-        const display = document.getElementById('display');
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+  authDomain: "mum-new-id.firebaseapp.com",
+  projectId: "mum-new-id",
+  storageBucket: "mum-new-id.firebasestorage.app",
+  messagingSenderId: "794343464244",
+  appId: "1:794343464244:web:f9083036490e3609bf1961",
+  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rtdb = firebase.database();
+
+const urlParams = new URLSearchParams(window.location.search);
+const mId = urlParams.get('mid'); // Main page-ൽ നിന്ന് വരുന്നത് 'mid' ആണ്
+
+// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
+if(mId) {
+    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+        if(snap.exists()) document.getElementById('mName').innerText = snap.val().name;
+    });
+}
+
+async function loadRank() {
+    if(!mId) {
+        document.getElementById('display').innerHTML = "Madrasa ID Missing!";
+        return;
+    }
+
+    const display = document.getElementById('display');
+    
+    try {
+        // ഈ മദ്റസയിലെ ആൺകുട്ടികളെ മാത്രം മാർക്കിന്റെ അടിസ്ഥാനത്തിൽ എടുക്കുന്നു
         const snapshot = await db.collection("students")
+                                 .where("madrasa_id", "==", mId)
                                  .where("gender", "==", "Male")
-                                 .orderBy("totalSalahMark", "desc").limit(20).get();
+                                 .orderBy("totalSalahMark", "desc")
+                                 .limit(30)
+                                 .get();
         
         display.innerHTML = "";
-        let students = [];
-        snapshot.forEach(doc => students.push(doc.data()));
+        
+        if (snapshot.empty) {
+            display.innerHTML = "<div style='text-align:center; padding:20px;'>വിവരങ്ങൾ ലഭ്യമല്ല.</div>";
+            return;
+        }
 
-        if (students.length === 0) { display.innerHTML = "വിവരങ്ങൾ ലഭ്യമല്ല."; return; }
+        let rank = 1;
+        snapshot.forEach(doc => {
+            const s = doc.data();
+            let rankClass = "";
+            let medal = "";
 
-        let topMark = students[0].totalSalahMark;
-
-        students.forEach((s, i) => {
-            let cls = "";
-            if(s.totalSalahMark === topMark && topMark > 0) cls = "gold";
-            else if(i === 1) cls = "silver";
-            else if(i === 2) cls = "bronze";
+            if(rank === 1) { rankClass = "rank-1"; medal = "🥇"; }
+            else if(rank === 2) { rankClass = "rank-2"; medal = "🥈"; }
+            else if(rank === 3) { rankClass = "rank-3"; medal = "🥉"; }
+            else { medal = `<span class="rank-number">${rank}</span>`; }
 
             display.innerHTML += `
-                <div class="rank-item ${cls}">
-                    <div><span>${s.name}</span><br><small>Reg: ${s.number}</small></div>
-                    <div class="score">${s.totalSalahMark || 0}</div>
+                <div class="rank-item ${rankClass}">
+                    <div class="medal">${medal}</div>
+                    <div class="student-info">
+                        <span class="student-name">${s.name}</span>
+                        <span class="student-meta">Reg: ${s.number} | Class: ${s.class}</span>
+                    </div>
+                    <div class="score-badge">${s.totalSalahMark || 0}</div>
                 </div>`;
+            rank++;
         });
+
+    } catch (error) {
+        console.error(error);
+        display.innerHTML = "Error loading data.";
     }
-    loadRank();
+}
+
+window.onload = loadRank;
 </script>
+
 </body>
 </html>
