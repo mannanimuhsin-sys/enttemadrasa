@@ -148,22 +148,20 @@ async function saveSalahData(id, reg, name) {
         btn.innerText = "SAVING...";
 
         const logSnap = await logRef.get();
+        // ഇവിടെ .exists() എന്ന് മാറ്റം വരുത്തിയിട്ടുണ്ട്
         let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
         const diff = currentMark - oldMark;
 
-        // ദിവസേനയുള്ള ലോഗ് സേവ് ചെയ്യുന്നു
         await logRef.set({
             studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: currentMark
         });
 
-        // ടോട്ടൽ മാർക്ക് അപ്‌ഡേറ്റ് ചെയ്യുന്നു
         if (diff !== 0) {
             await db.collection("students").doc(id).update({
                 totalSalahMark: firebase.firestore.FieldValue.increment(diff)
             });
         }
 
-        // സേവ് ആയതിന്റെ അടയാളം
         btn.innerText = "SAVED ✅";
         btn.style.background = "#4caf50";
         setTimeout(() => { 
@@ -171,12 +169,13 @@ async function saveSalahData(id, reg, name) {
             btn.style.background = "#1976d2";
             btn.disabled = false;
         }, 2000);
-} catch (e) {
-    console.error("Firebase Error:", e);
-    alert("Error Details: " + e.message); // ഇത് മാറ്റുക
-    btn.disabled = false;
-    btn.innerText = "SAVE";
-}
+
+    } catch (e) {
+        console.error(e);
+        alert("Error Details: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "SAVE";
+    }
 }
 
 window.onload = loadStudents;
