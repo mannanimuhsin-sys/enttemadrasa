@@ -284,6 +284,15 @@ function openSalahTracker() {
 function openAdminSalah() { 
     window.location.href = `admin_salah.html?id=${currentId}`; 
 }
+// --- ഈ ഭാഗം പുതുതായി ചേർക്കുക ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Failed', err));
+    });
+}
 </script>
+
 </body>
 </html>
