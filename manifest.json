@@ -1,6 +1,7 @@
 {
   "name": "എന്റെ മദ്റസ - Entte Madrasa",
   "short_name": "Madrasa",
+  "id": "/", 
   "description": "Smart Management System for Misbahul Uloom Madrasa",
   "start_url": "./index.html",
   "display": "standalone",
