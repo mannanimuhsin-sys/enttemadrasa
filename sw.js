@@ -1,8 +1,11 @@
 const CACHE_NAME = 'madrasa-store-v1';
 const ASSETS = [
+  './',               // ഇത് പുതുതായി ചേർക്കുക
   './index.html',
   './logo.png',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',   // ഐക്കണുകളും ചേർക്കുന്നത് നല്ലതാണ്
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
