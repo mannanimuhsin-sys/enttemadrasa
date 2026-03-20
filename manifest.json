@@ -1,14 +1,12 @@
 {
   "name": "എന്റെ മദ്റസ - Entte Madrasa",
   "short_name": "Madrasa",
-  "id": "/index.html",
-  "description": "Smart Management System for Misbahul Uloom Madrasa",
+  "id": "/madrasa/", 
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#004d00",
-  "orientation": "portrait",
-  "scope": "./",
   "icons": [
     {
       "src": "icon-192.png",
