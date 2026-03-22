@@ -14,7 +14,6 @@
         :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
         .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-        .secret-trigger { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; color: #ddd; cursor: pointer; z-index: 100; }
         .page { display: none; animation: fadeIn 0.4s; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -33,7 +32,6 @@
 
 <div class="container">
     <div id="loginPage" class="page active">
-        <div class="secret-trigger" onclick="showPage('regPage')"><i class="fa fa-plus"></i></div>
         <div style="text-align: center; margin-top: 30px;">
             <img src="logo.png" style="width: 90px;">
             <h1 style="color: var(--primary); margin: 10px 0;">എന്‍റെ മദ്റസ</h1>
@@ -109,13 +107,6 @@
 </div>
 
 <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW Registered'))
-                .catch(err => console.error('SW Registration Failed', err));
-        });
-    }
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -155,30 +146,14 @@
         }
     });
 
-    function showPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const maxWidth = 500; 
-                    const scale = maxWidth / img.width;
-                    canvas.width = maxWidth; canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    document.getElementById('imagePrev').src = canvas.toDataURL('image/jpeg', 0.7);
-                    document.getElementById('imagePrev').style.display = 'block';
-                };
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    // ✅ NEW: PASSWORD HASH FUNCTION
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
     }
 
     async function register() {
@@ -195,36 +170,77 @@
         regBtn.disabled = true; regBtn.innerText = "CHECKING...";
 
         try {
+            // ✅ UPDATED: HASH PASSWORDS
+            const uPassHash = await hashPassword(uPass);
+            const pPassHash = await hashPassword(pPass);
+
             const regSnap = await db.ref('madrasa_requests').orderByChild('reg').equalTo(regNo).once('value');
-            if (regSnap.exists()) { regBtn.disabled = false; regBtn.innerText = "REGISTER NOW"; return alert("ഈ രജിസ്റ്റർ നമ്പറിൽ മദ്റസ നിലവിലുണ്ട്!"); }
+            if (regSnap.exists()) { 
+                regBtn.disabled = false; 
+                regBtn.innerText = "REGISTER NOW"; 
+                return alert("ഈ രജിസ്റ്റർ നമ്പറിൽ മദ്റസ നിലവിലുണ്ട്!"); 
+            }
 
             await db.ref('madrasa_requests/' + uId).set({
-                name, place, reg: regNo, photo: photo.startsWith('data') ? photo : "",
-                usthadPass: uPass, parentPass: pPass, status: "pending", createdAt: new Date().toISOString()
+                name, 
+                place, 
+                reg: regNo, 
+                photo: photo.startsWith('data') ? photo : "",
+                usthadPass: uPassHash,   // ✅ UPDATED
+                parentPass: pPassHash,   // ✅ UPDATED
+                status: "pending", 
+                createdAt: new Date().toISOString()
             });
-            alert("വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക."); location.reload();
-        } catch (e) { alert("Error: " + e.message); regBtn.disabled = false; regBtn.innerText = "REGISTER NOW"; }
+
+            alert("വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക."); 
+            location.reload();
+
+        } catch (e) { 
+            alert("Error: " + e.message); 
+            regBtn.disabled = false; 
+            regBtn.innerText = "REGISTER NOW"; 
+        }
     }
 
     async function handleLogin() {
         const reg = document.getElementById('logReg').value.trim();
         const pass = document.getElementById('logPass').value.trim();
+
         if(!reg || !pass) return alert("വിവരങ്ങൾ നൽകുക");
+
+        // ✅ UPDATED: HASH INPUT PASSWORD
+        const passHash = await hashPassword(pass);
 
         db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).once('value', snap => {
             let found = null;
+
             snap.forEach(c => {
                 const d = c.val();
-                if(d.usthadPass === pass) { found = d; currentId = c.key; currentRole = "admin"; }
-                else if(d.parentPass === pass) { found = d; currentId = c.key; currentRole = "parent"; }
+
+                // ✅ UPDATED: COMPARE HASH
+                if(d.usthadPass === passHash) { 
+                    found = d; 
+                    currentId = c.key; 
+                    currentRole = "admin"; 
+                }
+                else if(d.parentPass === passHash) { 
+                    found = d; 
+                    currentId = c.key; 
+                    currentRole = "parent"; 
+                }
             });
 
             if(found) {
                 if(found.status !== 'approved') return showPage('pendingPage');
+
                 localStorage.setItem("madrasaId", currentId);
                 localStorage.setItem("userRole", currentRole);
+
                 loadProfile(found);
-            } else { alert("തെറ്റായ വിവരം!"); }
+
+            } else { 
+                alert("തെറ്റായ വിവരം!"); 
+            }
         });
     }
 
@@ -254,13 +270,9 @@
         }
         showPage('portalPage');
     }
-if(currentRole === 'admin') {
-    document.getElementById('adminPanelSection').style.display = 'block';
-    document.getElementById('adminSalahSection').style.display = 'block'; // ഇത് പുതിയത്
-    document.getElementById('btnPayment').style.display = 'none';
-}
-    function openDashboard() { window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashbord?id=${currentId}&role=${currentRole}`; }
-    
+function openDashboard() { 
+    window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashboard?id=${currentId}&role=${currentRole}`; 
+}    
     // ശരിയാക്കിയ ലിങ്ക് ലോജിക്
     function openIDPortal() { 
         if(currentRole === "admin") {
@@ -291,14 +303,6 @@ function openSalahTracker() {
 // ഉസ്താദുമാർക്ക് മാർക്ക് രേഖപ്പെടുത്താൻ
 function openAdminSalah() { 
     window.location.href = `admin_salah.html?id=${currentId}`; 
-}
-// --- ഈ ഭാഗം പുതുതായി ചേർക്കുക ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker Registered'))
-            .catch(err => console.log('Service Worker Failed', err));
-    });
 }
 </script>
 
