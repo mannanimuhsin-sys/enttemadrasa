@@ -1,164 +1,204 @@
 <!DOCTYPE html>
 <html lang="ml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Admin | My Madrasa</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <style>
-        :root { --admin-theme: #004d00; --pending: #f57c00; --approved: #2e7d32; --blocked: #d32f2f; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f7; margin: 0; padding: 15px; }
-        .header { background: var(--admin-theme); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .search-box { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid var(--admin-theme); margin-bottom: 20px; box-sizing: border-box; font-size: 16px; outline: none; }
-        
-        .card { background: white; border-radius: 15px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 8px solid #ccc; transition: 0.3s; }
-        .card.approved { border-left-color: var(--approved); }
-        .card.blocked { border-left-color: var(--blocked); }
-        .card.pending { border-left-color: var(--pending); }
-        
-        .card h3 { margin: 0 0 10px 0; color: var(--admin-theme); font-size: 18px; display: flex; align-items: center; justify-content: space-between; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 14px; color: #444; }
-        
-        .pass-section { background: #f9f9f9; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; }
-        .pass-group { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .pass-group label { width: 90px; font-size: 12px; font-weight: bold; color: #666; }
-        .pass-group input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-        
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; text-align: center; font-size: 13px; transition: 0.2s; }
-        .btn-app { background: var(--approved); }
-        .btn-blk { background: var(--pending); }
-        .btn-del { background: var(--blocked); grid-column: span 2; margin-top: 5px; }
-        .btn-save { background: #2c3e50; width: 100%; margin-top: 5px; font-size: 12px; }
-        .btn:active { transform: scale(0.97); }
-        
-        #loading { text-align: center; padding: 40px; font-weight: bold; color: #666; }
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; text-transform: uppercase; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin Panel</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background:#eef1f5;
+  margin:0;
+}
+
+.header {
+  background:#1e293b;
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.container {
+  max-width:900px;
+  margin:auto;
+  padding:15px;
+}
+
+.search {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  margin-bottom:15px;
+}
+
+.card {
+  background:#fff;
+  padding:15px;
+  border-radius:14px;
+  margin-bottom:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.title {
+  font-size:18px;
+  font-weight:bold;
+}
+
+.meta {
+  font-size:13px;
+  color:#666;
+  margin-top:4px;
+}
+
+.status {
+  margin-top:6px;
+  font-weight:bold;
+}
+
+.btn {
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  margin:4px 4px 0 0;
+  cursor:pointer;
+}
+
+.approve { background:#16a34a; color:#fff; }
+.block { background:#f59e0b; color:#fff; }
+.delete { background:#dc2626; color:#fff; }
+.edit { background:#2563eb; color:#fff; }
+
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <h1 style="margin:0; font-size: 20px;">സൂപ്പർ അഡ്മിൻ കൺട്രോൾ പാനൽ</h1>
-        <p style="margin:5px 0 0 0; font-size: 12px; opacity: 0.8;">എല്ലാ മദ്രസകളെയും ഇവിടെ നിയന്ത്രിക്കാം</p>
-    </div>
+<div class="header">SUPER ADMIN PANEL</div>
 
-    <input type="text" id="search" class="search-box" placeholder="മദ്രസയുടെ പേര് / Reg No തിരയുക..." onkeyup="filterData()">
+<div class="container">
 
-    <div id="loading"><i class="fa fa-spinner fa-spin"></i> ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</div>
-    <div id="displayList"></div>
+<input type="text" id="search" class="search" placeholder="🔍 Search by Register Number..." onkeyup="filterData()">
+
+<div id="list"></div>
+
+</div>
 
 <script>
-    // നിങ്ങളുടെ വെബ്സൈറ്റിലെ അതേ Firebase Config ഇവിടെയും നൽകുന്നു
-    const firebaseConfig = {
-        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-        authDomain: "enttemadrasa.firebaseapp.com",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-        projectId: "enttemadrasa",
-        storageBucket: "enttemadrasa.firebasestorage.app",
-        appId: "1:623531881201:web:b863793340c3901cedaf50"
-    };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+const firebaseConfig = {
+    apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+    authDomain: "enttemadrasa.firebaseapp.com",
+    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+    projectId: "enttemadrasa",
+    storageBucket: "enttemadrasa.firebasestorage.app",
+    appId: "1:623531881201:web:b863793340c3901cedaf50"
+};
 
-    // ഡാറ്റ വേഗത്തിൽ ലോഡ് ചെയ്യാൻ ഈ ഫങ്ക്ഷൻ ഉപയോഗിക്കുക
-    async function fetchMadrasas() {
-        const listArea = document.getElementById('displayList');
-        const loading = document.getElementById('loading');
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-        // ഫയർബേസിൽ നിന്ന് ഡാറ്റ ഒരിക്കൽ മാത്രം എടുക്കുന്നു (Faster)
-        db.ref('madrasa_requests').once('value', (snap) => {
-            loading.style.display = 'none';
-            
-            if (!snap.exists()) {
-                listArea.innerHTML = "<p style='text-align:center;'>മദ്രസകളൊന്നും ഇതുവരെ രജിസ്റ്റർ ചെയ്തിട്ടില്ല.</p>";
-                return;
-            }
+let allData = [];
 
-            let allCards = ""; // എല്ലാ കാർഡുകളും ശേഖരിക്കാൻ ഒരു വേരിയബിൾ
+function loadData() {
+    db.ref('madrasa_requests').on('value', snap => {
+        allData = [];
 
-            snap.forEach((child) => {
-                const data = child.val();
-                const id = child.key;
-                const status = data.status || 'pending';
-                
-                // ഓരോ തവണയും DOM തൊടാതെ സ്ട്രിംഗിലേക്ക് ചേർക്കുന്നു
-                allCards += `
-                    <div class="card ${status}">
-                        <h3>
-                            ${data.name} 
-                            <span class="status-badge" style="background:${getStatusColor(status)}">${status}</span>
-                        </h3>
-                        
-                        <div class="info-grid">
-                            <div><i class="fa fa-id-card"></i> <b>Reg:</b> ${data.reg}</div>
-                            <div><i class="fa fa-map-marker-alt"></i> <b>Place:</b> ${data.place}</div>
-                            <div><i class="fa fa-user"></i> <b>ID:</b> ${id}</div>
-                        </div>
+        snap.forEach(c => {
+            let d = c.val();
+            d.id = c.key;
+            allData.push(d);
+        });
 
-                        <div class="pass-section">
-                            <div class="pass-group">
-                                <label>Usthad Pass</label>
-                                <input type="text" id="u_${id}" value="${data.usthadPass || ''}">
-                            </div>
-                            <div class="pass-group">
-                                <label>Parent Pass</label>
-                                <input type="text" id="p_${id}" value="${data.parentPass || ''}">
-                            </div>
-                            <button class="btn btn-save" onclick="updatePass('${id}')"><i class="fa fa-save"></i> പാസ്‌വേഡ് മാറ്റുക</button>
-                        </div>
+        // 🔥 Latest first (time based)
+        allData.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
 
-                        <div class="actions">
-                            <button class="btn btn-app" onclick="changeStatus('${id}', 'approved')">Approve</button>
-                            <button class="btn btn-blk" onclick="changeStatus('${id}', 'blocked')">Block</button>
-                            <button class="btn btn-del" onclick="deleteEntry('${id}')"><i class="fa fa-trash"></i> മദ്രസ ഡിലീറ്റ് ചെയ്യുക</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // അവസാനം മാത്രം ബ്രൗസറിലേക്ക് ഡാറ്റ നൽകുന്നു (Highly Efficient)
-            listArea.innerHTML = allCards;
+        render(allData);
+    });
+}
+
+function render(data) {
+    let html = "";
+
+    data.forEach(d => {
+        html += `
+        <div class="card">
+            <div class="title">${d.name || "No Name"}</div>
+            <div class="meta">📍 ${d.place || "-"}</div>
+            <div class="meta">🆔 Reg: ${d.reg}</div>
+            <div class="meta">⏱ ${d.createdAt || "-"}</div>
+
+            <div class="status">Status: ${d.status || "pending"}</div>
+
+            <button class="btn approve" onclick="approve('${d.id}')">Approve</button>
+            <button class="btn block" onclick="block('${d.id}')">Block</button>
+            <button class="btn edit" onclick="editData('${d.id}')">Edit</button>
+            <button class="btn delete" onclick="deleteData('${d.id}')">Delete</button>
+        </div>
+        `;
+    });
+
+    document.getElementById('list').innerHTML = html;
+}
+
+function filterData() {
+    let q = document.getElementById('search').value.toLowerCase();
+
+    let filtered = allData.filter(d =>
+        (d.reg || "").toLowerCase().includes(q)
+    );
+
+    render(filtered);
+}
+
+// ✅ APPROVE
+function approve(id){
+    db.ref('madrasa_requests/'+id).update({
+        status:"approved"
+    });
+}
+
+// 🚫 BLOCK
+function block(id){
+    db.ref('madrasa_requests/'+id).update({
+        status:"blocked"
+    });
+}
+
+// 🗑 DELETE
+function deleteData(id){
+    if(confirm("Delete this madrasa?")){
+        db.ref('madrasa_requests/'+id).remove();
+    }
+}
+
+// ✏️ EDIT
+function editData(id){
+
+    let name = prompt("Edit Madrasa Name:");
+    let place = prompt("Edit Place:");
+    let usthadPass = prompt("Edit Usthad Password:");
+    let parentPass = prompt("Edit Parent Password:");
+
+    if(name && place){
+        db.ref('madrasa_requests/'+id).update({
+            name:name,
+            place:place,
+            usthadPass:usthadPass,
+            parentPass:parentPass
         });
     }
+}
 
-    function getStatusColor(s) {
-        if(s === 'approved') return '#2e7d32';
-        if(s === 'blocked') return '#d32f2f';
-        return '#f57c00';
-    }
+loadData();
 
-    function changeStatus(id, s) {
-        db.ref('madrasa_requests/' + id).update({ status: s });
-    }
-
-    function updatePass(id) {
-        const u = document.getElementById('u_' + id).value;
-        const p = document.getElementById('p_' + id).value;
-        db.ref('madrasa_requests/' + id).update({ usthadPass: u, parentPass: p })
-          .then(() => alert("Passwords updated!"));
-    }
-
-    function deleteEntry(id) {
-        if (confirm("ഈ മദ്രസയുടെ എല്ലാ ഡാറ്റയും ഡിലീറ്റ് ചെയ്യട്ടെ?")) {
-            db.ref('madrasa_requests/' + id).remove();
-        }
-    }
-
-    function filterData() {
-        let val = document.getElementById('search').value.toUpperCase();
-        let cards = document.getElementsByClassName('card');
-        for (let i = 0; i < cards.length; i++) {
-            cards[i].style.display = cards[i].innerText.toUpperCase().includes(val) ? "" : "none";
-        }
-    }
-
-    fetchMadrasas();
-    
 </script>
+
 </body>
 </html>
