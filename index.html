@@ -27,14 +27,14 @@
         .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; border-radius: 10px; }
         #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
         .playstore-container { text-align: center; margin-top: 30px; padding: 15px; border-top: 1px solid #eee; }
+        .hidden-reg-btn {  position: absolute;  top: 5px;  right: 5px; background: transparent; border: none; font-size: 14px; color: rgba(0,0,0,0.01); /* ഇത് ബട്ടണിനെ ഏതാണ്ട് പൂർണ്ണമായും അദൃശ്യമാക്കും */ cursor: default; z-index: 100; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="loginPage" class="page active">
-        <button onclick="showPage('regPage')" 
-        style="position:absolute; top:10px; right:10px; background:transparent; border:none; font-size:22px; color:#ccc;">➕ </button>
+        <button class="hidden-reg-btn" onclick="showPage('regPage')">.</button> 
         <div style="text-align: center; margin-top: 30px;">
             <img src="logo.png" style="width: 90px;">
             <h1 style="color: var(--primary); margin: 10px 0;">എന്‍റെ മദ്റസ</h1>
@@ -162,50 +162,36 @@
     }
 
     async function register() {
-        const regNo = document.getElementById('rReg').value.trim();
-        const uId = document.getElementById('rUser').value.trim();
-        const name = document.getElementById('rName').value.trim();
-        const place = document.getElementById('rPlace').value.trim();
-        const uPass = document.getElementById('rUsthad').value.trim();
-        const pPass = document.getElementById('rParent').value.trim();
-        const photo = document.getElementById('imagePrev').src;
-        const regBtn = document.getElementById('regBtn');
+    const regNo = document.getElementById('rReg').value.trim();
+    const uId = document.getElementById('rUser').value.trim().toLowerCase();
+    const name = document.getElementById('rName').value.trim();
+    const uPass = document.getElementById('rUsthad').value.trim();
+    const pPass = document.getElementById('rParent').value.trim();
+    const photo = document.getElementById('imagePrev').src;
+    const regBtn = document.getElementById('regBtn');
 
-        if (!regNo || !uId || !name || !uPass || !pPass) return alert("വിവരങ്ങൾ നൽകുക!");
-        regBtn.disabled = true; regBtn.innerText = "CHECKING...";
+    if (!regNo || !uId || !uPass) return alert("വിവരങ്ങൾ നൽകുക!");
+    
+    regBtn.disabled = true;
+    regBtn.innerText = "CHECKING...";
 
-        try {
-            // ✅ UPDATED: HASH PASSWORDS
-            const uPassHash = await hashPassword(uPass);
-            const pPassHash = await hashPassword(pPass);
+    // പാസ്‌വേഡ് ഹാഷ് ചെയ്യുന്നു (ഗൂഗിൾ ബ്ലോക്ക് ചെയ്യാതിരിക്കാൻ)
+    const uPassHash = await hashPassword(uPass);
+    const pPassHash = await hashPassword(pPass);
 
-            const regSnap = await db.ref('madrasa_requests').orderByChild('reg').equalTo(regNo).once('value');
-            if (regSnap.exists()) { 
-                regBtn.disabled = false; 
-                regBtn.innerText = "REGISTER NOW"; 
-                return alert("ഈ രജിസ്റ്റർ നമ്പറിൽ മദ്റസ നിലവിലുണ്ട്!"); 
-            }
-
-            await db.ref('madrasa_requests/' + uId).set({
-                name, 
-                place, 
-                reg: regNo, 
-                photo: photo.startsWith('data') ? photo : "",
-                usthadPass: uPassHash,   // ✅ UPDATED
-                parentPass: pPassHash,   // ✅ UPDATED
-                status: "pending", 
-                createdAt: new Date().toISOString()
-            });
-
-            alert("വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക."); 
-            location.reload();
-
-        } catch (e) { 
-            alert("Error: " + e.message); 
-            regBtn.disabled = false; 
-            regBtn.innerText = "REGISTER NOW"; 
-        }
-    }
+    db.ref('madrasa_requests/' + uId).set({
+        name: name,
+        reg: regNo,
+        photo: photo.startsWith('data') ? photo : "",
+        usthadPass: uPassHash,
+        parentPass: pPassHash,
+        status: "pending",
+        createdAt: new Date().toLocaleString('en-IN')
+    }).then(() => {
+        alert("വിജയിച്ചു! അപ്രൂവലിനായി കാത്തിരിക്കുക.");
+        location.reload();
+    });
+}
 
     async function handleLogin() {
         const reg = document.getElementById('logReg').value.trim();
