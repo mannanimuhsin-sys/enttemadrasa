@@ -84,86 +84,74 @@
     const urlParams = new URLSearchParams(window.location.search);
     let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
 
-   async function startLeaderboard() {
-    if(!mId) {
-        document.getElementById('mName').innerText = "മദ്റസ ഐഡി ലഭ്യമല്ല.";
-        return;
-    }
+  async function loadLeaderboard() {
+    if(!mId) return;
 
     try {
-        // 1. മദ്റസ പേരും സലാഹ് റെക്കോർഡുകളും ഒരേസമയം എടുക്കുന്നു
-        const [madrasaSnap, recordsSnap] = await Promise.all([
-            rtdb.ref(`madrasa_requests/${mId}`).once('value'),
-            rtdb.ref(`salah_records/${mId}`).once('value')
-        ]);
+        // മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
+        rtdb.ref(`madrasa_requests/${mId}`).once('value', snap => {
+            if(snap.exists()) document.getElementById('mName').innerText = snap.val().name;
+        });
 
-        if(madrasaSnap.exists()) {
-            document.getElementById('mName').innerText = madrasaSnap.val().name;
-        }
-
-        // 2. ആകെ നടന്ന ജമാഅത്തുകൾ കണക്കാക്കുന്നു
+        // കുട്ടികളുടെ വിവരങ്ങൾ എടുക്കുന്നു
+        const studentSnap = await db.collection("students").where("madrasa_id", "==", mId).get();
+        
+        // സലാഹ് റെക്കോർഡുകൾ എടുക്കുന്നു (ആകെ ജമാഅത്ത് കണക്കാക്കാൻ)
+        const recordsSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
         const allRecords = recordsSnap.val() || {};
+        
         let allDates = new Set();
         for(let sid in allRecords) {
-            Object.keys(allRecords[sid]).forEach(date => {
-                if(date.includes('-')) allDates.add(date);
-            });
+            Object.keys(allRecords[sid]).forEach(d => { if(d.includes('-')) allDates.add(d); });
         }
         const totalPossible = allDates.size * 5;
         document.getElementById('totalPossible').innerText = totalPossible;
 
-        // 3. കുട്ടികളുടെ വിവരങ്ങൾ എടുക്കുന്നു
-        const studentSnap = await db.collection("students")
-                                     .where("madrasa_id", "==", mId) 
-                                     .get();
-
+        // സ്കോറുകൾ എടുക്കുന്നു
         const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
         const scores = scoreSnap.val() || {};
 
-        let leaderboardData = [];
+        let leaderboard = [];
         studentSnap.forEach(doc => {
             const s = doc.data();
-            const myScore = scores[doc.id] || 0;
-            leaderboardData.push({
-                name: s.name,
-                reg: s.number || '-',
-                cls: s.class,
-                score: myScore,
-                percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
-            });
+            
+            // പ്രധാന മാറ്റം: ആൺകുട്ടികളെ (Male) മാത്രം ഉൾപ്പെടുത്തുന്നു
+            if(s.gender === "Male") { 
+                const myScore = scores[doc.id] || 0;
+                leaderboard.push({
+                    name: s.name,
+                    reg: s.number || '-',
+                    cls: s.class,
+                    score: myScore,
+                    percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
+                });
+            }
         });
 
-        // സ്കോർ അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
-        leaderboardData.sort((a, b) => b.score - a.score);
+        // സ്കോർ അനുസരിച്ച് ക്രമീകരിക്കുന്നു
+        leaderboard.sort((a, b) => b.score - a.score);
 
-        // ഇവിടെയാണ് പ്രശ്നം ഉണ്ടായിരുന്നത് - display ഫങ്ക്ഷൻ വിളിക്കുന്നു
-        renderUI(leaderboardData, totalPossible);
-
-    } catch (error) {
-        console.error("Leaderboard Error:", error);
-        document.getElementById('leaderboardList').innerHTML = 
-            `<div style='text-align:center; padding:20px; color:red;'>
-                വിവരങ്ങൾ ലഭിക്കുന്നതിൽ തടസ്സം നേരിട്ടു. <br>
-                <small>${error.message}</small>
-            </div>`;
+        // UI-യിലേക്ക് ഡാറ്റ വിടുന്നു
+        displayLeaderboard(leaderboard, totalPossible);
+    } catch (e) {
+        console.error(e);
     }
 }
 
-// ഡാറ്റ കാണിക്കാനുള്ള ഫങ്ക്ഷൻ (ഇത് കോഡിൽ ഉണ്ടെന്ന് ഉറപ്പുവരുത്തുക)
-function renderUI(list, total) {
+function displayLeaderboard(list, total) {
     const listDiv = document.getElementById('leaderboardList');
     listDiv.innerHTML = "";
 
-    // ടോപ്പ് 3 കാർഡുകൾ ഉണ്ടെങ്കിൽ അത് കാണിക്കാൻ
-    const topSection = document.getElementById('topSection');
-    if (list.length >= 3 && topSection) {
-        topSection.style.display = 'flex';
-        // ടോപ്പ് കാർഡുകൾ റെൻഡർ ചെയ്യുന്ന ലോജിക്...
-        // (മുൻപ് നൽകിയ അതേ രീതിയിൽ തന്നെ)
+    // ടോപ്പ് 3 സെക്ഷൻ ഹൈലൈറ്റ് ചെയ്യുന്നു
+    if(list.length >= 3) {
+        document.getElementById('topSection').style.display = 'flex';
+        renderTopCard('rank1', list[0], 1, 'bg-gold', total);
+        renderTopCard('rank2', list[1], 2, 'bg-silver', total);
+        renderTopCard('rank3', list[2], 3, 'bg-bronze', total);
     }
 
     list.forEach((s, index) => {
-        const itemHtml = `
+        listDiv.innerHTML += `
             <div class="rank-item">
                 <div class="rank-number">${index + 1}</div>
                 <div class="student-details">
@@ -175,11 +163,18 @@ function renderUI(list, total) {
                     <div class="percent-bar"><div class="percent-fill" style="width:${s.percent}%"></div></div>
                 </div>
             </div>`;
-        listDiv.innerHTML += itemHtml;
     });
 }
-    // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ റൺ ചെയ്യാൻ
-    window.onload = startLeaderboard;
+
+function renderTopCard(divId, s, rank, colorClass, total) {
+    document.getElementById(divId).innerHTML = `
+        <div class="badge ${colorClass}">${rank}</div>
+        <span class="top-name" style="font-size:11px; font-weight:bold; display:block; margin-bottom:5px;">${s.name}</span>
+        <span class="top-score" style="font-size:22px; font-weight:800; color:var(--primary);">${s.score}</span>
+        <small style="font-size:10px; color:#888;">/${total}</small>
+        <div style="font-size:8px; color:#999; margin-top:2px;">TOTAL POINTS</div>
+    `;
+}
 </script>
 </body>
 </html>
