@@ -3,71 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salah Leaderboard | എന്‍റെ മദ്റസ</title>
+    <title>Salah Winner | Leaderboard</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        :root { --primary: #004d00; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        :root { --primary: #004d00; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0; }
         
-        .hero { background: linear-gradient(135deg, var(--primary), #002e00); color: white; padding: 40px 20px; text-align: center; border-radius: 0 0 30px 30px; }
-        .hero h1 { margin: 0; font-size: 24px; }
+        /* Poster Header Style */
+        .poster-header { 
+            background: linear-gradient(135deg, #004d00, #002e00); 
+            color: white; padding: 50px 20px; text-align: center; 
+            border-radius: 0 0 40px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+        }
+        .poster-header::before {
+            content: "\f695"; font-family: "Font Awesome 6 Free"; font-weight: 900;
+            position: absolute; top: -20px; right: -20px; font-size: 150px; opacity: 0.1;
+        }
+        .poster-header h1 { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 2px; color: var(--gold); }
+        .m-name { margin: 10px 0; font-size: 18px; font-weight: 500; opacity: 0.9; }
         
-        /* ആകെ നടന്ന നിസ്കാരങ്ങൾ കാണിക്കുന്ന ബോക്സ് */
-        .total-info { background: rgba(255,255,255,0.1); display: inline-block; padding: 8px 15px; border-radius: 20px; margin-top: 15px; font-size: 13px; border: 1px solid rgba(255,255,255,0.3); }
+        .total-box { 
+            background: rgba(255,255,255,0.1); display: inline-block; padding: 10px 25px; 
+            border-radius: 30px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.2);
+            font-size: 14px; font-weight: bold;
+        }
 
-        .container { padding: 20px; max-width: 600px; margin: auto; }
+        .container { padding: 20px; max-width: 500px; margin: auto; }
         
-        .top-three { display: flex; justify-content: center; align-items: flex-end; gap: 10px; margin-top: -40px; margin-bottom: 30px; }
-        .top-card { background: white; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); flex: 1; border-top: 5px solid #ddd; }
-        .rank-1 { height: 170px; border-color: var(--gold); z-index: 2; }
-        .rank-2 { height: 145px; border-color: var(--silver); }
-        .rank-3 { height: 135px; border-color: var(--bronze); }
+        /* Executive Winner Cards */
+        .winners-row { display: flex; justify-content: center; align-items: flex-end; gap: 12px; margin-top: -60px; margin-bottom: 40px; }
+        .winner-card { 
+            background: white; border-radius: 20px; padding: 20px 10px; text-align: center; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); flex: 1; position: relative; border-bottom: 6px solid #ddd;
+        }
+        .rank-1 { height: 190px; border-color: var(--gold); z-index: 3; scale: 1.1; }
+        .rank-2 { height: 160px; border-color: var(--silver); }
+        .rank-3 { height: 150px; border-color: var(--bronze); }
         
-        .badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; color: white; }
-        .top-score { font-size: 22px; font-weight: 800; color: var(--primary); }
-        .out-of { font-size: 11px; color: #777; font-weight: normal; }
+        .crown { font-size: 24px; color: var(--gold); margin-bottom: 5px; display: block; }
+        .winner-score { font-size: 26px; font-weight: 900; color: var(--primary); display: block; }
+        .winner-name { font-size: 11px; font-weight: bold; color: #333; margin: 8px 0; height: 32px; overflow: hidden; }
+        .medal { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: white; font-weight: bold; }
 
-        .rank-list { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
-        .rank-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f0f0f0; }
-        .rank-number { width: 30px; font-weight: bold; color: #999; }
-        .student-details { flex-grow: 1; padding-left: 10px; }
-        .student-details b { font-size: 15px; color: #333; }
-        .student-details span { display: block; font-size: 11px; color: #888; }
+        /* List Style */
+        .list-container { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .list-item { display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #f5f5f5; }
+        .list-rank { width: 35px; font-weight: 800; color: #ccc; font-size: 18px; }
+        .student-info { flex: 1; margin-left: 10px; }
+        .student-info b { display: block; font-size: 16px; color: #333; }
+        .student-info small { color: #888; font-size: 12px; }
         
-        .score-display { text-align: right; }
-        .score-val { font-weight: 800; color: var(--primary); font-size: 18px; }
-        .percent-bar { width: 100px; height: 6px; background: #eee; border-radius: 10px; margin-top: 5px; overflow: hidden; }
-        .percent-fill { height: 100%; background: var(--primary); border-radius: 10px; }
+        .points-info { text-align: right; }
+        .points-now { font-weight: 900; color: var(--primary); font-size: 20px; }
+        .points-total { font-size: 11px; color: #aaa; }
+
+        .loading { text-align: center; padding: 50px; color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="hero">
-    <h1><i class="fa fa-chart-line"></i> SALAH LEADERBOARD</h1>
-    <p id="mName">മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു...</p>
-    <div class="total-info">
-        ആകെ നടന്ന ജമാഅത്തുകൾ: <span id="totalPossible">0</span>
+<div class="poster-header">
+    <h1><i class="fa fa-star"></i> SALAH WINNER</h1>
+    <div id="mName" class="m-name">മദ്റസ വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+    <div class="total-box">
+        TOTAL JAMA'AT: <span id="totalJ">0</span>
     </div>
 </div>
 
 <div class="container">
-    <div id="topSection" class="top-three" style="display: none;">
-        <div id="rank2" class="top-card rank-2"></div>
-        <div id="rank1" class="top-card rank-1"></div>
-        <div id="rank3" class="top-card rank-3"></div>
+    <div id="topSection" class="winners-row" style="display: none;">
+        <div id="rank2" class="winner-card rank-2"></div>
+        <div id="rank1" class="winner-card rank-1">
+            <i class="fa fa-crown crown"></i>
+        </div>
+        <div id="rank3" class="winner-card rank-3"></div>
     </div>
 
-    <div id="leaderboardList" class="rank-list">
-        <div style="text-align:center; padding:30px;">റാങ്ക് ലിസ്റ്റ് ലോഡ് ചെയ്യുന്നു...</div>
+    <div id="leaderboardList" class="list-container">
+        <div class="loading">Please wait...</div>
     </div>
 </div>
 
 <script>
-    // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ)
+    // നിങ്ങളുടെ Firebase Config ഇവിടെ നൽകുക
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
         authDomain: "mum-new-id.firebaseapp.com",
@@ -80,101 +103,109 @@
     const db = firebase.firestore();
     const rtdb = firebase.database();
 
-    // ഐഡി എടുക്കുന്ന രീതി കുറച്ചുകൂടി ഉറപ്പുള്ളതാക്കി (Secure ID Retrieval)
+    // URL-ൽ നിന്നോ ലോക്കൽ സ്റ്റോറേജിൽ നിന്നോ മദ്റസ ഐഡി എടുക്കുന്നു
     const urlParams = new URLSearchParams(window.location.search);
     let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
 
-  async function loadLeaderboard() {
-    if(!mId) return;
-
-    try {
-        // മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
-        rtdb.ref(`madrasa_requests/${mId}`).once('value', snap => {
-            if(snap.exists()) document.getElementById('mName').innerText = snap.val().name;
-        });
-
-        // കുട്ടികളുടെ വിവരങ്ങൾ എടുക്കുന്നു
-        const studentSnap = await db.collection("students").where("madrasa_id", "==", mId).get();
-        
-        // സലാഹ് റെക്കോർഡുകൾ എടുക്കുന്നു (ആകെ ജമാഅത്ത് കണക്കാക്കാൻ)
-        const recordsSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
-        const allRecords = recordsSnap.val() || {};
-        
-        let allDates = new Set();
-        for(let sid in allRecords) {
-            Object.keys(allRecords[sid]).forEach(d => { if(d.includes('-')) allDates.add(d); });
+    async function loadSalahWinner() {
+        if(!mId) {
+            document.getElementById('mName').innerText = "മദ്റസ ഐഡി കണ്ടെത്തിയില്ല.";
+            return;
         }
-        const totalPossible = allDates.size * 5;
-        document.getElementById('totalPossible').innerText = totalPossible;
 
-        // സ്കോറുകൾ എടുക്കുന്നു
-        const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
-        const scores = scoreSnap.val() || {};
+        try {
+            // ഒരേസമയം എല്ലാ ഡാറ്റയും ലോഡ് ചെയ്യുന്നു (High Speed)
+            const [mSnap, rSnap, sSnap, tSnap] = await Promise.all([
+                rtdb.ref(`madrasa_requests/${mId}`).once('value'),
+                rtdb.ref(`salah_records/${mId}`).once('value'),
+                db.collection("students").where("madrasa_id", "==", mId).get(),
+                rtdb.ref(`salah_total/${mId}`).once('value')
+            ]);
 
-        let leaderboard = [];
-        studentSnap.forEach(doc => {
-            const s = doc.data();
-            
-            // പ്രധാന മാറ്റം: ആൺകുട്ടികളെ (Male) മാത്രം ഉൾപ്പെടുത്തുന്നു
-            if(s.gender === "Male") { 
-                const myScore = scores[doc.id] || 0;
-                leaderboard.push({
-                    name: s.name,
-                    reg: s.number || '-',
-                    cls: s.class,
-                    score: myScore,
-                    percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
-                });
+            // മദ്റസ പേര് നൽകുന്നു
+            if(mSnap.exists()) document.getElementById('mName').innerText = mSnap.val().name;
+
+            // ആകെ ജമാഅത്തുകൾ കണക്കാക്കുന്നു
+            const records = rSnap.val() || {};
+            let dates = new Set();
+            for(let sid in records) {
+                Object.keys(records[sid]).forEach(d => { if(d.includes('-')) dates.add(d); });
             }
+            const totalJamaat = dates.size * 5;
+            document.getElementById('totalJ').innerText = totalJamaat;
+
+            // ആൺകുട്ടികളെ മാത്രം ഫിൽട്ടർ ചെയ്ത് ലിസ്റ്റ് തയ്യാറാക്കുന്നു
+            const totals = tSnap.val() || {};
+            let winners = [];
+            
+            sSnap.forEach(doc => {
+                const s = doc.data();
+                if(s.gender === "Male") { // ആൺകുട്ടികൾ മാത്രം
+                    winners.push({
+                        name: s.name,
+                        reg: s.number || '-',
+                        cls: s.class,
+                        score: totals[doc.id] || 0
+                    });
+                }
+            });
+
+            // സ്കോർ അനുസരിച്ച് ക്രമീകരിക്കുന്നു
+            winners.sort((a, b) => b.score - a.score);
+
+            renderUI(winners, totalJamaat);
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('leaderboardList').innerHTML = "<div class='loading'>ഡാറ്റ ലോഡ് ചെയ്യുന്നതിൽ പിശക്.</div>";
+        }
+    }
+
+    function renderUI(list, total) {
+        const listDiv = document.getElementById('leaderboardList');
+        listDiv.innerHTML = "";
+
+        if(list.length > 0) {
+            document.getElementById('topSection').style.display = 'flex';
+            
+            // Winners Cards
+            setWinner('rank1', list[0], 1, '#ffd700', total);
+            if(list[1]) setWinner('rank2', list[1], 2, '#c0c0c0', total);
+            if(list[2]) setWinner('rank3', list[2], 3, '#cd7f32', total);
+        }
+
+        // മുഴുവൻ ആൺകുട്ടികളുടെ ലിസ്റ്റ്
+        list.forEach((s, i) => {
+            listDiv.innerHTML += `
+                <div class="list-item">
+                    <div class="list-rank">${i+1}</div>
+                    <div class="student-info">
+                        <b>${s.name}</b>
+                        <small>Reg: ${s.reg} | Class: ${s.cls}</small>
+                    </div>
+                    <div class="points-info">
+                        <span class="points-now">${s.score}</span>
+                        <span class="points-total">/${total}</span>
+                    </div>
+                </div>`;
         });
-
-        // സ്കോർ അനുസരിച്ച് ക്രമീകരിക്കുന്നു
-        leaderboard.sort((a, b) => b.score - a.score);
-
-        // UI-യിലേക്ക് ഡാറ്റ വിടുന്നു
-        displayLeaderboard(leaderboard, totalPossible);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function displayLeaderboard(list, total) {
-    const listDiv = document.getElementById('leaderboardList');
-    listDiv.innerHTML = "";
-
-    // ടോപ്പ് 3 സെക്ഷൻ ഹൈലൈറ്റ് ചെയ്യുന്നു
-    if(list.length >= 3) {
-        document.getElementById('topSection').style.display = 'flex';
-        renderTopCard('rank1', list[0], 1, 'bg-gold', total);
-        renderTopCard('rank2', list[1], 2, 'bg-silver', total);
-        renderTopCard('rank3', list[2], 3, 'bg-bronze', total);
     }
 
-    list.forEach((s, index) => {
-        listDiv.innerHTML += `
-            <div class="rank-item">
-                <div class="rank-number">${index + 1}</div>
-                <div class="student-details">
-                    <b>${s.name}</b>
-                    <span>Reg: ${s.reg} | Class: ${s.cls}</span>
-                </div>
-                <div class="score-display">
-                    <span class="score-val">${s.score}<small style="font-size:10px; color:#999;">/${total}</small></span>
-                    <div class="percent-bar"><div class="percent-fill" style="width:${s.percent}%"></div></div>
-                </div>
-            </div>`;
-    });
-}
+    function setWinner(id, s, r, color, total) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const crownHtml = r === 1 ? '<i class="fa fa-crown crown"></i>' : '';
+        el.innerHTML = `
+            ${crownHtml}
+            <div class="medal" style="background:${color}">${r}</div>
+            <div class="winner-name">${s.name}</div>
+            <div class="winner-score">${s.score}</div>
+            <div class="points-total">/${total}</div>
+        `;
+    }
 
-function renderTopCard(divId, s, rank, colorClass, total) {
-    document.getElementById(divId).innerHTML = `
-        <div class="badge ${colorClass}">${rank}</div>
-        <span class="top-name" style="font-size:11px; font-weight:bold; display:block; margin-bottom:5px;">${s.name}</span>
-        <span class="top-score" style="font-size:22px; font-weight:800; color:var(--primary);">${s.score}</span>
-        <small style="font-size:10px; color:#888;">/${total}</small>
-        <div style="font-size:8px; color:#999; margin-top:2px;">TOTAL POINTS</div>
-    `;
-}
+    window.onload = loadSalahWinner;
 </script>
+
 </body>
 </html>
