@@ -3,186 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>സലാഹ് അഡ്മിൻ പാനൽ</title>
+    <title>Salah Admin | Boys Only</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .header { background: var(--primary); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
-        .filter-box { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: var(--primary); font-size: 13px; }
-        .student-name-cell { text-align: left; display: flex; align-items: center; gap: 10px; }
-        .chk-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
-        .save-btn { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100px; transition: 0.3s; }
-        .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+        :root { --primary: #1b5e20; --bg: #f0f4f1; --gold: #c5a021; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .header { background: linear-gradient(135deg, #1b5e20, #003300); color: white; padding: 25px 15px; text-align: center; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        .card { background: white; padding: 18px; border-radius: 15px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); margin-bottom: 15px; border: 1px solid #e0e0e0; }
+        label { font-weight: bold; color: #333; display: block; margin-bottom: 8px; font-size: 14px; }
+        select, input[type="date"] { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: var(--primary); }
+
+        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f0f0f0; background: white; margin-bottom: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .student-info b { font-size: 17px; color: #1b5e20; display: block; }
+        .student-info small { color: #666; font-weight: 500; }
+        
+        .salah-grid { display: flex; gap: 8px; }
+        .salah-box { 
+            width: 42px; height: 42px; border: 2px solid #ddd; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; font-size: 14px; font-weight: 800; transition: 0.3s;
+            background: #fff; color: #888;
+        }
+        .salah-box.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 3px 8px rgba(27, 94, 32, 0.4); }
+
+        .save-bar { position: sticky; bottom: 20px; width: 100%; text-align: center; z-index: 100; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 16px 60px; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s; }
+        .btn-save:active { transform: scale(0.95); }
+        
+        .loading { text-align: center; padding: 30px; color: #1b5e20; font-weight: bold; }
+        .gender-badge { background: #e3f2fd; color: #1976d2; font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-top: 4px; display: inline-block; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 id="mName">സലാഹ് ട്രാക്കർ അഡ്മിൻ</h2>
-    <p id="mPlace">മദ്റസ വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു...</p>
+    <h2 style="margin:0;"><i class="fa fa-user-check"></i> BOYS SALAH TRACKER</h2>
+    <p style="margin:5px 0 0; font-size:14px; opacity: 0.8;">മദ്റസ നിസ്‌കാര കണക്കുകൾ (+2 വരെ)</p>
 </div>
 
-<div class="filter-box">
-    <input type="date" id="attDate" onchange="loadStudents()">
-    <select id="filterClass" onchange="loadStudents()">
-        <option value="">എല്ലാ ക്ലാസ്സും</option>
-        <script>
-            for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`);
-            document.write(`<option value="Plus Two">Plus Two</option>`);
-        </script>
+<div class="card">
+    <label><i class="fa fa-calendar-alt"></i> തിയ്യതി:</label>
+    <input type="date" id="salahDate" onchange="loadStudents()">
+    
+    <label><i class="fa fa-graduation-cap"></i> ക്ലാസ്:</label>
+    <select id="classSelect" onchange="loadStudents()">
+        <option value="">ക്ലാസ് തിരഞ്ഞെടുക്കുക</option>
+        <option value="1">Class 1</option>
+        <option value="2">Class 2</option>
+        <option value="3">Class 3</option>
+        <option value="4">Class 4</option>
+        <option value="5">Class 5</option>
+        <option value="6">Class 6</option>
+        <option value="7">Class 7</option>
+        <option value="8">Class 8</option>
+        <option value="9">Class 9</option>
+        <option value="10">Class 10</option>
+        <option value="+1">Plus One (+1)</option>
+        <option value="+2">Plus Two (+2)</option>
     </select>
 </div>
 
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th>വിദ്യാർത്ഥി</th>
-                <th>സുബഹി</th>
-                <th>ളുഹർ</th>
-                <th>അസർ</th>
-                <th>മഗ്രിബ്</th>
-                <th>ഇശാഅ്</th>
-                <th>സേവ്</th>
-            </tr>
-        </thead>
-        <tbody id="studentRows"></tbody>
-    </table>
+<div id="studentList" style="display:none; margin-bottom: 100px;">
+    </div>
+
+<div class="save-bar" id="saveSection" style="display:none;">
+    <button class="btn-save" onclick="saveAllSalah()"><i class="fa fa-check-circle"></i> SAVE ATTENDANCE</button>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-  authDomain: "mum-new-id.firebaseapp.com",
-  projectId: "mum-new-id",
-  storageBucket: "mum-new-id.firebasestorage.app",
-  messagingSenderId: "794343464244",
-  appId: "1:794343464244:web:f9083036490e3609bf1961",
-  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
-};
+    // നിങ്ങളുടെ ഫയർബേസ് കോൺഫിഗറേഷൻ
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const rtdb = firebase.database();
+    const urlParams = new URLSearchParams(window.location.search);
+    const mid = urlParams.get('id'); // Madrasa ID
 
-const urlParams = new URLSearchParams(window.location.search);
-const mId = urlParams.get('id');
+    document.getElementById('salahDate').valueAsDate = new Date();
+    let currentSalahs = {};
 
-document.getElementById('attDate').valueAsDate = new Date();
+    async function loadStudents() {
+        const cls = document.getElementById('classSelect').value;
+        const date = document.getElementById('salahDate').value;
+        if(!cls || !date) return;
 
-if (mId) {
-    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-        if(snap.exists()){
-            document.getElementById('mName').innerText = snap.val().name;
-            document.getElementById('mPlace').innerText = snap.val().place;
-        }
-    });
-}
+        const listDiv = document.getElementById('studentList');
+        listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു...</div>";
+        listDiv.style.display = 'block';
 
-async function loadStudents() {
-    const tableBody = document.getElementById('studentRows');
-    const selClass = document.getElementById('filterClass').value;
-    const selDate = document.getElementById('attDate').value;
-    tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+        // ആൺകുട്ടികളെ മാത്രം ഫിൽട്ടർ ചെയ്യുന്നു
+        db.ref(`students/${mid}`).orderByChild('class').equalTo(cls).once('value', async snap => {
+            listDiv.innerHTML = "";
+            let hasBoys = false;
 
-    // ലിസ്റ്റ് വരാൻ വേണ്ടി gender ഫിൽട്ടർ ഒഴിവാക്കി
-    let query = db.collection("students").where("madrasa_id", "==", mId);
-    if (selClass) query = query.where("class", "==", selClass);
+            const savedSnap = await db.ref(`salah_records/${mid}`).once('value');
+            const savedData = savedSnap.val() || {};
 
-    try {
-        const snapshot = await query.get();
-        tableBody.innerHTML = "";
+            snap.forEach(child => {
+                const s = child.val();
+                
+                // ✅ ആൺകുട്ടികളെ മാത്രം കാണിക്കാൻ (Gender check)
+                if(s.gender === "Male" || s.gender === "male" || !s.gender) {
+                    hasBoys = true;
+                    const sid = child.key;
+                    const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
+                    currentSalahs[sid] = dayData;
 
-        if (snapshot.empty) {
-            tableBody.innerHTML = "<tr><td colspan='7'>വിദ്യാർത്ഥികളെ കണ്ടെത്തിയില്ല!</td></tr>";
-            return;
-        }
-
-        for (const doc of snapshot.docs) {
-            const s = doc.data();
-            const sId = doc.id;
-            
-            // gender ഫീൽഡ് ഉണ്ടെങ്കിൽ മാത്രം പരിശോധിക്കും, ഇല്ലെങ്കിലും ലിസ്റ്റ് കാണിക്കും
-            if (s.gender && s.gender !== "Male") continue;
-
-            const logDoc = await db.collection("salah_daily_logs").doc(`${sId}_${selDate}`).get();
-            
-            // എറർ പരിഹരിച്ചു: .exists()
-            let savedMarks = logDoc.exists() ? (logDoc.data().marks || 0) : 0;
-
-            let checkHTML = "";
-            for(let i=1; i<=5; i++) {
-                let isChecked = (i <= savedMarks) ? "checked" : ""; 
-                checkHTML += `<td><input type="checkbox" class="chk-${sId} chk-box" ${isChecked}></td>`;
-            }
-
-            tableBody.innerHTML += `
-                <tr>
-                    <td class="student-name-cell">
-                        <div><b>${s.name}</b><br><small>Reg: ${s.number}</small></div>
-                    </td>
-                    ${checkHTML}
-                    <td><button id="btn-${sId}" class="save-btn" onclick="saveSalahData('${sId}', '${s.number}', '${s.name}')">SAVE</button></td>
-                </tr>`;
-        }
-    } catch (e) {
-        tableBody.innerHTML = "<tr><td colspan='7'>Error: " + e.message + "</td></tr>";
-    }
-}
-
-async function saveSalahData(id, reg, name) {
-    const date = document.getElementById('attDate').value;
-    const checks = document.querySelectorAll(`.chk-${id}`);
-    const btn = document.getElementById(`btn-${id}`);
-    let currentMark = 0;
-    checks.forEach(c => { if(c.checked) currentMark += 1; });
-
-    const logRef = db.collection("salah_daily_logs").doc(`${id}_${date}`);
-    
-    try {
-        btn.disabled = true;
-        btn.innerText = "SAVING...";
-        const logSnap = await logRef.get();
-        
-        // എറർ പരിഹരിച്ചു: .exists()
-        let oldMark = logSnap.exists() ? (logSnap.data().marks || 0) : 0;
-        const diff = currentMark - oldMark;
-
-        await logRef.set({
-            studentId: id, madrasa_id: mId, regNo: reg, name: name, date: date, marks: currentMark, updatedAt: new Date()
-        });
-
-        if (diff !== 0) {
-            await db.collection("students").doc(id).update({
-                totalSalahMark: firebase.firestore.FieldValue.increment(diff)
+                    listDiv.innerHTML += `
+                        <div class="student-item">
+                            <div class="student-info">
+                                <b>${s.name}</b>
+                                <small>Roll: ${s.rollNo || '-'}</small>
+                                <div class="gender-badge">BOY</div>
+                            </div>
+                            <div class="salah-grid">
+                                <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
+                                <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
+                                <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
+                                <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
+                                <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
+                            </div>
+                        </div>`;
+                }
             });
+
+            if(!hasBoys) {
+                listDiv.innerHTML = "<div class='card' style='text-align:center;'>ഈ ക്ലാസ്സിൽ ആൺകുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
+                document.getElementById('saveSection').style.display = 'none';
+            } else {
+                document.getElementById('saveSection').style.display = 'block';
+            }
+        });
+    }
+
+    function toggle(sid, type) {
+        const box = document.getElementById(`${type}_${sid}`);
+        currentSalahs[sid][type] = currentSalahs[sid][type] === 1 ? 0 : 1;
+        box.classList.toggle('active');
+    }
+
+    async function saveAllSalah() {
+        const date = document.getElementById('salahDate').value;
+        const updates = {};
+        const btn = document.querySelector('.btn-save');
+        btn.disabled = true; btn.innerText = "SAVING...";
+
+        for(let sid in currentSalahs) {
+            const data = currentSalahs[sid];
+            updates[`salah_records/${mid}/${sid}/${date}`] = data;
+            
+            const dailyTotal = data.f + data.d + data.a + data.m + data.i;
+            calculateGrandTotal(sid);
         }
 
-        btn.innerText = "SAVED ✅";
-        btn.style.background = "#4caf50";
-        setTimeout(() => { 
-            btn.innerText = "SAVE"; 
-            btn.style.background = "#1976d2";
-            btn.disabled = false;
-        }, 2000);
-    } catch (e) {
-        console.error(e);
-        alert("Error: " + e.message);
-        btn.disabled = false;
-        btn.innerText = "SAVE";
+        db.ref().update(updates).then(() => {
+            alert("നിസ്‌കാര കണക്കുകൾ വിജയകരമായി സേവ് ചെയ്തു!");
+            btn.disabled = false; btn.innerText = "SAVE ATTENDANCE";
+        });
     }
-}
-window.onload = loadStudents;
+
+    function calculateGrandTotal(sid) {
+        db.ref(`salah_records/${mid}/${sid}`).once('value', snap => {
+            let total = 0;
+            snap.forEach(day => {
+                if(day.key.includes('-')) {
+                    const d = day.val();
+                    total += (d.f||0) + (d.d||0) + (d.a||0) + (d.m||0) + (d.i||0);
+                }
+            });
+            db.ref(`salah_total/${mid}/${sid}`).set(total);
+        });
+    }
 </script>
+
 </body>
 </html>
