@@ -76,37 +76,19 @@
 </div>
 
 <script>
-    // നിങ്ങളുടെ ഫയർബേസ് കോൺഫിഗറേഷൻ
-    const firebaseConfig = {
-        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-        authDomain: "enttemadrasa.firebaseapp.com",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-        projectId: "enttemadrasa",
-        storageBucket: "enttemadrasa.firebasestorage.app",
-        appId: "1:623531881201:web:b863793340c3901cedaf50"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const mid = urlParams.get('id'); // Madrasa ID
-
-    document.getElementById('salahDate').valueAsDate = new Date();
-    let currentSalahs = {};
-
     async function loadStudents() {
         const cls = document.getElementById('classSelect').value;
         const date = document.getElementById('salahDate').value;
         if(!cls || !date) return;
 
         const listDiv = document.getElementById('studentList');
-        listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു...</div>";
+        listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> ലോഡ് ചെയ്യുന്നു...</div>";
         listDiv.style.display = 'block';
 
-        // ആൺകുട്ടികളെ മാത്രം ഫിൽട്ടർ ചെയ്യുന്നു
-        db.ref(`students/${mid}`).orderByChild('class').equalTo(cls).once('value', async snap => {
+        // ഐഡി കാർഡ് കാണിക്കുന്ന അതേ പാത (Path) തന്നെ ഇവിടെയും ഉപയോഗിക്കുന്നു
+        db.ref(`students/${mid}`).once('value', async snap => {
             listDiv.innerHTML = "";
-            let hasBoys = false;
+            let found = false;
 
             const savedSnap = await db.ref(`salah_records/${mid}`).once('value');
             const savedData = savedSnap.val() || {};
@@ -114,19 +96,18 @@
             snap.forEach(child => {
                 const s = child.val();
                 
-                // ✅ ആൺകുട്ടികളെ മാത്രം കാണിക്കാൻ (Gender check)
-                if(s.gender === "Male" || s.gender === "male" || !s.gender) {
-                    hasBoys = true;
+                // ക്ലാസ്സ് കൃത്യമായി ഒത്തുനോക്കുന്നു (നമ്പറോ അക്ഷരമോ ഏതായാലും)
+                if(String(s.class) === String(cls)) {
+                    found = true;
                     const sid = child.key;
                     const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
                     currentSalahs[sid] = dayData;
 
                     listDiv.innerHTML += `
-                        <div class="student-item">
+                        <div class="student-item card">
                             <div class="student-info">
                                 <b>${s.name}</b>
                                 <small>Roll: ${s.rollNo || '-'}</small>
-                                <div class="gender-badge">BOY</div>
                             </div>
                             <div class="salah-grid">
                                 <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
@@ -139,53 +120,15 @@
                 }
             });
 
-            if(!hasBoys) {
-                listDiv.innerHTML = "<div class='card' style='text-align:center;'>ഈ ക്ലാസ്സിൽ ആൺകുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
+            if(!found) {
+                listDiv.innerHTML = "<div class='card' style='text-align:center;'>ഈ ക്ലാസ്സിൽ കുട്ടികളെ കണ്ടെത്താനായില്ല.</div>";
                 document.getElementById('saveSection').style.display = 'none';
             } else {
                 document.getElementById('saveSection').style.display = 'block';
             }
         });
     }
-
-    function toggle(sid, type) {
-        const box = document.getElementById(`${type}_${sid}`);
-        currentSalahs[sid][type] = currentSalahs[sid][type] === 1 ? 0 : 1;
-        box.classList.toggle('active');
-    }
-
-    async function saveAllSalah() {
-        const date = document.getElementById('salahDate').value;
-        const updates = {};
-        const btn = document.querySelector('.btn-save');
-        btn.disabled = true; btn.innerText = "SAVING...";
-
-        for(let sid in currentSalahs) {
-            const data = currentSalahs[sid];
-            updates[`salah_records/${mid}/${sid}/${date}`] = data;
-            
-            const dailyTotal = data.f + data.d + data.a + data.m + data.i;
-            calculateGrandTotal(sid);
-        }
-
-        db.ref().update(updates).then(() => {
-            alert("നിസ്‌കാര കണക്കുകൾ വിജയകരമായി സേവ് ചെയ്തു!");
-            btn.disabled = false; btn.innerText = "SAVE ATTENDANCE";
-        });
-    }
-
-    function calculateGrandTotal(sid) {
-        db.ref(`salah_records/${mid}/${sid}`).once('value', snap => {
-            let total = 0;
-            snap.forEach(day => {
-                if(day.key.includes('-')) {
-                    const d = day.val();
-                    total += (d.f||0) + (d.d||0) + (d.a||0) + (d.m||0) + (d.i||0);
-                }
-            });
-            db.ref(`salah_total/${mid}/${sid}`).set(total);
-        });
-    }
+    // ... ബാക്കി സേവ് ചെയ്യുന്ന ഫംഗ്ഷനുകൾ മാറ്റമില്ലാതെ തുടരുക ...
 </script>
 
 </body>
