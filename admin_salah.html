@@ -3,138 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salah Admin | Boys Only</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <title>Salah Admin | Firestore</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        :root { --primary: #1b5e20; --bg: #f0f4f1; --gold: #c5a021; }
+        :root { --primary: #004d00; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .header { background: linear-gradient(135deg, #1b5e20, #003300); color: white; padding: 25px 15px; text-align: center; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        
-        .card { background: white; padding: 18px; border-radius: 15px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); margin-bottom: 15px; border: 1px solid #e0e0e0; }
-        label { font-weight: bold; color: #333; display: block; margin-bottom: 8px; font-size: 14px; }
-        select, input[type="date"] { width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
-        select:focus, input:focus { border-color: var(--primary); }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 15px; margin-bottom: 20px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #444; }
+        select, input[type="date"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; }
 
-        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f0f0f0; background: white; margin-bottom: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        .student-info b { font-size: 17px; color: #1b5e20; display: block; }
-        .student-info small { color: #666; font-weight: 500; }
+        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 10px; }
+        .student-info b { font-size: 16px; color: #333; display: block; }
         
-        .salah-grid { display: flex; gap: 8px; }
+        .salah-grid { display: flex; gap: 5px; }
         .salah-box { 
-            width: 42px; height: 42px; border: 2px solid #ddd; border-radius: 10px; 
+            width: 38px; height: 38px; border: 1.5px solid #ccc; border-radius: 8px; 
             display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; font-size: 14px; font-weight: 800; transition: 0.3s;
-            background: #fff; color: #888;
+            cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.3s;
         }
-        .salah-box.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 3px 8px rgba(27, 94, 32, 0.4); }
+        .salah-box.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .save-bar { position: sticky; bottom: 20px; width: 100%; text-align: center; z-index: 100; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 16px 60px; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s; }
-        .btn-save:active { transform: scale(0.95); }
-        
-        .loading { text-align: center; padding: 30px; color: #1b5e20; font-weight: bold; }
-        .gender-badge { background: #e3f2fd; color: #1976d2; font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-top: 4px; display: inline-block; }
+        .save-bar { position: sticky; bottom: 20px; width: 100%; text-align: center; margin-top: 20px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 15px 50px; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
+        .loading { text-align: center; padding: 20px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2 style="margin:0;"><i class="fa fa-user-check"></i> BOYS SALAH TRACKER</h2>
-    <p style="margin:5px 0 0; font-size:14px; opacity: 0.8;">മദ്റസ നിസ്‌കാര കണക്കുകൾ (+2 വരെ)</p>
+    <h2 style="margin:0;"><i class="fa fa-mosque"></i> SALAH TRACKER</h2>
+    <p style="margin:5px 0 0; font-size:13px;">വിദ്യാർത്ഥികളുടെ നിസ്‌കാര കണക്കുകൾ</p>
 </div>
 
 <div class="card">
-    <label><i class="fa fa-calendar-alt"></i> തിയ്യതി:</label>
+    <label>തിയ്യതി തിരഞ്ഞെടുക്കുക:</label>
     <input type="date" id="salahDate" onchange="loadStudents()">
     
-    <label><i class="fa fa-graduation-cap"></i> ക്ലാസ്:</label>
+    <label>ക്ലാസ് തിരഞ്ഞെടുക്കുക:</label>
     <select id="classSelect" onchange="loadStudents()">
-        <option value="">ക്ലാസ് തിരഞ്ഞെടുക്കുക</option>
-        <option value="1">Class 1</option>
-        <option value="2">Class 2</option>
-        <option value="3">Class 3</option>
-        <option value="4">Class 4</option>
-        <option value="5">Class 5</option>
-        <option value="6">Class 6</option>
-        <option value="7">Class 7</option>
-        <option value="8">Class 8</option>
-        <option value="9">Class 9</option>
-        <option value="10">Class 10</option>
-        <option value="+1">Plus One (+1)</option>
-        <option value="+2">Plus Two (+2)</option>
+        <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
+        <script>
+            for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
+            document.write(`<option value="11">Plus One (+1)</option>`);
+            document.write(`<option value="12">Plus Two (+2)</option>`);
+        </script>
     </select>
 </div>
 
-<div id="studentList" style="display:none; margin-bottom: 100px;">
-    </div>
+<div id="studentList" style="display:none; margin-bottom: 80px;"></div>
 
 <div class="save-bar" id="saveSection" style="display:none;">
-    <button class="btn-save" onclick="saveAllSalah()"><i class="fa fa-check-circle"></i> SAVE ATTENDANCE</button>
+    <button class="btn-save" onclick="saveAllSalah()">SAVE DATA</button>
 </div>
 
 <script>
+    // നിങ്ങളുടെ ഐഡി കാർഡ് സിസ്റ്റത്തിലെ അതേ കോൺഫിഗറേഷൻ
+    const firebaseConfig = {
+        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+        authDomain: "mum-new-id.firebaseapp.com",
+        projectId: "mum-new-id",
+        storageBucket: "mum-new-id.firebasestorage.app",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(); // കുട്ടികളെ തിരയാൻ
+    const rtdb = firebase.database(); // സലാഹ് റെക്കോർഡുകൾ സേവ് ചെയ്യാൻ
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mId = urlParams.get('id'); // Madrasa ID
+
+    document.getElementById('salahDate').valueAsDate = new Date();
+    let currentSalahs = {};
+
     async function loadStudents() {
-    const cls = document.getElementById('classSelect').value;
-    const date = document.getElementById('salahDate').value;
-    if(!cls || !date) return;
+        const cls = document.getElementById('classSelect').value;
+        const date = document.getElementById('salahDate').value;
+        if(!cls || !date || !mId) return;
 
-    const listDiv = document.getElementById('studentList');
-    listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> വിവരങ്ങൾ തിരയുന്നു...</div>";
-    listDiv.style.display = 'block';
+        const listDiv = document.getElementById('studentList');
+        listDiv.innerHTML = "<div class='loading'>ലോഡ് ചെയ്യുന്നു...</div>";
+        listDiv.style.display = 'block';
 
-    // മദ്റസ ഐഡിക്ക് കീഴിലുള്ള കുട്ടികളെ നേരിട്ട് എടുക്കുന്നു
-    db.ref(`students/${mid}`).once('value', async snap => {
-        listDiv.innerHTML = "";
-        let found = false;
+        try {
+            // Firestore-ൽ നിന്ന് ആ മദ്റസയിലെ ആ ക്ലാസ്സിലെ കുട്ടികളെ തിരയുന്നു
+            const snap = await db.collection("students")
+                                 .where("madrasa_id", "==", mId)
+                                 .where("class", "==", cls)
+                                 .get();
 
-        // പഴയ റെക്കോർഡുകൾ ഉണ്ടോ എന്ന് നോക്കുന്നു
-        const savedSnap = await db.ref(`salah_records/${mid}`).once('value');
-        const savedData = savedSnap.val() || {};
+            listDiv.innerHTML = "";
+            let found = false;
 
-        snap.forEach(child => {
-            const s = child.val();
-            
-            // ക്ലാസ്സ് നമ്പറാണോ അക്ഷരമാണോ എന്ന് നോക്കാതെ കൃത്യമായി ഫിൽട്ടർ ചെയ്യുന്നു
-            // ഡാറ്റാബേസിൽ "5" എന്നാണെങ്കിലും ഇവിടെ "Class 5" എന്നാണെങ്കിലും ഇത് വർക്ക് ആകും
-            let studentClass = String(s.class).toLowerCase().replace("class", "").trim();
-            let selectedClass = String(cls).toLowerCase().replace("class", "").trim();
+            // നേരത്തെ സേവ് ചെയ്ത റെക്കോർഡുകൾ Realtime DB-ൽ നിന്ന് എടുക്കുന്നു
+            const savedSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
+            const savedData = savedSnap.val() || {};
 
-            if(studentClass === selectedClass) {
-                found = true;
-                const sid = child.key;
-                const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
-                currentSalahs[sid] = dayData;
+            snap.forEach(doc => {
+                const s = doc.data();
+                // ആൺകുട്ടികളെ മാത്രം കാണിക്കുന്നു
+                if(s.gender === "Male" || !s.gender) {
+                    found = true;
+                    const sid = doc.id;
+                    const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
+                    currentSalahs[sid] = dayData;
 
-                listDiv.innerHTML += `
-                    <div class="student-item card">
-                        <div class="student-info">
-                            <b>${s.name}</b>
-                            <small>Roll: ${s.rollNo || '-'}</small>
-                        </div>
-                        <div class="salah-grid">
-                            <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
-                            <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
-                            <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
-                            <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
-                            <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
-                        </div>
-                    </div>`;
+                    listDiv.innerHTML += `
+                        <div class="student-item card">
+                            <div class="student-info">
+                                <b>${s.name}</b>
+                                <small>Reg: ${s.number || '-'}</small>
+                            </div>
+                            <div class="salah-grid">
+                                <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
+                                <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
+                                <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
+                                <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
+                                <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if(!found) {
+                listDiv.innerHTML = "<div class='card' style='text-align:center;'>കുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
+                document.getElementById('saveSection').style.display = 'none';
+            } else {
+                document.getElementById('saveSection').style.display = 'block';
             }
-        });
-
-        if(!found) {
-            listDiv.innerHTML = "<div class='card' style='text-align:center; padding:20px;'>ഈ ക്ലാസ്സിൽ കുട്ടികളെ കണ്ടെത്താനായില്ല!</div>";
-            document.getElementById('saveSection').style.display = 'none';
-        } else {
-            document.getElementById('saveSection').style.display = 'block';
+        } catch (e) {
+            listDiv.innerHTML = "Error: " + e.message;
         }
-    }).catch(error => {
-        listDiv.innerHTML = "<div class='card' style='color:red;'>Error: " + error.message + "</div>";
-    });
-}
+    }
+
+    function toggle(sid, type) {
+        const box = document.getElementById(`${type}_${sid}`);
+        currentSalahs[sid][type] = currentSalahs[sid][type] === 1 ? 0 : 1;
+        box.classList.toggle('active');
+    }
+
+    async function saveAllSalah() {
+        const date = document.getElementById('salahDate').value;
+        const updates = {};
+        
+        for(let sid in currentSalahs) {
+            const data = currentSalahs[sid];
+            updates[`salah_records/${mId}/${sid}/${date}`] = data;
+            
+            // ടോട്ടൽ സ്കോർ കണക്കാക്കുന്നു
+            const total = data.f + data.d + data.a + data.m + data.i;
+            updatePoints(sid, total);
+        }
+
+        rtdb.ref().update(updates).then(() => {
+            alert("വിജയകരമായി സേവ് ചെയ്തു!");
+        });
+    }
+
+    function updatePoints(sid, dayScore) {
+        // എല്ലാ ദിവസത്തെയും സ്കോർ കൂട്ടി കാണിക്കാൻ
+        rtdb.ref(`salah_records/${mId}/${sid}`).once('value', snap => {
+            let grandTotal = 0;
+            snap.forEach(day => {
+                if(day.key.includes('-')) {
+                    const d = day.val();
+                    grandTotal += (d.f||0) + (d.d||0) + (d.a||0) + (d.m||0) + (d.i||0);
+                }
+            });
+            rtdb.ref(`salah_total/${mId}/${sid}`).set(grandTotal);
+        });
+    }
 </script>
 
 </body>
