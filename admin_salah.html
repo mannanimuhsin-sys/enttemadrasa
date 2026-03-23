@@ -77,58 +77,64 @@
 
 <script>
     async function loadStudents() {
-        const cls = document.getElementById('classSelect').value;
-        const date = document.getElementById('salahDate').value;
-        if(!cls || !date) return;
+    const cls = document.getElementById('classSelect').value;
+    const date = document.getElementById('salahDate').value;
+    if(!cls || !date) return;
 
-        const listDiv = document.getElementById('studentList');
-        listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> ലോഡ് ചെയ്യുന്നു...</div>";
-        listDiv.style.display = 'block';
+    const listDiv = document.getElementById('studentList');
+    listDiv.innerHTML = "<div class='loading'><i class='fa fa-spinner fa-spin'></i> വിവരങ്ങൾ തിരയുന്നു...</div>";
+    listDiv.style.display = 'block';
 
-        // ഐഡി കാർഡ് കാണിക്കുന്ന അതേ പാത (Path) തന്നെ ഇവിടെയും ഉപയോഗിക്കുന്നു
-        db.ref(`students/${mid}`).once('value', async snap => {
-            listDiv.innerHTML = "";
-            let found = false;
+    // മദ്റസ ഐഡിക്ക് കീഴിലുള്ള കുട്ടികളെ നേരിട്ട് എടുക്കുന്നു
+    db.ref(`students/${mid}`).once('value', async snap => {
+        listDiv.innerHTML = "";
+        let found = false;
 
-            const savedSnap = await db.ref(`salah_records/${mid}`).once('value');
-            const savedData = savedSnap.val() || {};
+        // പഴയ റെക്കോർഡുകൾ ഉണ്ടോ എന്ന് നോക്കുന്നു
+        const savedSnap = await db.ref(`salah_records/${mid}`).once('value');
+        const savedData = savedSnap.val() || {};
 
-            snap.forEach(child => {
-                const s = child.val();
-                
-                // ക്ലാസ്സ് കൃത്യമായി ഒത്തുനോക്കുന്നു (നമ്പറോ അക്ഷരമോ ഏതായാലും)
-                if(String(s.class) === String(cls)) {
-                    found = true;
-                    const sid = child.key;
-                    const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
-                    currentSalahs[sid] = dayData;
+        snap.forEach(child => {
+            const s = child.val();
+            
+            // ക്ലാസ്സ് നമ്പറാണോ അക്ഷരമാണോ എന്ന് നോക്കാതെ കൃത്യമായി ഫിൽട്ടർ ചെയ്യുന്നു
+            // ഡാറ്റാബേസിൽ "5" എന്നാണെങ്കിലും ഇവിടെ "Class 5" എന്നാണെങ്കിലും ഇത് വർക്ക് ആകും
+            let studentClass = String(s.class).toLowerCase().replace("class", "").trim();
+            let selectedClass = String(cls).toLowerCase().replace("class", "").trim();
 
-                    listDiv.innerHTML += `
-                        <div class="student-item card">
-                            <div class="student-info">
-                                <b>${s.name}</b>
-                                <small>Roll: ${s.rollNo || '-'}</small>
-                            </div>
-                            <div class="salah-grid">
-                                <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
-                                <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
-                                <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
-                                <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
-                                <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
-                            </div>
-                        </div>`;
-                }
-            });
+            if(studentClass === selectedClass) {
+                found = true;
+                const sid = child.key;
+                const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
+                currentSalahs[sid] = dayData;
 
-            if(!found) {
-                listDiv.innerHTML = "<div class='card' style='text-align:center;'>ഈ ക്ലാസ്സിൽ കുട്ടികളെ കണ്ടെത്താനായില്ല.</div>";
-                document.getElementById('saveSection').style.display = 'none';
-            } else {
-                document.getElementById('saveSection').style.display = 'block';
+                listDiv.innerHTML += `
+                    <div class="student-item card">
+                        <div class="student-info">
+                            <b>${s.name}</b>
+                            <small>Roll: ${s.rollNo || '-'}</small>
+                        </div>
+                        <div class="salah-grid">
+                            <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
+                            <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
+                            <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
+                            <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
+                            <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
+                        </div>
+                    </div>`;
             }
         });
-    }
-    // ... ബാക്കി സേവ് ചെയ്യുന്ന ഫംഗ്ഷനുകൾ മാറ്റമില്ലാതെ തുടരുക ...
+
+        if(!found) {
+            listDiv.innerHTML = "<div class='card' style='text-align:center; padding:20px;'>ഈ ക്ലാസ്സിൽ കുട്ടികളെ കണ്ടെത്താനായില്ല!</div>";
+            document.getElementById('saveSection').style.display = 'none';
+        } else {
+            document.getElementById('saveSection').style.display = 'block';
+        }
+    }).catch(error => {
+        listDiv.innerHTML = "<div class='card' style='color:red;'>Error: " + error.message + "</div>";
+    });
+}
 </script>
 
 </body>
