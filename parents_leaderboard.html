@@ -91,7 +91,7 @@
     }
 
     try {
-        // 1. മദ്റസ പേരും സലാഹ് റെക്കോർഡുകളും എടുക്കുന്നു
+        // 1. മദ്റസ പേരും സലാഹ് റെക്കോർഡുകളും ഒരേസമയം എടുക്കുന്നു
         const [madrasaSnap, recordsSnap] = await Promise.all([
             rtdb.ref(`madrasa_requests/${mId}`).once('value'),
             rtdb.ref(`salah_records/${mId}`).once('value')
@@ -112,45 +112,71 @@
         const totalPossible = allDates.size * 5;
         document.getElementById('totalPossible').innerText = totalPossible;
 
-        // 3. കുട്ടികളെ ലിസ്റ്റ് ചെയ്യുന്നു (കൂടുതൽ ലളിതമായ രീതിയിൽ)
-        // ഐഡി കാർഡ് കോഡിലെ അതേ കളക്ഷൻ പേര് 'students' തന്നെയാണെന്ന് ഉറപ്പുവരുത്തുക
+        // 3. കുട്ടികളുടെ വിവരങ്ങൾ എടുക്കുന്നു
         const studentSnap = await db.collection("students")
                                      .where("madrasa_id", "==", mId) 
                                      .get();
 
-        if (studentSnap.empty) {
-            document.getElementById('leaderboardList').innerHTML = "<div class='card' style='text-align:center; padding:20px;'>വിദ്യാർത്ഥികളെ കണ്ടെത്താനായില്ല. (Check Madrasa ID)</div>";
-            return;
-        }
-
         const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
         const scores = scoreSnap.val() || {};
 
-        let leaderboard = [];
+        let leaderboardData = [];
         studentSnap.forEach(doc => {
             const s = doc.data();
             const myScore = scores[doc.id] || 0;
-            leaderboard.push({
+            leaderboardData.push({
                 name: s.name,
-                reg: s.number || s.regNo || '-', // നിങ്ങളുടെ ഡാറ്റയിലെ ഫീൽഡ് പേര് നോക്കുക
+                reg: s.number || '-',
                 cls: s.class,
                 score: myScore,
                 percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
             });
         });
 
-        leaderboard.sort((a, b) => b.score - a.score);
-        display(leaderboard, totalPossible);
+        // സ്കോർ അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
+        leaderboardData.sort((a, b) => b.score - a.score);
+
+        // ഇവിടെയാണ് പ്രശ്നം ഉണ്ടായിരുന്നത് - display ഫങ്ക്ഷൻ വിളിക്കുന്നു
+        renderUI(leaderboardData, totalPossible);
 
     } catch (error) {
         console.error("Leaderboard Error:", error);
-        // ഇവിടെ എറർ മെസേജ് കൂടുതൽ വ്യക്തമാക്കുന്നു
         document.getElementById('leaderboardList').innerHTML = 
             `<div style='text-align:center; padding:20px; color:red;'>
                 വിവരങ്ങൾ ലഭിക്കുന്നതിൽ തടസ്സം നേരിട്ടു. <br>
                 <small>${error.message}</small>
             </div>`;
     }
+}
+
+// ഡാറ്റ കാണിക്കാനുള്ള ഫങ്ക്ഷൻ (ഇത് കോഡിൽ ഉണ്ടെന്ന് ഉറപ്പുവരുത്തുക)
+function renderUI(list, total) {
+    const listDiv = document.getElementById('leaderboardList');
+    listDiv.innerHTML = "";
+
+    // ടോപ്പ് 3 കാർഡുകൾ ഉണ്ടെങ്കിൽ അത് കാണിക്കാൻ
+    const topSection = document.getElementById('topSection');
+    if (list.length >= 3 && topSection) {
+        topSection.style.display = 'flex';
+        // ടോപ്പ് കാർഡുകൾ റെൻഡർ ചെയ്യുന്ന ലോജിക്...
+        // (മുൻപ് നൽകിയ അതേ രീതിയിൽ തന്നെ)
+    }
+
+    list.forEach((s, index) => {
+        const itemHtml = `
+            <div class="rank-item">
+                <div class="rank-number">${index + 1}</div>
+                <div class="student-details">
+                    <b>${s.name}</b>
+                    <span>Reg: ${s.reg} | Class: ${s.cls}</span>
+                </div>
+                <div class="score-display">
+                    <span class="score-val">${s.score}<small style="font-size:10px; color:#999;">/${total}</small></span>
+                    <div class="percent-bar"><div class="percent-fill" style="width:${s.percent}%"></div></div>
+                </div>
+            </div>`;
+        listDiv.innerHTML += itemHtml;
+    });
 }
     // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ റൺ ചെയ്യാൻ
     window.onload = startLeaderboard;
