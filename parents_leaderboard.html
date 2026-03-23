@@ -67,6 +67,7 @@
 </div>
 
 <script>
+    // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ)
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
         authDomain: "mum-new-id.firebaseapp.com",
@@ -79,95 +80,70 @@
     const db = firebase.firestore();
     const rtdb = firebase.database();
 
+    // ഐഡി എടുക്കുന്ന രീതി കുറച്ചുകൂടി ഉറപ്പുള്ളതാക്കി (Secure ID Retrieval)
     const urlParams = new URLSearchParams(window.location.search);
-    const mId = urlParams.get('id');
+    let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
 
-    async function loadData() {
-        if(!mId) return;
+    async function startLeaderboard() {
+        if(!mId) {
+            document.getElementById('mName').innerText = "മദ്റസ ഐഡി ലഭ്യമല്ല. ദയവായി ലോഗിൻ ചെയ്യുക.";
+            return;
+        }
 
-        // 1. മദ്റസയുടെ അടിസ്ഥാന വിവരങ്ങൾ
-        rtdb.ref(`madrasa_requests/${mId}`).once('value', snap => {
-            if(snap.exists()) document.getElementById('mName').innerText = snap.val().name + " - " + snap.val().place;
-        });
+        try {
+            // 1. മദ്റസ പേരും ആകെ റെക്കോർഡുകളും ഒരേസമയം എടുക്കുന്നു (Parallel Loading)
+            const [madrasaSnap, recordsSnap, studentSnap] = await Promise.all([
+                rtdb.ref(`madrasa_requests/${mId}`).once('value'),
+                rtdb.ref(`salah_records/${mId}`).once('value'),
+                db.collection("students").where("madrasa_id", "==", mId).get()
+            ]);
 
-        // 2. ആകെ നടന്ന നിസ്കാരങ്ങൾ കണക്കാക്കുന്നു
-        // എല്ലാ കുട്ടികളുടേയും എല്ലാ ദിവസത്തെയും റെക്കോർഡുകൾ നോക്കി ആകെ എത്ര ദിവസങ്ങളിൽ എൻട്രി ഉണ്ടെന്ന് കണ്ടെത്തുന്നു
-        const recordsSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
-        const allRecords = recordsSnap.val() || {};
-        
-        let allDates = new Set();
-        for(let sid in allRecords) {
-            for(let date in allRecords[sid]) {
-                if(date.includes('-')) allDates.add(date);
+            // മദ്റസ പേര് സെറ്റ് ചെയ്യുന്നു
+            if(madrasaSnap.exists()) {
+                document.getElementById('mName').innerText = madrasaSnap.val().name;
             }
-        }
-        
-        // ആകെ നടന്ന നിസ്കാരങ്ങൾ = ആകെ ദിവസങ്ങൾ * 5 (ഫജ്‌ർ മുതൽ ഇശാ വരെ)
-        const totalPossibleScore = allDates.size * 5;
-        document.getElementById('totalPossible').innerText = totalPossibleScore;
 
-        // 3. കുട്ടികളുടെ വിവരങ്ങളും സ്കോറും എടുക്കുന്നു
-        const studentSnap = await db.collection("students").where("madrasa_id", "==", mId).get();
-        const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
-        const scores = scoreSnap.val() || {};
+            // 2. ആകെ നടന്ന ജമാഅത്തുകൾ കണക്കാക്കുന്നു
+            const allRecords = recordsSnap.val() || {};
+            let allDates = new Set();
+            for(let sid in allRecords) {
+                Object.keys(allRecords[sid]).forEach(date => {
+                    if(date.includes('-')) allDates.add(date);
+                });
+            }
+            const totalPossible = allDates.size * 5;
+            document.getElementById('totalPossible').innerText = totalPossible;
 
-        let leaderboard = [];
-        studentSnap.forEach(doc => {
-            const s = doc.data();
-            const myScore = scores[doc.id] || 0;
-            leaderboard.push({
-                name: s.name,
-                reg: s.number || '-',
-                cls: s.class,
-                score: myScore,
-                percent: totalPossibleScore > 0 ? (myScore / totalPossibleScore) * 100 : 0
+            // 3. സ്കോർ എടുക്കുന്നു
+            const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
+            const scores = scoreSnap.val() || {};
+
+            // 4. കുട്ടികളെ ലിസ്റ്റ് ചെയ്യുന്നു
+            let leaderboard = [];
+            studentSnap.forEach(doc => {
+                const s = doc.data();
+                const myScore = scores[doc.id] || 0;
+                leaderboard.push({
+                    name: s.name,
+                    reg: s.number || '-',
+                    cls: s.class,
+                    score: myScore,
+                    percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
+                });
             });
-        });
 
-        leaderboard.sort((a, b) => b.score - a.score);
-        display(leaderboard, totalPossibleScore);
-    }
+            // സ്കോർ അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
+            leaderboard.sort((a, b) => b.score - a.score);
+            display(leaderboard, totalPossible);
 
-    function display(list, total) {
-        const listDiv = document.getElementById('leaderboardList');
-        listDiv.innerHTML = "";
-
-        if(list.length >= 3) {
-            document.getElementById('topSection').style.display = 'flex';
-            renderTop('rank1', list[0], 1, 'bg-gold', total);
-            renderTop('rank2', list[1], 2, 'bg-silver', total);
-            renderTop('rank3', list[2], 3, 'bg-bronze', total);
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('leaderboardList').innerHTML = "വിവരങ്ങൾ ലഭിക്കുന്നതിൽ തടസ്സം നേരിട്ടു.";
         }
-
-        list.forEach((s, i) => {
-            listDiv.innerHTML += `
-                <div class="rank-item">
-                    <div class="rank-number">${i+1}</div>
-                    <div class="student-details">
-                        <b>${s.name}</b>
-                        <span>Reg: ${s.reg} | Class: ${s.cls}</span>
-                    </div>
-                    <div class="score-display">
-                        <span class="score-val">${s.score}<small class="out-of">/${total}</small></span>
-                        <div class="percent-bar"><div class="percent-fill" style="width:${s.percent}%"></div></div>
-                    </div>
-                </div>
-            `;
-        });
     }
 
-    function renderTop(id, s, r, cls, total) {
-        document.getElementById(id).innerHTML = `
-            <div class="badge ${cls === 'bg-gold' ? 'bg-gold' : (cls === 'bg-silver' ? 'bg-silver' : 'bg-bronze')}" 
-                 style="background:${cls === 'bg-gold' ? '#ffd700' : (cls === 'bg-silver' ? '#c0c0c0' : '#cd7f32')}">${r}</div>
-            <b style="font-size:12px; display:block; margin-bottom:5px;">${s.name}</b>
-            <span class="top-score">${s.score}</span><span class="out-of">/${total}</span>
-            <div style="font-size:9px; color:#999; margin-top:5px;">TOTAL POINTS</div>
-        `;
-    }
-
-    loadData();
+    // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ റൺ ചെയ്യാൻ
+    window.onload = startLeaderboard;
 </script>
-
 </body>
 </html>
