@@ -84,64 +84,74 @@
     const urlParams = new URLSearchParams(window.location.search);
     let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
 
-    async function startLeaderboard() {
-        if(!mId) {
-            document.getElementById('mName').innerText = "മദ്റസ ഐഡി ലഭ്യമല്ല. ദയവായി ലോഗിൻ ചെയ്യുക.";
+   async function startLeaderboard() {
+    if(!mId) {
+        document.getElementById('mName').innerText = "മദ്റസ ഐഡി ലഭ്യമല്ല.";
+        return;
+    }
+
+    try {
+        // 1. മദ്റസ പേരും സലാഹ് റെക്കോർഡുകളും എടുക്കുന്നു
+        const [madrasaSnap, recordsSnap] = await Promise.all([
+            rtdb.ref(`madrasa_requests/${mId}`).once('value'),
+            rtdb.ref(`salah_records/${mId}`).once('value')
+        ]);
+
+        if(madrasaSnap.exists()) {
+            document.getElementById('mName').innerText = madrasaSnap.val().name;
+        }
+
+        // 2. ആകെ നടന്ന ജമാഅത്തുകൾ കണക്കാക്കുന്നു
+        const allRecords = recordsSnap.val() || {};
+        let allDates = new Set();
+        for(let sid in allRecords) {
+            Object.keys(allRecords[sid]).forEach(date => {
+                if(date.includes('-')) allDates.add(date);
+            });
+        }
+        const totalPossible = allDates.size * 5;
+        document.getElementById('totalPossible').innerText = totalPossible;
+
+        // 3. കുട്ടികളെ ലിസ്റ്റ് ചെയ്യുന്നു (കൂടുതൽ ലളിതമായ രീതിയിൽ)
+        // ഐഡി കാർഡ് കോഡിലെ അതേ കളക്ഷൻ പേര് 'students' തന്നെയാണെന്ന് ഉറപ്പുവരുത്തുക
+        const studentSnap = await db.collection("students")
+                                     .where("madrasa_id", "==", mId) 
+                                     .get();
+
+        if (studentSnap.empty) {
+            document.getElementById('leaderboardList').innerHTML = "<div class='card' style='text-align:center; padding:20px;'>വിദ്യാർത്ഥികളെ കണ്ടെത്താനായില്ല. (Check Madrasa ID)</div>";
             return;
         }
 
-        try {
-            // 1. മദ്റസ പേരും ആകെ റെക്കോർഡുകളും ഒരേസമയം എടുക്കുന്നു (Parallel Loading)
-            const [madrasaSnap, recordsSnap, studentSnap] = await Promise.all([
-                rtdb.ref(`madrasa_requests/${mId}`).once('value'),
-                rtdb.ref(`salah_records/${mId}`).once('value'),
-                db.collection("students").where("madrasa_id", "==", mId).get()
-            ]);
+        const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
+        const scores = scoreSnap.val() || {};
 
-            // മദ്റസ പേര് സെറ്റ് ചെയ്യുന്നു
-            if(madrasaSnap.exists()) {
-                document.getElementById('mName').innerText = madrasaSnap.val().name;
-            }
-
-            // 2. ആകെ നടന്ന ജമാഅത്തുകൾ കണക്കാക്കുന്നു
-            const allRecords = recordsSnap.val() || {};
-            let allDates = new Set();
-            for(let sid in allRecords) {
-                Object.keys(allRecords[sid]).forEach(date => {
-                    if(date.includes('-')) allDates.add(date);
-                });
-            }
-            const totalPossible = allDates.size * 5;
-            document.getElementById('totalPossible').innerText = totalPossible;
-
-            // 3. സ്കോർ എടുക്കുന്നു
-            const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
-            const scores = scoreSnap.val() || {};
-
-            // 4. കുട്ടികളെ ലിസ്റ്റ് ചെയ്യുന്നു
-            let leaderboard = [];
-            studentSnap.forEach(doc => {
-                const s = doc.data();
-                const myScore = scores[doc.id] || 0;
-                leaderboard.push({
-                    name: s.name,
-                    reg: s.number || '-',
-                    cls: s.class,
-                    score: myScore,
-                    percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
-                });
+        let leaderboard = [];
+        studentSnap.forEach(doc => {
+            const s = doc.data();
+            const myScore = scores[doc.id] || 0;
+            leaderboard.push({
+                name: s.name,
+                reg: s.number || s.regNo || '-', // നിങ്ങളുടെ ഡാറ്റയിലെ ഫീൽഡ് പേര് നോക്കുക
+                cls: s.class,
+                score: myScore,
+                percent: totalPossible > 0 ? (myScore / totalPossible) * 100 : 0
             });
+        });
 
-            // സ്കോർ അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു
-            leaderboard.sort((a, b) => b.score - a.score);
-            display(leaderboard, totalPossible);
+        leaderboard.sort((a, b) => b.score - a.score);
+        display(leaderboard, totalPossible);
 
-        } catch (error) {
-            console.error("Error:", error);
-            document.getElementById('leaderboardList').innerHTML = "വിവരങ്ങൾ ലഭിക്കുന്നതിൽ തടസ്സം നേരിട്ടു.";
-        }
+    } catch (error) {
+        console.error("Leaderboard Error:", error);
+        // ഇവിടെ എറർ മെസേജ് കൂടുതൽ വ്യക്തമാക്കുന്നു
+        document.getElementById('leaderboardList').innerHTML = 
+            `<div style='text-align:center; padding:20px; color:red;'>
+                വിവരങ്ങൾ ലഭിക്കുന്നതിൽ തടസ്സം നേരിട്ടു. <br>
+                <small>${error.message}</small>
+            </div>`;
     }
-
+}
     // പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ റൺ ചെയ്യാൻ
     window.onload = startLeaderboard;
 </script>
