@@ -271,6 +271,13 @@
         overlay.style.display = 'block';
         iosView.style.display = 'block';
     }
+      // ✅ സർവീസ് വർക്കർ രജിസ്റ്റർ ചെയ്യുന്നു (ഇത് നിർബന്ധമാണ്)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
+        });
+    }
+
 </script>
 </body>
 </html>
