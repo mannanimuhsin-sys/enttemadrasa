@@ -3,168 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>സലാഹ് ലീഡർബോർഡ്</title>
+    <title>Salah Leaderboard | എന്‍റെ മദ്റസ</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        :root { --primary: #004d00; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .container { max-width: 500px; margin: auto; }
-        .header-card { 
-            background: linear-gradient(135deg, #004d00, #002b00); 
-            color: white; padding: 25px 15px; border-radius: 20px; 
-            text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }
-        .rank-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: white; padding: 12px 15px; margin-bottom: 10px; 
-            border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: 0.3s; position: relative; overflow: hidden;
-        }
-        .rank-1 { background: #fffdf0; border: 1px solid var(--gold); }
-        .rank-2 { background: #f8f9fa; border: 1px solid var(--silver); }
-        .rank-3 { background: #fff9f5; border: 1px solid var(--bronze); }
-
-        .rank-badge { width: 40px; text-align: center; font-size: 24px; }
-        .rank-number { font-size: 16px; font-weight: bold; color: #888; }
+        :root { --primary: #004d00; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
         
-        .student-info { flex-grow: 1; margin-left: 12px; }
-        .student-name { font-weight: bold; color: #333; display: block; text-transform: capitalize; }
-        .student-meta { font-size: 11px; color: #666; margin-top: 2px; }
-
-        .score-box { 
-            background: var(--primary); color: white; 
-            padding: 5px 12px; border-radius: 12px; 
-            text-align: center; min-width: 45px;
-        }
-        .score-val { font-size: 16px; font-weight: bold; display: block; }
-        .score-label { font-size: 9px; opacity: 0.8; }
+        .hero { background: linear-gradient(135deg, var(--primary), #002e00); color: white; padding: 40px 20px; text-align: center; border-radius: 0 0 30px 30px; }
+        .hero h1 { margin: 0; font-size: 24px; }
         
-        .loading { text-align: center; padding: 50px; color: #666; }
+        /* ആകെ നടന്ന നിസ്കാരങ്ങൾ കാണിക്കുന്ന ബോക്സ് */
+        .total-info { background: rgba(255,255,255,0.1); display: inline-block; padding: 8px 15px; border-radius: 20px; margin-top: 15px; font-size: 13px; border: 1px solid rgba(255,255,255,0.3); }
+
+        .container { padding: 20px; max-width: 600px; margin: auto; }
+        
+        .top-three { display: flex; justify-content: center; align-items: flex-end; gap: 10px; margin-top: -40px; margin-bottom: 30px; }
+        .top-card { background: white; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); flex: 1; border-top: 5px solid #ddd; }
+        .rank-1 { height: 170px; border-color: var(--gold); z-index: 2; }
+        .rank-2 { height: 145px; border-color: var(--silver); }
+        .rank-3 { height: 135px; border-color: var(--bronze); }
+        
+        .badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: bold; color: white; }
+        .top-score { font-size: 22px; font-weight: 800; color: var(--primary); }
+        .out-of { font-size: 11px; color: #777; font-weight: normal; }
+
+        .rank-list { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .rank-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f0f0f0; }
+        .rank-number { width: 30px; font-weight: bold; color: #999; }
+        .student-details { flex-grow: 1; padding-left: 10px; }
+        .student-details b { font-size: 15px; color: #333; }
+        .student-details span { display: block; font-size: 11px; color: #888; }
+        
+        .score-display { text-align: right; }
+        .score-val { font-weight: 800; color: var(--primary); font-size: 18px; }
+        .percent-bar { width: 100px; height: 6px; background: #eee; border-radius: 10px; margin-top: 5px; overflow: hidden; }
+        .percent-fill { height: 100%; background: var(--primary); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-card">
-        <i class="fa fa-trophy" style="font-size: 40px; color: var(--gold); margin-bottom: 10px;"></i>
-        <h2 style="margin:0;">സലാഹ് ലീഡർബോർഡ്</h2>
-        <p id="mName" style="opacity: 0.8; font-size: 13px; margin: 5px 0 0;">Loading...</p>
-    </div>
-
-    <div id="display">
-        <div class="loading">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
+<div class="hero">
+    <h1><i class="fa fa-chart-line"></i> SALAH LEADERBOARD</h1>
+    <p id="mName">മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു...</p>
+    <div class="total-info">
+        ആകെ നടന്ന ജമാഅത്തുകൾ: <span id="totalPossible">0</span>
     </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<div class="container">
+    <div id="topSection" class="top-three" style="display: none;">
+        <div id="rank2" class="top-card rank-2"></div>
+        <div id="rank1" class="top-card rank-1"></div>
+        <div id="rank3" class="top-card rank-3"></div>
+    </div>
+
+    <div id="leaderboardList" class="rank-list">
+        <div style="text-align:center; padding:30px;">റാങ്ക് ലിസ്റ്റ് ലോഡ് ചെയ്യുന്നു...</div>
+    </div>
+</div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-  authDomain: "mum-new-id.firebaseapp.com",
-  projectId: "mum-new-id",
-  storageBucket: "mum-new-id.firebasestorage.app",
-  messagingSenderId: "794343464244",
-  appId: "1:794343464244:web:f9083036490e3609bf1961",
-  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+        authDomain: "mum-new-id.firebaseapp.com",
+        projectId: "mum-new-id",
+        storageBucket: "mum-new-id.firebasestorage.app",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+    };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const rtdb = firebase.database();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const rtdb = firebase.database();
 
-const urlParams = new URLSearchParams(window.location.search);
-const mId = urlParams.get('mid'); 
+    const urlParams = new URLSearchParams(window.location.search);
+    const mId = urlParams.get('id');
 
-// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
-if(mId) {
-    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-        if(snap.exists()) document.getElementById('mName').innerText = snap.val().name;
-    });
-}
+    async function loadData() {
+        if(!mId) return;
 
-async function loadRank() {
-    if(!mId) {
-        document.getElementById('display').innerHTML = "Madrasa ID Missing!";
-        return;
-    }
-
-    const display = document.getElementById('display');
-    
-    try {
-        // ആൺകുട്ടികളെ മാത്രം എടുക്കുന്നു
-        const snapshot = await db.collection("students")
-                                 .where("madrasa_id", "==", mId)
-                                 .where("gender", "==", "Male")
-                                 .get();
-        
-        display.innerHTML = "";
-        let students = [];
-        snapshot.forEach(doc => {
-            let data = doc.data();
-            // മാർക്ക് ഇല്ലാത്തവർക്ക് 0 നൽകുന്നു
-            data.totalSalahMark = data.totalSalahMark || 0;
-            students.push(data);
+        // 1. മദ്റസയുടെ അടിസ്ഥാന വിവരങ്ങൾ
+        rtdb.ref(`madrasa_requests/${mId}`).once('value', snap => {
+            if(snap.exists()) document.getElementById('mName').innerText = snap.val().name + " - " + snap.val().place;
         });
 
-        // മാർക്ക് അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (കൂടിയ മാർക്ക് മുകളിൽ)
-        students.sort((a, b) => b.totalSalahMark - a.totalSalahMark);
+        // 2. ആകെ നടന്ന നിസ്കാരങ്ങൾ കണക്കാക്കുന്നു
+        // എല്ലാ കുട്ടികളുടേയും എല്ലാ ദിവസത്തെയും റെക്കോർഡുകൾ നോക്കി ആകെ എത്ര ദിവസങ്ങളിൽ എൻട്രി ഉണ്ടെന്ന് കണ്ടെത്തുന്നു
+        const recordsSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
+        const allRecords = recordsSnap.val() || {};
+        
+        let allDates = new Set();
+        for(let sid in allRecords) {
+            for(let date in allRecords[sid]) {
+                if(date.includes('-')) allDates.add(date);
+            }
+        }
+        
+        // ആകെ നടന്ന നിസ്കാരങ്ങൾ = ആകെ ദിവസങ്ങൾ * 5 (ഫജ്‌ർ മുതൽ ഇശാ വരെ)
+        const totalPossibleScore = allDates.size * 5;
+        document.getElementById('totalPossible').innerText = totalPossibleScore;
 
-        if (students.length === 0) {
-            display.innerHTML = "<div style='text-align:center; padding:20px;'>വിവരങ്ങൾ ലഭ്യമല്ല.</div>";
-            return;
+        // 3. കുട്ടികളുടെ വിവരങ്ങളും സ്കോറും എടുക്കുന്നു
+        const studentSnap = await db.collection("students").where("madrasa_id", "==", mId).get();
+        const scoreSnap = await rtdb.ref(`salah_total/${mId}`).once('value');
+        const scores = scoreSnap.val() || {};
+
+        let leaderboard = [];
+        studentSnap.forEach(doc => {
+            const s = doc.data();
+            const myScore = scores[doc.id] || 0;
+            leaderboard.push({
+                name: s.name,
+                reg: s.number || '-',
+                cls: s.class,
+                score: myScore,
+                percent: totalPossibleScore > 0 ? (myScore / totalPossibleScore) * 100 : 0
+            });
+        });
+
+        leaderboard.sort((a, b) => b.score - a.score);
+        display(leaderboard, totalPossibleScore);
+    }
+
+    function display(list, total) {
+        const listDiv = document.getElementById('leaderboardList');
+        listDiv.innerHTML = "";
+
+        if(list.length >= 3) {
+            document.getElementById('topSection').style.display = 'flex';
+            renderTop('rank1', list[0], 1, 'bg-gold', total);
+            renderTop('rank2', list[1], 2, 'bg-silver', total);
+            renderTop('rank3', list[2], 3, 'bg-bronze', total);
         }
 
-        let currentRank = 0;
-        let lastMark = -1;
-        let rankToDisplay = 0;
-
-        students.forEach((s, index) => {
-            // ഒരേ മാർക്ക് ആണെങ്കിൽ റാങ്ക് മാറില്ല
-            if (s.totalSalahMark !== lastMark) {
-                currentRank = index + 1;
-            }
-            lastMark = s.totalSalahMark;
-
-            let rankClass = "";
-            let medalIcon = "";
-
-            if(currentRank === 1 && s.totalSalahMark > 0) { 
-                rankClass = "rank-1"; 
-                medalIcon = "🥇"; 
-            } else if(currentRank === 2 && s.totalSalahMark > 0) { 
-                rankClass = "rank-2"; 
-                medalIcon = "🥈"; 
-            } else if(currentRank === 3 && s.totalSalahMark > 0) { 
-                rankClass = "rank-3"; 
-                medalIcon = "🥉"; 
-            } else { 
-                medalIcon = `<span class="rank-number">${currentRank}</span>`; 
-            }
-
-            display.innerHTML += `
-                <div class="rank-item ${rankClass}">
-                    <div class="rank-badge">${medalIcon}</div>
-                    <div class="student-info">
-                        <span class="student-name">${s.name}</span>
-                        <span class="student-meta">Reg: ${s.number} | Class: ${s.class}</span>
+        list.forEach((s, i) => {
+            listDiv.innerHTML += `
+                <div class="rank-item">
+                    <div class="rank-number">${i+1}</div>
+                    <div class="student-details">
+                        <b>${s.name}</b>
+                        <span>Reg: ${s.reg} | Class: ${s.cls}</span>
                     </div>
-                    <div class="score-box">
-                        <span class="score-val">${s.totalSalahMark}</span>
-                        <span class="score-label">POINTS</span>
+                    <div class="score-display">
+                        <span class="score-val">${s.score}<small class="out-of">/${total}</small></span>
+                        <div class="percent-bar"><div class="percent-fill" style="width:${s.percent}%"></div></div>
                     </div>
-                </div>`;
+                </div>
+            `;
         });
-
-    } catch (error) {
-        console.error(error);
-        display.innerHTML = "<div style='text-align:center;'>ഡാറ്റ ലോഡ് ചെയ്യുന്നതിൽ പിശക്!</div>";
     }
-}
 
-window.onload = loadRank;
+    function renderTop(id, s, r, cls, total) {
+        document.getElementById(id).innerHTML = `
+            <div class="badge ${cls === 'bg-gold' ? 'bg-gold' : (cls === 'bg-silver' ? 'bg-silver' : 'bg-bronze')}" 
+                 style="background:${cls === 'bg-gold' ? '#ffd700' : (cls === 'bg-silver' ? '#c0c0c0' : '#cd7f32')}">${r}</div>
+            <b style="font-size:12px; display:block; margin-bottom:5px;">${s.name}</b>
+            <span class="top-score">${s.score}</span><span class="out-of">/${total}</span>
+            <div style="font-size:9px; color:#999; margin-top:5px;">TOTAL POINTS</div>
+        `;
+    }
+
+    loadData();
 </script>
+
 </body>
 </html>
