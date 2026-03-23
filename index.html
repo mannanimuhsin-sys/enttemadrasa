@@ -242,9 +242,6 @@
             db.ref('madrasa_requests/' + sid).once('value', snap => { if(snap.exists()) loadProfile(snap.val()); });
         }
     };
-    
-</script>
-<script>
     let deferredPrompt;
     const overlay = document.getElementById('appInstallOverlay');
     const androidView = document.getElementById('androidView');
@@ -274,7 +271,6 @@
         overlay.style.display = 'block';
         iosView.style.display = 'block';
     }
-    
 </script>
 </body>
 </html>
