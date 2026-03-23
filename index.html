@@ -36,6 +36,10 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; border-radius: 10px; font-weight: bold; }
         #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
+        .install-overlay { position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; text-align: center; border: 1px solid #eee; }
+        .install-btn { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
+        .ios-msg { color: #555; font-size: 13px; line-height: 1.5; }
+        .ios-icon { width: 25px; vertical-align: middle; margin: 0 5px; }
     </style>
 </head>
 <body>
@@ -105,6 +109,25 @@
             <button class="btn btn-primary" onclick="location.reload()">BACK</button>
         </div>
     </div>
+</div>
+<div id="appInstallOverlay" class="install-overlay">
+    <h3 style="margin:0 0 10px 0; color:#333;">Get Our App</h3>
+    
+    <div id="androidView" style="display:none;">
+        <p style="font-size:13px; color:#666;">പ്ലേസ്റ്റോറിൽ പോകാതെ തന്നെ ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യാം.</p>
+        <button id="pwaInstallBtn" class="install-btn">INSTALL NOW</button>
+    </div>
+
+    <div id="iosView" style="display:none;">
+        <div class="ios-msg">
+            ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ താഴെ കാണുന്ന <b>'Share'</b> 
+            <img src="https://img.icons8.com/ios/50/000000/export.png" class="ios-icon"> 
+            ബട്ടൺ അമർത്തി <b>'Add to Home Screen'</b> എന്നത് തിരഞ്ഞെടുക്കുക.
+        </div>
+    </div>
+    
+    <button onclick="document.getElementById('appInstallOverlay').style.display='none'" 
+            style="background:none; border:none; color:#999; margin-top:10px; font-size:12px;">Later</button>
 </div>
 
 <script>
@@ -219,6 +242,38 @@
             db.ref('madrasa_requests/' + sid).once('value', snap => { if(snap.exists()) loadProfile(snap.val()); });
         }
     };
+    
+</script>
+<script>
+    let deferredPrompt;
+    const overlay = document.getElementById('appInstallOverlay');
+    const androidView = document.getElementById('androidView');
+    const iosView = document.getElementById('iosView');
+
+    // 1. ആൻഡ്രോയിഡ് ഇൻസ്റ്റാൾ സപ്പോർട്ട് ഉണ്ടോ എന്ന് നോക്കുന്നു
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        overlay.style.display = 'block';
+        androidView.style.display = 'block';
+    });
+
+    document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            overlay.style.display = 'none';
+        }
+    });
+
+    // 2. ഐഫോൺ തിരിച്ചറിയുന്നു
+    const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true;
+
+    if (isIos && !isStandalone) {
+        overlay.style.display = 'block';
+        iosView.style.display = 'block';
+    }
 </script>
 </body>
 </html>
