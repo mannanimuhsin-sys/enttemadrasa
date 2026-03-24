@@ -58,7 +58,13 @@ button {
     text-align: right;
     margin-top: 40px;
 }
+@media print {
+    button {
+        display: none;
+    }
+}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
@@ -137,14 +143,57 @@ function generateBill(){
     <p style="text-align:center; font-size:12px; color:#888; margin-top:20px;">
    This is a system generated bill from Entte Madrasa.
     </p>
-        <button onclick="window.print()">🖨 Print / Save PDF</button>
-
-    </div>
+        <button onclick="downloadPDF()">📄 Download PDF</button>
+        <button onclick="window.print()">🖨 Print / Save PDF</button> 
+        </div>
     `;
 
     document.getElementById("output").innerHTML = html;
 }
+function downloadPDF() {
 
+    const element = document.getElementById("billArea");
+
+    // എല്ലാ images load ആകുന്നത് wait ചെയ്യുക
+    const images = element.getElementsByTagName("img");
+    let loaded = 0;
+
+    if(images.length === 0){
+        generatePDF();
+    }
+
+    for(let i=0; i<images.length; i++){
+        if(images[i].complete){
+            loaded++;
+            if(loaded === images.length){
+                generatePDF();
+            }
+        } else {
+            images[i].onload = () => {
+                loaded++;
+                if(loaded === images.length){
+                    generatePDF();
+                }
+            };
+        }
+    }
+
+    function generatePDF(){
+
+        const receiptText = document.querySelector("#billArea p").innerText;
+        const receipt = receiptText.replace("Receipt No: ","");
+
+        const opt = {
+            margin: 5,
+            filename: receipt + '.pdf',
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    }
+}
 </script>
 
 </body>
