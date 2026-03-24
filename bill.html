@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill Generator</title>
+
+<style>
+body {
+  font-family: Arial;
+  background:#f3f4f6;
+  padding:15px;
+}
+
+.container {
+  max-width:600px;
+  margin:auto;
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+}
+
+button {
+  padding:10px;
+  width:100%;
+  background:#16a34a;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+}
+
+.bill {
+  margin-top:20px;
+  padding:20px;
+  border:1px solid #ccc;
+  background:#fff;
+  position:relative;
+}
+
+.watermark {
+  position:absolute;
+  top:40%;
+  left:20%;
+  opacity:0.1;
+  font-size:40px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h3>🧾 Bill Generator</h3>
+
+<input type="text" id="name" placeholder="Madrasa / Committee Name">
+<input type="text" id="place" placeholder="Place">
+
+<button onclick="generateBill()">Generate Bill</button>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+
+// 🔢 Auto Receipt Number (local storage)
+function getReceiptNo(){
+    let num = localStorage.getItem("billNo") || 1;
+    localStorage.setItem("billNo", parseInt(num)+1);
+    return "R" + String(num).padStart(3,'0');
+}
+
+function generateBill(){
+
+    let name = document.getElementById("name").value;
+    let place = document.getElementById("place").value;
+
+    let receipt = getReceiptNo();
+    let d = new Date();
+    let date = String(d.getDate()).padStart(2,'0') + "-" +
+           String(d.getMonth()+1).padStart(2,'0') + "-" +
+           d.getFullYear();
+
+    let html = `
+    <div class="bill" id="billArea">
+
+        <div class="watermark">ENTTE MADRASA</div>
+        
+        <img src="logo.png" style="height:60px; display:block; margin:auto;">
+        <h2 style="text-align:center;">ENTTE MADRASA</h2>
+        <h4 style="text-align:center;">SERVICE BILL</h4>
+
+        <hr>
+
+        <p><b>Receipt No:</b> ${receipt}</p>
+        <p><b>Date:</b> ${date}</p>
+
+        <p><b>To:</b> ${name}</p>
+        <p><b>Place:</b> ${place}</p>
+
+        <hr>
+
+        <p><b>Service:</b> Madrasa App Setup</p>
+        <p><b>Amount:</b> ₹700</p>
+
+        <hr>
+
+        <h3>Total: ₹700</h3>
+
+        <br><br>
+
+    <div style="margin-top:40px;">
+    <img src="signature.png" style="height:80px;"><br>
+    <b>Authorized Signature</b>
+    </div>
+        <button onclick="window.print()">🖨 Print / Save PDF</button>
+
+    </div>
+    `;
+
+    document.getElementById("output").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>
