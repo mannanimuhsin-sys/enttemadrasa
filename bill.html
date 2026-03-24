@@ -45,12 +45,19 @@ button {
 
 .watermark {
   position:absolute;
-  top:40%;
-  left:20%;
-  opacity:0.1;
-  font-size:40px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  opacity:0.06;
 }
 
+.watermark img {
+  width:250px;
+}
+.signature {
+    text-align: right;
+    margin-top: 40px;
+}
 </style>
 </head>
 
@@ -92,11 +99,17 @@ function generateBill(){
     let html = `
     <div class="bill" id="billArea">
 
-        <div class="watermark">ENTTE MADRASA</div>
+       <div class="watermark">
+       <img src="logo.png">
+       </div>
         
         <img src="logo.png" style="height:60px; display:block; margin:auto;">
-        <h2 style="text-align:center;">ENTTE MADRASA</h2>
-        <h4 style="text-align:center;">SERVICE BILL</h4>
+       <h2 style="text-align:center; color:#111827; letter-spacing:1px;">
+       ENTTE MADRASA
+       </h2>
+        <h4 style="text-align:center; color:#16a34a;">
+       SERVICE BILL
+       </h4>
 
         <hr>
 
@@ -111,9 +124,9 @@ function generateBill(){
         <p><b>Service:</b> Madrasa App Setup</p>
         <p><b>Amount:</b> ₹700</p>
 
-        <hr>
+       <hr style="border:1px solid #16a34a;">
 
-        <h3>Total: ₹700</h3>
+       <h3 style="color:#16a34a;">Total: ₹700</h3>
 
         <br><br>
 
@@ -121,6 +134,9 @@ function generateBill(){
     <img src="signature.png" style="height:80px;"><br>
     <b>Authorized Signature</b>
     </div>
+    <p style="text-align:center; font-size:12px; color:#888; margin-top:20px;">
+   This is a system generated bill from Entte Madrasa.
+    </p>
         <button onclick="window.print()">🖨 Print / Save PDF</button>
 
     </div>
