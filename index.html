@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>എന്‍റെ മദ്റസ | Smart Management</title>
     
-    <link rel="manifest" href="manifest.json">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -13,38 +12,43 @@
     <style>
         :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; }
         .page { display: none; animation: fadeIn 0.4s; }
         .active { display: block !important; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ✅ ഹൈഡ് ചെയ്ത പ്ലസ് ബട്ടൺ (ഏറ്റവും മുകളിൽ) */
+        /* ✅ പ്ലസ് ബട്ടൺ - ഇപ്പോൾ പച്ച നിറത്തിൽ വരും */
         #plusBtn { 
-            position: fixed; top: 10px; right: 10px; 
-            width: 50px; height: 50px; 
-            background: transparent; border: none; 
-            font-size: 24px; color: rgba(0,0,0,0.06); 
-            cursor: pointer; z-index: 100000 !important; 
-            display: flex; align-items: center; justify-content: center;
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            width: 55px; 
+            height: 55px; 
+            background: #004d00 !important; /* പച്ച നിറം */
+            border: none; 
+            border-radius: 50%;
+            font-size: 24px; 
+            color: white !important; /* വെള്ള പ്ലസ് */
+            cursor: pointer; 
+            z-index: 999999 !important; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-
+        
+        /* ബാക്കി പഴയ സ്റ്റൈലുകൾ */
         .profile-card { text-align: center; background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 30px 20px; border-radius: 20px; margin-bottom: 25px; }
-        .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--gold); object-fit: cover; background: white; margin-bottom: 15px; }
-        .m-reg { display: inline-block; background: var(--gold); color: black; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px; }
+        .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--gold); object-fit: cover; background: white; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; border-radius: 10px; font-weight: bold; }
         #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
-        .install-overlay { position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; text-align: center; border: 1px solid #eee; }
-        .install-btn { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
-        .ios-msg { color: #555; font-size: 13px; line-height: 1.5; }
-        .ios-icon { width: 25px; vertical-align: middle; margin: 0 5px; }
     </style>
 </head>
 <body>
 
-<button id="plusBtn" onclick="showPage('regPage')">➕</button>
+<button id="plusBtn" onclick="showPage('regPage')"><i class="fa fa-plus"></i></button>
 
 <div class="container">
     <div id="loginPage" class="page active">
@@ -54,7 +58,7 @@
         </div>
         <input type="text" id="logReg" placeholder="മദ്റസ രജിസ്റ്റർ നമ്പർ">
         <input type="password" id="logPass" placeholder="പാസ്‌വേഡ്">
-        <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">LOGIN</button>
+        <button class="btn btn-primary" onclick="handleLogin()">LOGIN</button>
     </div>
 
     <div id="regPage" class="page">
@@ -78,27 +82,8 @@
 
     <div id="portalPage" class="page">
         <div id="profileArea"></div>
-        
         <button class="btn btn-dash" onclick="openDashboard()"><i class="fa fa-chart-line"></i> DASHBOARD</button>
-        
-        <button class="btn btn-dash" id="btnPayment" onclick="openPaymentPortal()"><i class="fa fa-file-invoice-dollar"></i> PAYMENTS</button>
         <button class="btn btn-dash" onclick="openIDPortal()"><i class="fa fa-id-badge"></i> ID CARD PORTAL</button>
-        <button class="btn btn-dash" onclick="openQuizPortal()"><i class="fa fa-question-circle"></i> SPECIAL QUIZ</button>
-        
-        <button id="btn_salah" class="btn btn-dash" onclick="openSalahTracker()" style="display: none; background: #e8f5e9; border: 2px solid #2e7d32;">
-            <i class="fa fa-mosque"></i> SALAH TRACKER
-        </button>
-
-        <div id="adminSalahSection" style="display: none;">
-            <button class="btn btn-dash" onclick="openAdminSalah()" style="background: #2e7d32; color: white; border:none;">
-                <i class="fa fa-check-double"></i> MARK SALAH (Admin)
-            </button>
-        </div>
-
-        <div id="adminPanelSection" style="display: none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
-            <button class="btn btn-dash" onclick="window.location.href='payment_admin.html?id='+currentId" style="background: #2e7d32; color: white; border:none;">MANAGE PAYMENTS</button>
-            <button class="btn btn-dash" onclick="window.location.href='settings.html?id='+currentId" style="background: #607d8b; color: white; border:none;">SETTINGS</button>
-        </div>
         <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 40px;" onclick="logout()">LOGOUT</button>
     </div>
 
@@ -110,27 +95,9 @@
         </div>
     </div>
 </div>
-<div id="appInstallOverlay" class="install-overlay">
-    <h3 style="margin:0 0 10px 0; color:#333;">Get Our App</h3>
-    
-    <div id="androidView" style="display:none;">
-        <p style="font-size:13px; color:#666;">പ്ലേസ്റ്റോറിൽ പോകാതെ തന്നെ ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യാം.</p>
-        <button id="pwaInstallBtn" class="install-btn">INSTALL NOW</button>
-    </div>
-
-    <div id="iosView" style="display:none;">
-        <div class="ios-msg">
-            ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ താഴെ കാണുന്ന <b>'Share'</b> 
-            <img src="https://img.icons8.com/ios/50/000000/export.png" class="ios-icon"> 
-            ബട്ടൺ അമർത്തി <b>'Add to Home Screen'</b> എന്നത് തിരഞ്ഞെടുക്കുക.
-        </div>
-    </div>
-    
-    <button onclick="document.getElementById('appInstallOverlay').style.display='none'" 
-            style="background:none; border:none; color:#999; margin-top:10px; font-size:12px;">Later</button>
-</div>
 
 <script>
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -142,16 +109,19 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // നിങ്ങൾ നൽകിയ API Key ഇവിടെ ചേർത്തു
     const IMGBB_API_KEY = "A0ec42450bb0e87699896f33dbd7c471"; 
-
-    let currentId = "", currentRole = "";
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
-        document.getElementById('plusBtn').style.display = (pageId === 'loginPage') ? 'flex' : 'none';
-        window.scrollTo(0,0);
+        
+        // പ്ലസ് ബട്ടൺ കാണിക്കേണ്ട ലോജിക്
+        const plusBtn = document.getElementById('plusBtn');
+        if (pageId === 'loginPage' || pageId === 'regPage') {
+            plusBtn.style.display = 'flex';
+        } else {
+            plusBtn.style.display = 'none';
+        }
     }
 
     function previewImage(input) {
@@ -172,25 +142,22 @@
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യാനുള്ള പുതിയ ഫങ്ക്ഷൻ
     async function uploadToImgBB(file) {
         const formData = new FormData();
         formData.append('image', file);
         try {
             const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
             const result = await response.json();
-            return result.data.url; 
-        } catch (error) {
-            console.error("ImgBB Upload Error:", error);
-            return "";
-        }
+            return result.data.url;
+        } catch (e) { return ""; }
     }
 
     async function register() {
         const regBtn = document.getElementById('regBtn');
+        const rName = document.getElementById('rName').value.trim();
+        const rPlace = document.getElementById('rPlace').value.trim();
         const regNo = document.getElementById('rReg').value.trim();
         const uId = document.getElementById('rUser').value.trim();
         const uPass = document.getElementById('rUsthad').value.trim();
@@ -200,33 +167,19 @@
         if (!regNo || !uId || !uPass) return alert("വിവരങ്ങൾ നൽകുക!");
 
         regBtn.disabled = true;
-        regBtn.innerText = "അപ്‌ലോഡ് ചെയ്യുന്നു...";
+        regBtn.innerText = "Processing...";
 
         let photoUrl = "";
-        if (photoFile) {
-            photoUrl = await uploadToImgBB(photoFile); // ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു
-        }
+        if (photoFile) photoUrl = await uploadToImgBB(photoFile);
 
         const uHash = await hashPassword(uPass);
         const pHash = await hashPassword(pPass);
 
         db.ref('madrasa_requests/' + uId).set({
-            name: document.getElementById('rName').value,
-            place: document.getElementById('rPlace').value,
-            reg: regNo, 
-            photo: photoUrl, // ImgBB ലിങ്ക് ഇവിടെ സേവ് ചെയ്യുന്നു
-            usthadPass: uHash, 
-            parentPass: pHash, 
-            status: "pending",
+            name: rName, place: rPlace, reg: regNo, photo: photoUrl,
+            usthadPass: uHash, parentPass: pHash, status: "pending",
             createdAt: new Date().toISOString()
-        }).then(() => { 
-            alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക."); 
-            location.reload(); 
-        }).catch(err => {
-            alert("എറർ: " + err.message);
-            regBtn.disabled = false;
-            regBtn.innerText = "REGISTER NOW";
-        });
+        }).then(() => { alert("വിജയിച്ചു!"); location.reload(); });
     }
 
     async function handleLogin() {
@@ -236,22 +189,18 @@
 
         db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).once('value', snap => {
             let found = null;
-            let key = null;
+            let currentId = "";
             snap.forEach(c => {
                 const d = c.val();
-                if(d.usthadPass === passHash) { found = d; key = c.key; currentRole = "admin"; }
-                else if(d.parentPass === passHash) { found = d; key = c.key; currentRole = "parent"; }
+                if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
+                else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
             });
-
             if(found) {
                 if(found.status !== 'approved') return showPage('pendingPage');
-                currentId = key;
                 localStorage.setItem("madrasaId", currentId);
                 localStorage.setItem("userRole", currentRole);
                 loadProfile(found);
-            } else { 
-                alert("തെറ്റായ മദ്റസ നമ്പർ അല്ലെങ്കിൽ പാസ്‌വേഡ്!"); 
-            }
+            } else { alert("തെറ്റായ വിവരം!"); }
         });
     }
 
@@ -259,72 +208,19 @@
         document.getElementById('plusBtn').style.display = 'none';
         document.getElementById('profileArea').innerHTML = `
             <div class="profile-card"><img src="${d.photo || 'logo.png'}" class="profile-img">
-            <h1 style="margin:0; font-size:22px;">${d.name}</h1>
+            <h1 style="margin:0;">${d.name}</h1>
             <div class="m-reg">REG NO: ${d.reg}</div></div>`;
-
-        db.ref('settings/' + currentId).on('value', snap => {
-            const settings = snap.val() || {};
-            document.getElementById('btn_salah').style.display = settings.salah ? 'flex' : 'none';
-        });
-
-        if(currentRole === 'admin') {
-            document.getElementById('adminPanelSection').style.display = 'block';
-            document.getElementById('adminSalahSection').style.display = 'block';
-        }
         showPage('portalPage');
     }
-    
-    function openDashboard() { window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashboard?id=${currentId}&role=${currentRole}`; }
-    function openIDPortal() { window.location.href = (currentRole === "admin") ? `https://mannanimuhsin-sys.github.io/madrasa/admin_id_portal.html?id=${currentId}` : `https://mannanimuhsin-sys.github.io/madrasa/student_id.html?mid=${currentId}`; }
-    function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
-    function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
-    function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
-    function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
+
     function logout() { localStorage.clear(); location.reload(); }
 
     window.onload = () => {
         const sid = localStorage.getItem("madrasaId");
         if(sid) {
-            currentId = sid; currentRole = localStorage.getItem("userRole");
             db.ref('madrasa_requests/' + sid).once('value', snap => { if(snap.exists()) loadProfile(snap.val()); });
         }
     };
-    let deferredPrompt;
-    const overlay = document.getElementById('appInstallOverlay');
-    const androidView = document.getElementById('androidView');
-    const iosView = document.getElementById('iosView');
-
-    // 1. ആൻഡ്രോയിഡ് ഇൻസ്റ്റാൾ സപ്പോർട്ട് ഉണ്ടോ എന്ന് നോക്കുന്നു
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        overlay.style.display = 'block';
-        androidView.style.display = 'block';
-    });
-
-    document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-            overlay.style.display = 'none';
-        }
-    });
-
-    // 2. ഐഫോൺ തിരിച്ചറിയുന്നു
-    const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isStandalone = window.navigator.standalone === true;
-
-    if (isIos && !isStandalone) {
-        overlay.style.display = 'block';
-        iosView.style.display = 'block';
-    }
-      // ✅ സർവീസ് വർക്കർ രജിസ്റ്റർ ചെയ്യുന്നു (ഇത് നിർബന്ധമാണ്)
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-        });
-    }
-
 </script>
 </body>
 </html>
