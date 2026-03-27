@@ -288,24 +288,40 @@
         alert("കണക്ഷൻ പ്രശ്നം! വീണ്ടും ശ്രമിക്കുക.");
     }
 }
-    function loadProfile(d) {
-        document.getElementById('plusBtn').style.display = 'none';
-        document.getElementById('profileArea').innerHTML = `
-            <div class="profile-card"><img src="${d.photo || 'logo.png'}" class="profile-img">
-            <h1 style="margin:0; font-size:22px;">${d.name}</h1>
-            <div class="m-reg">REG NO: ${d.reg}</div></div>`;
-
-        db.ref('settings/' + currentId).on('value', snap => {
-            const settings = snap.val() || {};
-            document.getElementById('btn_salah').style.display = settings.salah ? 'flex' : 'none';
-        });
-
-        if(currentRole === 'admin') {
-            document.getElementById('adminPanelSection').style.display = 'block';
-            document.getElementById('adminSalahSection').style.display = 'block';
-        }
-        showPage('portalPage');
+   function loadProfile(d) {
+    // 1. പ്രൊഫൈൽ ഏരിയയിൽ വിവരങ്ങൾ കാണിക്കുന്നു
+    const profileArea = document.getElementById('profileArea');
+    if (profileArea) {
+        profileArea.innerHTML = `
+            <div class="profile-card">
+                <img src="${d.photo || 'logo.png'}" class="profile-img">
+                <h1 style="margin:0; font-size:22px;">${d.name}</h1>
+                <div class="m-reg">REG NO: ${d.reg}</div>
+            </div>`;
     }
+
+    // 2. പ്ലസ് ബട്ടൺ മറയ്ക്കുന്നു
+    const plusBtn = document.getElementById('plusBtn');
+    if (plusBtn) plusBtn.style.display = 'none';
+
+    // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു
+    db.ref('settings/' + currentId).on('value', snap => {
+        const settings = snap.val() || {};
+        const salahBtn = document.getElementById('btn_salah');
+        if (salahBtn) {
+            salahBtn.style.display = settings.salah ? 'flex' : 'none';
+        }
+    });
+
+    // 4. അഡ്മിൻ ആണെങ്കിൽ മാത്രം അഡ്മിൻ ഏരിയ കാണിക്കുന്നു
+    const adminBox = document.getElementById('adminArea');
+    if (adminBox) {
+        adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
+    }
+
+    // 5. അവസാനം പോർട്ടൽ പേജ് തുറക്കുന്നു
+    showPage('portalPage');
+}
 
     function openDashboard() { window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashboard?id=${currentId}&role=${currentRole}`; }
     function openIDPortal() { window.location.href = (currentRole === "admin") ? `https://mannanimuhsin-sys.github.io/madrasa/admin_id_portal.html?id=${currentId}` : `https://mannanimuhsin-sys.github.io/madrasa/student_id.html?mid=${currentId}`; }
