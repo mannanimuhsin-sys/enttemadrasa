@@ -34,12 +34,45 @@
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-dash { background: white; color: var(--primary); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; margin-top: 12px; text-decoration: none; border-radius: 10px; font-weight: bold; }
-        #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
-        .install-overlay { position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; text-align: center; border: 1px solid #eee; }
-        .install-btn { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
-        .ios-msg { color: #555; font-size: 13px; line-height: 1.5; }
-        .ios-icon { width: 25px; vertical-align: middle; margin: 0 5px; }
+/* ✅ ഗ്രിഡ് ലേഔട്ട് */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* ✅ മനോഹരമായ കാർഡ് ഡിസൈൻ */
+.portal-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px 10px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    cursor: pointer;
+    border-left: 5px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    transition: transform 0.2s;
+}
+
+.portal-card:active { transform: scale(0.95); }
+.portal-card i { font-size: 26px; margin-bottom: 8px; }
+.portal-card span { font-size: 13px; font-weight: bold; text-transform: uppercase; }
+.c-green { border-left-color: #2e7d32; } .c-green i { color: #2e7d32; }
+.c-blue { border-left-color: #0277bd; } .c-blue i { color: #0277bd; }
+.c-gold { border-left-color: #d4af37; } .c-gold i { color: #d4af37; }
+.c-red { border-left-color: #c62828; } .c-red i { color: #c62828; }
+.c-purple { border-left-color: #6a1b9a; } .c-purple i { color: #6a1b9a; }
+.admin-section { margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee; width: 100%; }
+.admin-btn { width: 100%; padding: 12px; border-radius: 10px; border:none;  margin-bottom: 10px; font-weight: bold; color: white; cursor: pointer;  display: flex; align-items: center; justify-content: center; gap: 10px; }        #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
+.install-overlay { position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; text-align: center; border: 1px solid #eee; }
+.install-btn { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
+.ios-msg { color: #555; font-size: 13px; line-height: 1.5; }
+.ios-icon { width: 25px; vertical-align: middle; margin: 0 5px; }
     </style>
 </head>
 <body>
@@ -77,30 +110,43 @@
     </div>
 
     <div id="portalPage" class="page">
-        <div id="profileArea"></div>
+    <div id="profileArea"></div>
+    
+    <div class="card-grid">
+        <div class="portal-card c-green" onclick="openDashboard()">
+            <i class="fa fa-chart-line"></i><span>Dashboard</span>
+        </div>
         
-        <button class="btn btn-dash" onclick="openDashboard()"><i class="fa fa-chart-line"></i> DASHBOARD</button>
+        <div class="portal-card c-blue" id="btnPayment" onclick="openPaymentPortal()">
+            <i class="fa fa-file-invoice-dollar"></i><span>Payments</span>
+        </div>
+
+        <div class="portal-card c-gold" onclick="openIDPortal()">
+            <i class="fa fa-id-badge"></i><span>ID Card</span>
+        </div>
+
+        <div class="portal-card c-red" onclick="openQuizPortal()">
+            <i class="fa fa-question-circle"></i><span>Special Quiz</span>
+        </div>
         
-        <button class="btn btn-dash" id="btnPayment" onclick="openPaymentPortal()"><i class="fa fa-file-invoice-dollar"></i> PAYMENTS</button>
-        <button class="btn btn-dash" onclick="openIDPortal()"><i class="fa fa-id-badge"></i> ID CARD PORTAL</button>
-        <button class="btn btn-dash" onclick="openQuizPortal()"><i class="fa fa-question-circle"></i> SPECIAL QUIZ</button>
+        <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()" style="display: none;">
+            <i class="fa fa-mosque"></i><span>Salah Tracker</span>
+        </div>
+    </div>
+
+    <div id="adminArea" class="admin-section" style="display: none;">
+        <p style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 10px;">ADMIN CONTROLS</p>
         
-        <button id="btn_salah" class="btn btn-dash" onclick="openSalahTracker()" style="display: none; background: #e8f5e9; border: 2px solid #2e7d32;">
-            <i class="fa fa-mosque"></i> SALAH TRACKER
+        <button class="admin-btn" style="background: #2e7d32;" onclick="openAdminSalah()">
+            <i class="fa fa-check-double"></i> MARK SALAH (ADMIN)
         </button>
 
-        <div id="adminSalahSection" style="display: none;">
-            <button class="btn btn-dash" onclick="openAdminSalah()" style="background: #2e7d32; color: white; border:none;">
-                <i class="fa fa-check-double"></i> MARK SALAH (Admin)
-            </button>
-        </div>
-
-        <div id="adminPanelSection" style="display: none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
-            <button class="btn btn-dash" onclick="window.location.href='payment_admin.html?id='+currentId" style="background: #2e7d32; color: white; border:none;">MANAGE PAYMENTS</button>
-            <button class="btn btn-dash" onclick="window.location.href='settings.html?id='+currentId" style="background: #607d8b; color: white; border:none;">SETTINGS</button>
-        </div>
-        <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 40px;" onclick="logout()">LOGOUT</button>
+        <button class="admin-btn" style="background: #607d8b;" onclick="window.location.href='settings.html?id='+currentId">
+            <i class="fa fa-cog"></i> SETTINGS
+        </button>
     </div>
+    <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 30px;" onclick="logout()">LOGOUT</button>
+</div>
 
     <div id="pendingPage" class="page">
         <div style="text-align: center; padding: 50px 20px;">
