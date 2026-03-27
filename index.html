@@ -236,26 +236,33 @@
    async function handleLogin() {
     const reg = document.getElementById('logReg').value.trim();
     const pass = document.getElementById('logPass').value.trim();
-    const btn = document.querySelector('button[onclick="handleLogin()"]');
+    
+    // ബട്ടൺ സെലക്ട് ചെയ്യുന്നത് കൂടുതൽ കൃത്യമാക്കുന്നു
+    const btn = document.getElementById('loginBtn') || document.querySelector('button[onclick="handleLogin()"]');
 
     if (!reg || !pass) {
         alert("രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
         return;
     }
 
-    btn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
-    btn.disabled = true;
+    if(btn) {
+        btn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
+        btn.disabled = true;
+    }
 
     try {
         const passHash = await hashPassword(pass);
         db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).once('value', snap => {
-            btn.innerText = "LOGIN";
-            btn.disabled = false;
+            if(btn) {
+                btn.innerText = "LOGIN";
+                btn.disabled = false;
+            }
 
             if (snap.exists()) {
                 let found = null;
                 snap.forEach(c => {
                     const d = c.val();
+                    // പാസ്‌വേഡ് ഹാഷ് ഒത്തുനോക്കുന്നു
                     if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
                     else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
                 });
@@ -264,13 +271,20 @@
                     if(found.status !== 'approved') return showPage('pendingPage');
                     localStorage.setItem("madrasaId", currentId);
                     localStorage.setItem("userRole", currentRole);
-                    loadProfile(found);
-                } else { alert("തെറ്റായ പാസ്‌വേഡ്!"); }
-            } else { alert("രജിസ്റ്റർ നമ്പർ തെറ്റാണ്!"); }
+                    loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
+                } else { 
+                    alert("തെറ്റായ പാസ്‌വേഡ്!"); 
+                }
+            } else { 
+                alert("രജിസ്റ്റർ നമ്പർ തെറ്റാണ്!"); 
+            }
         });
     } catch (e) {
-        btn.innerText = "LOGIN";
-        btn.disabled = false;
+        if(btn) {
+            btn.innerText = "LOGIN";
+            btn.disabled = false;
+        }
+        console.error("Login Error:", e);
         alert("കണക്ഷൻ പ്രശ്നം! വീണ്ടും ശ്രമിക്കുക.");
     }
 }
