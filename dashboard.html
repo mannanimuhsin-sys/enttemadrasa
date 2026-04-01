@@ -9,10 +9,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
-        .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; border-top: 5px solid #2c3e50; }
+        .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; border-top: 6px solid #2c3e50; }
         
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 26px; font-weight: 800; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; letter-spacing: 1px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 8px; font-size: 28px; font-weight: 900; letter-spacing: 0.4px; }
+        .subtitle { text-align: center; color: #4d5563; margin-bottom: 20px; font-size: 15px; letter-spacing: 0.5px; }
+
+        .summary-grid { display: grid; gap: 15px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 22px; }
+        .stat-card { border-radius: 16px; padding: 18px 20px; color: #fff; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px rgba(44,62,80,0.08); }
+        .stat-card span { text-transform: uppercase; letter-spacing: 1px; font-size: 12px; opacity: 0.85; }
+        .stat-card strong { display: block; font-size: 32px; margin-top: 10px; font-weight: 800; line-height: 1; }
+        .stat-boys { background: linear-gradient(135deg, #2f80ed 0%, #3b82f6 100%); }
+        .stat-girls { background: linear-gradient(135deg, #d63384 0%, #e83e8c 100%); }
+        .stat-total { background: linear-gradient(135deg, #20c997 0%, #2ebf7f 100%); }
+
+        .card-grid { display: none; gap: 16px; margin-bottom: 20px; }
+        .class-card { border-radius: 18px; background: #ffffff; border: 1px solid rgba(44,62,80,0.08); box-shadow: 0 10px 30px rgba(15,23,42,0.06); padding: 18px; }
+        .card-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .card-title span { font-size: 17px; font-weight: 800; color: #1f2937; }
+        .card-total { font-size: 14px; color: #16a34a; font-weight: 700; }
+        .card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: #475569; }
+        .card-row strong { font-size: 16px; color: #111827; }
+        .card-row.contact-row { gap: 10px; flex-wrap: wrap; }
+        .card-row.contact-row a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; transition: 0.2s; }
+        .card-row.contact-row a:hover { background: #eff6ff; }
 
         /* Admin Entry Box */
         .admin-section { background: #eef2f3; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: none; border: 1px solid #d1d8db; }
@@ -24,12 +43,12 @@
         /* Table Styling */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { border: 1px solid #eee; padding: 15px 10px; text-align: center; }
-        th { background: #2c3e50; color: #fff; font-size: 13px; text-transform: uppercase; }
-        
-        .boys { color: #0b5ed7; font-weight: bold; }
-        .girls { color: #d63384; font-weight: bold; }
-        .total-cell { color: #198754; font-weight: bold; background: #f9f9f9; }
+        th, td { border: 1px solid #e6e8eb; padding: 14px 10px; text-align: center; vertical-align: middle; }
+        th { background: #2c3e50; color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.7px; }
+        td { background: #ffffff; }
+        .boys { color: #0b5ed7; font-weight: 700; }
+        .girls { color: #d63384; font-weight: 700; }
+        .total-cell { color: #198754; font-weight: 700; background: #f8fcf9; }
         .usthad-name { text-align: left; font-weight: 600; color: #333; padding-left: 15px; }
 
         /* Contact Icons - No Number Displayed */
@@ -42,9 +61,22 @@
         tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
         tfoot td { border: none; padding: 15px; }
         
-        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        
-        @media(max-width: 768px) { h1 { font-size: 20px; } .container { padding: 15px; } }
+        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+
+        @media(max-width: 992px) {
+            .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media(max-width: 768px) {
+            h1 { font-size: 22px; }
+            .container { padding: 18px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .card-grid { display: grid; }
+            .table-responsive { display: none; }
+            .admin-section input { min-width: 100%; }
+            .input-group { flex-direction: column; }
+            .btn-add { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -52,6 +84,23 @@
 <div class="container">
     <h1 id="mNameHead">മദ്റസ വിവരങ്ങൾ</h1>
     <div class="subtitle" id="mPlaceHead">Student Strength & Staff Details</div>
+
+    <div class="summary-grid">
+        <div class="stat-card stat-boys">
+            <span>BOYS</span>
+            <strong id="totalBoysCard">0</strong>
+        </div>
+        <div class="stat-card stat-girls">
+            <span>GIRLS</span>
+            <strong id="totalGirlsCard">0</strong>
+        </div>
+        <div class="stat-card stat-total">
+            <span>TOTAL STUDENTS</span>
+            <strong id="totalAllCard">0</strong>
+        </div>
+    </div>
+
+    <div id="cardView" class="card-grid"></div>
 
     <div id="adminArea" class="admin-section">
         <h4>പുതിയ ക്ലാസ് വിവരങ്ങൾ ചേർക്കുക</h4>
@@ -152,6 +201,8 @@
             let html = "";
             let totalBoys = 0, totalGirls = 0, totalAll = 0;
 
+            let cardHtml = "";
+
             classes.forEach((item, index) => {
                 let b = parseInt(item.b) || 0;
                 let g = parseInt(item.g) || 0;
@@ -183,8 +234,28 @@
                         <i class="fa fa-trash" style="color:red; cursor:pointer;" onclick="deleteClass(${index})"></i>
                     </td>` : ''}
                 </tr>`;
+
+                cardHtml += `
+                <div class="class-card">
+                    <div class="card-title">
+                        <span>${item.name}${item.div ? ' (' + item.div + ')' : ''}</span>
+                        <span class="card-total">${rowTotal} students</span>
+                    </div>
+                    <div class="card-row"><span>BOYS</span><strong>${b}</strong></div>
+                    <div class="card-row"><span>GIRLS</span><strong>${g}</strong></div>
+                    <div class="card-row"><span>TOTAL</span><strong>${rowTotal}</strong></div>
+                    <div class="card-row"><span>USTHAD</span><strong>${item.u || '-'}</strong></div>
+                    <div class="card-row contact-row">
+                        <a href="tel:${item.p}" title="Call"><i class="fa fa-phone-alt"></i> CALL</a>
+                        <a href="https://wa.me/91${item.p}" title="WhatsApp"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
+                    </div>
+                </div>`;
             });
             document.getElementById('tableBody').innerHTML = html;
+            document.getElementById('cardView').innerHTML = cardHtml;
+            document.getElementById('totalBoysCard').innerText = totalBoys;
+            document.getElementById('totalGirlsCard').innerText = totalGirls;
+            document.getElementById('totalAllCard').innerText = totalAll;
             
             if(role === 'admin') {
                 document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'table-cell');
