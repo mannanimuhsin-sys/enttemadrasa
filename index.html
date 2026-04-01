@@ -225,10 +225,14 @@
             const uHash = await hashPassword(uPass);
             const pHash = await hashPassword(pPass);
 
-            db.ref('madrasa_requests/' + uId).set({
+            db.ref('madrasa_requests/' + regNo).set({
+                userId: uId,
                 name: document.getElementById('rName').value,
-                reg: regNo, photo: document.getElementById('imagePrev').src.startsWith('data') ? document.getElementById('imagePrev').src : "",
-                usthadPass: uHash, parentPass: pHash, status: "pending",
+                reg: regNo,
+                photo: document.getElementById('imagePrev').src.startsWith('data') ? document.getElementById('imagePrev').src : "",
+                usthadPass: uHash,
+                parentPass: pHash,
+                status: "pending",
                 createdAt: new Date().toISOString()
             }).then(() => { alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക."); location.reload(); });
         }
@@ -252,33 +256,41 @@
 
         try {
             const passHash = await hashPassword(pass);
-            const query = db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).limitToFirst(1);
-            const snap = await query.once('value');
+            const snap = await db.ref('madrasa_requests/' + reg).once('value');
 
             if(btn) {
                 btn.innerText = "LOGIN";
                 btn.disabled = false;
             }
 
-            if (snap.exists()) {
-                let found = null;
-                snap.forEach(c => {
-                    const d = c.val();
-                    // പാസ്‌വേഡ് ഹാഷ് ഒത്തുനോക്കുന്നു
-                    if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
-                    else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
-                });
+            let found = null;
 
-                if(found) {
-                    if(found.status !== 'approved') return showPage('pendingPage');
-                    localStorage.setItem("madrasaId", currentId);
-                    localStorage.setItem("userRole", currentRole);
-                    loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
-                } else {
-                    alert("തെറ്റായ പാസ്‌വേഡ്!");
+            if (snap.exists()) {
+                const d = snap.val();
+                if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+            }
+
+            if (!found) {
+                const legacyQuery = db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).limitToFirst(1);
+                const legacySnap = await legacyQuery.once('value');
+                if (legacySnap.exists()) {
+                    legacySnap.forEach(c => {
+                        const d = c.val();
+                        if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
+                        else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
+                    });
                 }
+            }
+
+            if(found) {
+                if(found.status !== 'approved') return showPage('pendingPage');
+                localStorage.setItem("madrasaId", currentId);
+                localStorage.setItem("userRole", currentRole);
+                loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
             } else {
-                alert("രജിസ്റ്റർ നമ്പർ തെറ്റാണ്!");
+                alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!"
+                    + "\nനോക്കുക: പുതിയ രജിസ്ട്രേഷനുകൾ ഉപയോഗിക്കുന്നത് റെഗ് നമ്പർ ആണ്.");
             }
         } catch (e) {
             if(btn) {
