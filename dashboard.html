@@ -52,9 +52,11 @@
         .usthad-name { text-align: left; font-weight: 600; color: #333; padding-left: 15px; }
 
         /* Contact Icons - No Number Displayed */
-        .contact-btns { display: flex; justify-content: center; gap: 20px; }
-        .contact-btns a { font-size: 22px; transition: 0.3s; text-decoration: none; }
-        .contact-btns a:hover { transform: translateY(-3px); }
+        .contact-btns { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .contact-btns a, .admin-action { font-size: 22px; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .contact-btns a:hover, .admin-action:hover { transform: translateY(-3px); }
+        .admin-action { cursor: pointer; color: #0d6efd; padding: 8px; border-radius: 10px; background: #eef4ff; }
+        .admin-action.delete-action { color: #dc3545; background: #fff0f0; }
         .call-icon { color: #0d6efd; }
         .whatsapp-icon { color: #25D366; }
 
@@ -124,7 +126,6 @@
                     <th colspan="3">വിദ്യാർത്ഥികളുടെ എണ്ണം</th>
                     <th rowspan="2">CLASS USTHAD</th>
                     <th rowspan="2">CONTACT</th>
-                    <th rowspan="2" class="admin-only-cell" style="display:none">ACTION</th>
                 </tr>
                 <tr>
                     <th>BOYS</th>
@@ -225,14 +226,12 @@
                     <td>
                         <div class="contact-btns">
                             <a href="tel:${item.p}" class="call-icon" title="Call"><i class="fa fa-phone-alt"></i></a>
+                            ${role === 'admin' ? `
+                            <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
+                            <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
                             <a href="https://wa.me/91${item.p}" class="whatsapp-icon" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </td>
-                    ${role === 'admin' ? `
-                    <td>
-                        <i class="fa fa-edit" style="color:blue; cursor:pointer; margin-right:15px;" onclick="editClass(${index})"></i>
-                        <i class="fa fa-trash" style="color:red; cursor:pointer;" onclick="deleteClass(${index})"></i>
-                    </td>` : ''}
                 </tr>`;
 
                 cardHtml += `
@@ -257,17 +256,13 @@
             document.getElementById('totalGirlsCard').innerText = totalGirls;
             document.getElementById('totalAllCard').innerText = totalAll;
             
-            if(role === 'admin') {
-                document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'table-cell');
-            }
-
             document.getElementById('tableFoot').innerHTML = `
                 <tr>
                     <td colspan="2">ആകെ (TOTAL)</td>
                     <td>${totalBoys}</td>
                     <td>${totalGirls}</td>
                     <td>${totalAll}</td>
-                    <td colspan="${role === 'admin' ? '3' : '2'}">TOTAL STRENGTH</td>
+                    <td colspan="2">TOTAL STRENGTH</td>
                 </tr>`;
         });
     }
