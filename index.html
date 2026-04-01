@@ -252,33 +252,34 @@
 
         try {
             const passHash = await hashPassword(pass);
-            db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).once('value', snap => {
-                if(btn) {
-                    btn.innerText = "LOGIN";
-                    btn.disabled = false;
-                }
+            const query = db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).limitToFirst(1);
+            const snap = await query.once('value');
 
-                if (snap.exists()) {
-                    let found = null;
-                    snap.forEach(c => {
-                        const d = c.val();
-                        // പാസ്‌വേഡ് ഹാഷ് ഒത്തുനോക്കുന്നു
-                        if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
-                        else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
-                    });
+            if(btn) {
+                btn.innerText = "LOGIN";
+                btn.disabled = false;
+            }
 
-                    if(found) {
-                        if(found.status !== 'approved') return showPage('pendingPage');
-                        localStorage.setItem("madrasaId", currentId);
-                        localStorage.setItem("userRole", currentRole);
-                        loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
-                    } else { 
-                        alert("തെറ്റായ പാസ്‌വേഡ്!"); 
-                    }
-                } else { 
-                    alert("രജിസ്റ്റർ നമ്പർ തെറ്റാണ്!"); 
+            if (snap.exists()) {
+                let found = null;
+                snap.forEach(c => {
+                    const d = c.val();
+                    // പാസ്‌വേഡ് ഹാഷ് ഒത്തുനോക്കുന്നു
+                    if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
+                    else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
+                });
+
+                if(found) {
+                    if(found.status !== 'approved') return showPage('pendingPage');
+                    localStorage.setItem("madrasaId", currentId);
+                    localStorage.setItem("userRole", currentRole);
+                    loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
+                } else {
+                    alert("തെറ്റായ പാസ്‌വേഡ്!");
                 }
-            });
+            } else {
+                alert("രജിസ്റ്റർ നമ്പർ തെറ്റാണ്!");
+            }
         } catch (e) {
             if(btn) {
                 btn.innerText = "LOGIN";

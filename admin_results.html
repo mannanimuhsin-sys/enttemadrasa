@@ -45,7 +45,8 @@
                 <th>Rank</th>
                 <th>വിദ്യാർത്ഥി</th>
                 <th>ക്ലാസ്</th>
-                <th>സമയം (MS)</th>
+                <th>സ്കോർ</th>
+                <th>സബ്മിറ്റ് സമയം</th>
             </tr>
         </thead>
         <tbody id="resultBody">
@@ -91,17 +92,33 @@
             let data = [];
             snap.forEach(child => {
                 const res = child.val();
-                if(res.isCorrect) { // ശരിയുത്തരം നൽകിയവരെ മാത്രം എടുക്കുന്നു
+                if (res && typeof res.score === 'number') {
                     data.push(res);
                 }
             });
 
-            // സമയം (submitTime) അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (ഏറ്റവും കുറഞ്ഞ സമയം ആദ്യം)
-            data.sort((a, b) => a.submitTime - b.submitTime);
+            data.sort((a, b) => {
+                const scoreA = a.score ?? 0;
+                const scoreB = b.score ?? 0;
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                const timeA = a.submitTime ?? 0;
+                const timeB = b.submitTime ?? 0;
+                return timeA - timeB;
+            });
 
             topWinners = data.slice(0, 3); // ആദ്യത്തെ 3 പേരെ എടുക്കുന്നു
             renderTable(data);
         });
+    }
+
+    function formatSubmitTime(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const h = String(d.getHours()).padStart(2, '0');
+        const m = String(d.getMinutes()).padStart(2, '0');
+        const s = String(d.getSeconds()).padStart(2, '0');
+        const ms = String(d.getMilliseconds()).padStart(3, '0');
+        return `${h}:${m}:${s}.${ms}`;
     }
 
     // 2. ടേബിൾ നിർമ്മാണം
@@ -112,7 +129,8 @@
                 <td>${i+1}</td>
                 <td>${r.studentName} (${r.regNo})</td>
                 <td>${r.class}</td>
-                <td>${new Date(r.submitTime).getMilliseconds()} ms</td>
+                <td>${r.score}/${r.totalQuestions || ''}</td>
+                <td>${formatSubmitTime(r.submitTime)}</td>
             </tr>
         `).join('');
     }

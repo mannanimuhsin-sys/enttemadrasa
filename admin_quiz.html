@@ -22,6 +22,7 @@
 
 <div class="admin-box">
     <h2 id="madrasaName">Loading...</h2>
+    <p id="quizStatus" style="text-align:center; font-weight:bold; color:#444; margin-bottom:8px;">Quiz Status: Draft</p>
     <h4 style="text-align:center;">Special Day Quiz Creator</h4>
 
     <input type="text" id="quizHeading" placeholder="പ്രോഗ്രാം ഹെഡിംഗ് (ഉദാ: മീലാദ് ക്വിസ്)">
@@ -48,6 +49,7 @@
         </div>
 
     <button class="btn btn-publish" onclick="publishQuiz()">PUBLISH QUIZ</button>
+    <button class="btn" style="background: #607D8B; color: white;" onclick="stopQuiz()">STOP QUIZ</button>
     <button class="btn btn-danger" onclick="clearQuiz()">REFRESH / CLEAR ALL</button>
     <button class="btn" style="background: #2196F3; color: white;" 
         onclick="window.location.href='admin_results.html?id=' + mID">
@@ -134,6 +136,7 @@
             const dt = new Date(data.startTime);
             document.getElementById('quizTime').value = dt.toISOString().slice(0,16);
         }
+        updateQuizStatus(data.status || 'draft');
         if (data.questions && Array.isArray(data.questions)) {
             questions = data.questions;
             renderQuestions();
@@ -151,7 +154,23 @@
             startTime: new Date(time).getTime(),
             questions: questions,
             status: "published"
-        }).then(() => alert("ക്വിസ് പബ്ലിഷ് ചെയ്തു!"));
+        }).then(() => {
+            updateQuizStatus('published');
+            alert("ക്വിസ് പബ്ലിഷ് ചെയ്തു!");
+        });
+    }
+
+    function stopQuiz() {
+        if (!confirm('ഈ ക്വിസ് നിർത്തണോ?')) return;
+        db.ref('quizzes/' + mID).update({ status: 'stopped' }).then(() => {
+            updateQuizStatus('stopped');
+            alert('Quiz stopped.');
+        });
+    }
+
+    function updateQuizStatus(status) {
+        const statusText = status === 'published' ? 'Published' : status === 'stopped' ? 'Stopped' : 'Draft';
+        document.getElementById('quizStatus').innerText = `Quiz Status: ${statusText}`;
     }
 
     function clearQuiz() {
