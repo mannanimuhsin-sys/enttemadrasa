@@ -246,6 +246,9 @@
                     <div class="card-row"><span>USTHAD</span><strong>${item.u || '-'}</strong></div>
                     <div class="card-row contact-row">
                         <a href="tel:${item.p}" title="Call"><i class="fa fa-phone-alt"></i> CALL</a>
+                        ${role === 'admin' ? `
+                        <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
+                        <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
                         <a href="https://wa.me/91${item.p}" title="WhatsApp"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
                     </div>
                 </div>`;
