@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Special Day Quiz - Student Portal</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --primary: #004d00; --gold: #d4af37; }
@@ -70,17 +71,19 @@
 </div>
 
 <script>
-    // Firebase Config (നിങ്ങളുടെ അതേ വിവരങ്ങൾ ഇവിടെയും വേണം)
+    // Firebase Config (മദ്രസയും ID പോർട്ടലും ഒരേ അടിസ്ഥാനത്തിൽ പ്രവർത്തിക്കണം)
     const firebaseConfig = {
-        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-        authDomain: "enttemadrasa.firebaseapp.com",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-        projectId: "enttemadrasa",
-        storageBucket: "enttemadrasa.firebasestorage.app",
-        appId: "1:623531881201:web:b863793340c3901cedaf50"
+        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+        authDomain: "mum-new-id.firebaseapp.com",
+        projectId: "mum-new-id",
+        storageBucket: "mum-new-id.firebasestorage.app",
+        messagingSenderId: "794343464244",
+        appId: "1:794343464244:web:f9083036490e3609bf1961",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const db = firebase.firestore();
+    const rtdb = firebase.database();
 
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('mid'); // മദ്റസ ID
@@ -89,28 +92,49 @@
     let quizData = null;
     let selectedOption = null;
 
-    // 1. ലോഗിൻ ഫങ്ക്ഷൻ
-    function studentLogin() {
+    // 1. ലോഗിൻ ഫംഗ്ഷൻ
+    async function studentLogin() {
         const reg = document.getElementById('stuReg').value.trim();
         const pass = document.getElementById('stuPass').value.trim();
 
-        // ഐഡി കാർഡ് പോർട്ടലിൽ സേവ് ചെയ്തിട്ടുള്ള വിദ്യാർത്ഥികളുടെ ലിസ്റ്റിൽ നിന്ന് തിരയുന്നു
-        db.ref('students/' + mID).once('value', snap => {
-            let found = false;
-            snap.forEach(child => {
-                const s = child.val();
-                if(s.regNo === reg && s.password === pass) {
-                    currentStudent = s;
-                    found = true;
-                }
-            });
+        if (!reg || !pass) {
+            return alert("ദയവായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+        }
 
-            if(found) {
-                showQuizDashboard();
-            } else {
-                alert("രജിസ്റ്റർ നമ്പറോ പാസ്‌വേഡോ തെറ്റാണ്!");
+        try {
+            const doc = await db.collection('students').doc(reg).get();
+            if (!doc.exists) {
+                return alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!");
             }
-        });
+
+            const s = doc.data();
+            if (s.madrasa_id !== mID || s.password !== pass) {
+                return alert("തെറ്റായ രജിസ്റ്റർ നമ്പർ അല്ലെങ്കിൽ പാസ്‌വേഡാണ്!");
+            }
+            if (s.status !== 'approved') {
+                return alert("അഡ്മിൻ അംഗീകാരത്തിനായി കാത്തിരിക്കൂ.");
+            }
+
+            currentStudent = { ...s, regNo: reg };
+            const submissionSnap = await rtdb.ref('quiz_submissions/' + mID + '/' + reg).once('value');
+            if (submissionSnap.exists()) {
+                return showAlreadySubmitted();
+            }
+
+            showQuizDashboard();
+        } catch (error) {
+            console.error(error);
+            alert("ലോഗിൻ തകരാറായി. ദയവായി വീണ്ടും ശ്രമിക്കുക.");
+        }
+    }
+
+    function showAlreadySubmitted() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('quizSection').style.display = 'block';
+        document.getElementById('quizHeader').style.display = 'block';
+        document.getElementById('programTitle').innerText = 'നിങ്ങൾ ഇതിനകം ക്വിസ് സബ്മിറ്റ് ചെയ്തിട്ടുണ്ട്';
+        document.getElementById('timerBox').innerHTML = '<h3>ഒരു രജിസ്റ്റർ നമ്പറിൽ നിന്ന് ഒരേ ക്വിസ് ഒരു തവണ മാത്രമേ നൽകാവൂ.</h3>';
+        document.getElementById('questionArea').style.display = 'none';
     }
 
     // 2. ക്വിസ് ഡാഷ്ബോർഡ് കാണിക്കുന്നു
@@ -133,19 +157,27 @@
     }
 
     // 3. ക്വിസ് വിവരങ്ങളും ടൈമറും ലോഡ് ചെയ്യുന്നു
-    function loadQuizInfo() {
-        db.ref('quizzes/' + mID).on('value', snap => {
+    async function loadQuizInfo() {
+        try {
+            const snap = await rtdb.ref('quizzes/' + mID).once('value');
             quizData = snap.val();
-            if(!quizData || quizData.status !== 'published') {
-                document.getElementById('timerBox').innerHTML = "<h3>നിലവിൽ ക്വിസ് ലഭ്യമല്ല!</h3>";
+            if (!quizData || quizData.status !== 'published') {
+                document.getElementById('timerBox').innerHTML = '<h3>നിലവിൽ ക്വിസ് ലഭ്യമല്ല!</h3>';
                 return;
             }
 
             document.getElementById('quizHeader').style.display = 'block';
             document.getElementById('programTitle').innerText = quizData.heading;
 
-            startTimer(quizData.startTime);
-        });
+            if (new Date().getTime() >= quizData.startTime) {
+                showQuestions();
+            } else {
+                startTimer(quizData.startTime);
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('timerBox').innerHTML = '<h3>ക്വിസ് വിവരങ്ങൾ വായിക്കുന്നതിനിടയിൽ പിഴവ് സംഭവിച്ചു.</h3>';
+        }
     }
 
     // 4. ടൈമർ ലോജിക്
@@ -154,32 +186,38 @@
             const now = new Date().getTime();
             const distance = startTime - now;
 
-            if (distance < 0) {
+            if (distance <= 0) {
                 clearInterval(timerInterval);
-                showQuestions(); // സമയം കഴിഞ്ഞാൽ ചോദ്യങ്ങൾ കാണിക്കും
+                showQuestions();
             } else {
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                document.getElementById('countdown').innerHTML = hours + ":" + minutes + ":" + seconds;
+                document.getElementById('countdown').innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
         }, 1000);
     }
 
     // 5. ചോദ്യങ്ങൾ കാണിക്കുന്നു
     function showQuestions() {
+        if (!quizData || !quizData.questions || !quizData.questions.length) {
+            document.getElementById('timerBox').innerHTML = '<h3>ചോദ്യങ്ങൾ ലഭ്യമല്ല.</h3>';
+            return;
+        }
+
         document.getElementById('timerBox').style.display = 'none';
         document.getElementById('questionArea').style.display = 'block';
+        selectedOption = null;
 
-        // ഇവിടെ തൽക്കാലം ആദ്യത്തെ ചോദ്യം മാത്രം കാണിക്കുന്നു (മൾട്ടിപ്പിൾ ചോദ്യങ്ങളുണ്ടെങ്കിൽ ലൂപ്പ് ചെയ്യാം)
-        const q = quizData.questions[0]; 
+        const q = quizData.questions[questionIndex];
         let optionsHtml = q.options.map((opt, i) => `
-            <div class="option" onclick="selectOpt(this, ${i+1})">${opt}</div>
+            <div class="option" onclick="selectOpt(this, ${i + 1})">${opt}</div>
         `).join('');
 
         document.getElementById('currentQuestion').innerHTML = `
-            <div class="q-title">Q: ${q.question}</div>
+            <div class="q-title">Q ${questionIndex + 1} of ${quizData.questions.length}: ${q.question}</div>
             ${optionsHtml}`;
+        document.getElementById('submitBtn').innerText = questionIndex < quizData.questions.length - 1 ? 'NEXT QUESTION' : 'SUBMIT ANSWER';
     }
 
     function selectOpt(el, val) {
@@ -188,26 +226,52 @@
         selectedOption = val;
     }
 
-    // 6. സബ്മിഷൻ (മൈക്രോ സെക്കന്റ് കണക്കാക്കുന്നു)
     function submitAnswer() {
-        if(!selectedOption) return alert("ദയവായി ഒരു ഓപ്ഷൻ തിരഞ്ഞെടുക്കുക!");
+        if (!selectedOption) return alert('ദയവായി ഒരു ഓപ്ഷൻ തിരഞ്ഞെടുക്കുക!');
+        if (!quizData || !quizData.questions || !quizData.questions.length) return;
 
-        const submitTime = firebase.database.ServerValue.TIMESTAMP;
-        
+        const q = quizData.questions[questionIndex];
+        answers.push({
+            question: q.question,
+            selectedAnswer: selectedOption,
+            correctAnswer: q.correct,
+            isCorrect: selectedOption == q.correct
+        });
+
+        questionIndex++;
+        if (questionIndex < quizData.questions.length) {
+            showQuestions();
+            return;
+        }
+
         const resultData = {
             studentName: currentStudent.name,
             regNo: currentStudent.regNo,
             class: currentStudent.class,
-            mentor: currentStudent.mentor,
-            photo: currentStudent.photo || "",
-            selectedAnswer: selectedOption,
-            isCorrect: selectedOption == quizData.questions[0].correct,
-            submitTime: submitTime
+            mentor: currentStudent.mentor || '',
+            photo: currentStudent.photo || '',
+            answers: answers,
+            score: answers.filter(a => a.isCorrect).length,
+            totalQuestions: answers.length,
+            submitTime: firebase.database.ServerValue.TIMESTAMP
         };
 
-        db.ref('quiz_submissions/' + mID + '/' + currentStudent.regNo).set(resultData).then(() => {
-            alert("നിങ്ങളുടെ ഉത്തരം സബ്മിറ്റ് ചെയ്തു!");
-            location.reload(); // ഒരു തവണ സബ്മിറ്റ് ചെയ്താൽ പേജ് റീലോഡ് ആകും
+        const submissionRef = rtdb.ref('quiz_submissions/' + mID + '/' + currentStudent.regNo);
+        submissionRef.transaction(current => {
+            if (current === null) {
+                return resultData;
+            }
+            return; // Already submitted
+        }, (error, committed) => {
+            if (error) {
+                console.error(error);
+                return alert('സബ്മിഷൻ പിഴവ്. ദയവായി വീണ്ടും ശ്രമിക്കുക.');
+            }
+            if (!committed) {
+                return alert('നിങ്ങൾ ഇതിനകം ഈ ക്വിസ് സബ്മിറ്റ് ചെയ്തിട്ടുണ്ട്!');
+            }
+            alert(`സബ്മിഷൻ പൂർത്തിയായി! സ്കോർ: ${resultData.score}/${resultData.totalQuestions}`);
+            location.reload();
         });
     }
 </script>
