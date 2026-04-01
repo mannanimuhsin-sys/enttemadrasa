@@ -30,11 +30,21 @@
         .countdown { font-size: 30px; font-weight: bold; margin-top: 10px; }
 
         /* Question Style */
-        .question-box { display: none; }
-        .q-title { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
-        .option { background: #f8f9fa; border: 2px solid #eee; padding: 12px; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
-        .option:hover { border-color: var(--primary); background: #e8f5e9; }
+        #quizHeader { padding: 15px 0 10px; }
+        .question-box { display: none; background: #fff; padding: 22px; border-radius: 20px; border: 1px solid #e6e6e6; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+        .q-title { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 18px; }
+        .option { background: #f8f9fa; border: 2px solid #dce9da; padding: 14px 16px; border-radius: 14px; margin-bottom: 12px; cursor: pointer; transition: 0.2s ease; }
+        .option:hover { border-color: var(--primary); background: #e6f2e9; }
         .option.selected { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.25s ease; background: linear-gradient(135deg, #0a7b3d, #2fb24b); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,128,0,0.18); }
+        .quiz-container { max-width: 540px; margin: auto; background: linear-gradient(180deg, #f7fff3 0%, #e5f7e2 100%); border-radius: 30px; padding: 25px; box-shadow: 0 18px 48px rgba(0,0,0,0.09); min-height: 88vh; }
+        .login-box { text-align: center; padding: 25px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1.5px solid #d1e5d4; border-radius: 14px; box-sizing: border-box; background: #fff; }
+        .student-card { background: linear-gradient(135deg, #0b662f, #1f8b4c); color: white; padding: 20px; border-radius: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; box-shadow: 0 16px 32px rgba(0,0,0,0.12); }
+        .student-card img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,215,0,0.95); object-fit: cover; }
+        #timerBox { text-align: center; padding: 30px 18px; color: #1e4021; background: #fffcec; border-radius: 20px; border: 1px solid #f1e9c9; margin-bottom: 20px; }
+        .countdown { font-size: 34px; font-weight: 800; margin-top: 12px; color: #0f5b1d; }
     </style>
 </head>
 <body>
@@ -91,6 +101,8 @@
     let currentStudent = null;
     let quizData = null;
     let selectedOption = null;
+    let questionIndex = 0;
+    let answers = [];
 
     // 1. ലോഗിൻ ഫംഗ്ഷൻ
     async function studentLogin() {

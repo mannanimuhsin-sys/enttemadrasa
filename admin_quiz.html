@@ -107,6 +107,10 @@
 
     function renderQuestions() {
         const area = document.getElementById('qListArea');
+        if (!questions.length) {
+            area.innerHTML = '<p style="color:#555; padding:10px;">ഇപ്പോൾ ചോദ്യങ്ങൾ ഇനിയും ചേർത്തിട്ടില്ല.</p>';
+            return;
+        }
         area.innerHTML = questions.map((q, i) => `
             <div class="q-item">
                 <b>${i+1}. ${q.question}</b> (Ans: ${q.correct})
@@ -118,6 +122,23 @@
     function removeQ(index) {
         questions.splice(index, 1);
         renderQuestions();
+    }
+
+    async function loadExistingQuiz() {
+        if (!mID) return;
+        const snap = await db.ref('quizzes/' + mID).once('value');
+        const data = snap.val();
+        if (!data) return;
+
+        document.getElementById('quizHeading').value = data.heading || '';
+        if (data.startTime) {
+            const dt = new Date(data.startTime);
+            document.getElementById('quizTime').value = dt.toISOString().slice(0,16);
+        }
+        if (data.questions && Array.isArray(data.questions)) {
+            questions = data.questions;
+            renderQuestions();
+        }
     }
 
     function publishQuiz() {
@@ -141,6 +162,8 @@
             location.reload();
         }
     }
+
+    window.onload = loadExistingQuiz;
 </script>
 
 </body>
