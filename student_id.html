@@ -11,7 +11,7 @@
 
 <style>
 :root{--green:#0b5d1e;--orange:#f39c12}
-body{margin:0;background:#e9ecef;font-family:Roboto}
+body{margin:0;background:#e9ecef;background-image:var(--bg-image);background-size:cover;background-attachment:fixed;font-family:Roboto}
 .container{max-width:430px;margin:auto;padding:15px}
 .card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,.15)}
 .tabs{display:flex;margin-bottom:15px;gap:5px}
@@ -25,15 +25,15 @@ label{font-size:12px;font-weight:bold;color:var(--green);margin-top:10px;display
 /* ID CARD DESIGN */
 #idArea{display:none;text-align:center;padding:20px 10px}
 #idCard{
- width:280px;background:#fff;margin:auto;border-radius:12px;
+ width:280px;background:linear-gradient(135deg, #fff, #f9f9f9);margin:auto;border-radius:12px;
  overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.4);border:2px solid #ddd;
  position:relative;
 }
-.header{background:var(--green);color:#fff;padding:10px}
+.header{background:linear-gradient(135deg, var(--green), #004d00);color:#fff;padding:10px}
 .header h1{margin:0;font-size:18px;text-transform: uppercase;}
 .header p{margin:4px 0 0;font-size:11px}
-.ribbon{background:var(--orange);color:#fff;font-weight:900;width:80%;margin:10px auto;padding:6px;border-radius:20px;position:relative;z-index:2;display:block}
-.photoBox{width:100px;height:130px;margin:5px auto;border-radius:14px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.ribbon{background:linear-gradient(135deg, var(--orange), #d4af37);color:#fff;font-weight:900;width:80%;margin:10px auto;padding:6px;border-radius:20px;position:relative;z-index:2;display:block}
+.photoBox{width:100px;height:130px;margin:5px auto;border-radius:8px;overflow:hidden;border:4px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.2)}
 .photoBox img{width:100%;height:100%;object-fit:cover}
 .details{padding:15px;text-align:left;font-size:11px}
 .row{display:flex;border-bottom:1px solid #eee;padding:3px 0}
@@ -190,6 +190,7 @@ async function loadMadrasa() {
             document.getElementById('cardMName').innerText = d.name;
             document.getElementById('cardMDetails').innerText = d.place + " | REG.NO: " + d.reg;
             document.getElementById('pageTitle').innerText = d.name + " | ID Portal";
+            if(d.photo) document.documentElement.style.setProperty('--bg-image', "url(" + d.photo + ")");
         }
     });
 }

@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; background-image: var(--bg-image); background-size: cover; background-attachment: fixed; padding: 15px; margin: 0; }
         .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; border-top: 6px solid #2c3e50; }
         
         h1 { text-align: center; color: #2c3e50; margin-bottom: 8px; font-size: 28px; font-weight: 900; letter-spacing: 0.4px; }
@@ -172,8 +172,9 @@
             const data = snap.val();
             if(!data) return;
 
-            document.getElementById('mNameHead').innerText = data.name;
+            document.getElementById('mNameHead').innerText = data.name + " (" + data.reg + ")";
             document.getElementById('mPlaceHead').innerText = data.place;
+            if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
 
             let classes = data.classes || [];
 
