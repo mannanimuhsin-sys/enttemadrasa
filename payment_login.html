@@ -143,6 +143,7 @@
                 const p = child.val();
                 const statusClass = p.status === "Paid" ? "status-paid" : "status-pending";
                 const statusText = p.status === "Paid" ? "PAID ✅" : "PENDING ⏳";
+                const receiptButton = p.status === "Paid" ? `<button class="btn-receipt" onclick='printReceipt(${JSON.stringify(p)})'>RECEIPT</button>` : "";
                 list.innerHTML += `
                     <div class="pay-card">
                         <div class="pay-meta">
@@ -152,7 +153,7 @@
                         </div>
                         <div class="amount-area">
                             <span>₹${p.amount}</span>
-                            <button class="btn-receipt" onclick='printReceipt(${JSON.stringify(p)})'>RECEIPT</button>
+                            ${receiptButton}
                         </div>
                     </div>`;
             });
@@ -160,9 +161,9 @@
     }
 
     function printReceipt(p) {
-        // മുമ്പ് നൽകിയ അതേ റസീറ്റ് വ്യൂ പേജിലേക്ക് പോകുന്നു
+        //പ്പെടുത്തിയ പെയ്‌മെന്റ് വിവരങ്ങൾ റസീറ്റ് കാണിക്കാൻ സേവ് ചെയ്യുന്നു
         localStorage.setItem("currentReceipt", JSON.stringify(p));
-        window.location.href = `receipt_view.html?id=${mID}`;
+        window.location.href = `payment_view.html?id=${mID}`;
     }
 
     function logout() {
