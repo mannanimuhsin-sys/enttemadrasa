@@ -177,6 +177,7 @@
                 const cls = c.getAttribute('data-cls');
                 
                 await rtdb.ref(`payments/${mID}/${reg}`).push({
+                    category: title,
                     title: title,
                     amount: amt,
                     status: "Pending", // തുടക്കത്തിൽ പെൻഡിംഗ് ആയിരിക്കും
@@ -201,7 +202,9 @@
         rtdb.ref(`payments/${mID}`).once('value', snap => {
             const programs = new Set();
             snap.forEach(student => {
-                student.forEach(pay => { programs.add(pay.val().title); });
+                student.forEach(pay => { 
+                    programs.add(pay.val().category || pay.val().title);
+                });
             });
             const sel = document.getElementById('trackProgram');
             sel.innerHTML = '<option value="">പ്രോഗ്രാം തിരഞ്ഞെടുക്കുക...</option>';
@@ -224,7 +227,8 @@
                 const reg = student.key;
                 student.forEach(paySnap => {
                     const p = paySnap.val();
-                    if(p.title === prog) {
+                    const programName = p.category || p.title;
+                    if(programName === prog) {
                         if(cls !== "All" && p.sClass !== cls) return;
 
                         totalNeed += parseInt(p.amount);

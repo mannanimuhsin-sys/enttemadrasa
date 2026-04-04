@@ -32,7 +32,7 @@
     
     <div class="amount-big">₹ <span id="rAmt">0.00</span></div>
 
-    <div class="paid-stamp">PAID ✅</div>
+    <div class="paid-stamp" id="statusStamp">PAID ✅</div>
 
     <div class="footer-note">This is a computer generated receipt. <br> Powered by എന്‍റെ മദ്റസ Smart Portal</div>
     
@@ -56,10 +56,22 @@
         document.getElementById('rDate').innerText = data.date;
         document.getElementById('sName').innerText = data.sName;
         document.getElementById('sReg').innerText = data.reg;
-        document.getElementById('rCat').innerText = data.category;
+        document.getElementById('rCat').innerText = data.category || data.title;
         document.getElementById('rAmt').innerText = data.amount;
+        
+        // Status აბბილიტი დინამიკური გაკეთება
+        const stamp = document.getElementById('statusStamp');
+        if(data.status === "Paid" || data.status === "PAID") {
+            stamp.innerText = "PAID ✅";
+            stamp.style.color = "#2e7d32";
+            stamp.style.borderColor = "#2e7d32";
+        } else {
+            stamp.innerText = "PENDING ⏳";
+            stamp.style.color = "#d97706";
+            stamp.style.borderColor = "#d97706";
+        }
 
-        // മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
+        // მდ্রѓ पेर लोड चെয়नु ம்
         rtdb.ref('madrasa_requests/' + mID).once('value', snap => {
             const m = snap.val();
             if(m) {
