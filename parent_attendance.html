@@ -122,9 +122,17 @@ async function login() {
     try {
         const passHash = await hashPassword(password);
         
-        // Find student by register number first. This works even if the page was opened
-        // without the correct madrasa ID query parameter.
-        const studentDoc = await db.collection("students").doc(regNumber).get();
+        // Find student by document ID first, then fallback to number/regno field.
+        let studentDoc = await db.collection("students").doc(regNumber).get();
+        if(!studentDoc.exists) {
+            const fallbackSnap = await db.collection("students")
+                .where("number", "==", regNumber)
+                .limit(1)
+                .get();
+            if(!fallbackSnap.empty) {
+                studentDoc = fallbackSnap.docs[0];
+            }
+        }
         
         if(!studentDoc.exists) {
             alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല! ദയവായി ശരിയായ രജിസ്റ്റർ നമ്പർ നൽകുക.");
@@ -132,7 +140,9 @@ async function login() {
         }
         
         const studentData = studentDoc.data();
-        if(studentData.password !== passHash || studentData.status !== "approved") {
+        const storedPassword = studentData.password || "";
+        const passwordMatches = storedPassword === passHash || storedPassword === password;
+        if(!passwordMatches || studentData.status !== "approved") {
             alert("തെറ്റായ രജിസ്റ്റർ നമ്പറോ പാസ്‌വേഡോ!" );
             return;
         }
@@ -164,9 +174,10 @@ async function login() {
 
 function loadStudentInfo() {
     const info = document.getElementById('studentInfo');
+    const regNo = currentStudent.regno || currentStudent.number || currentStudent.id;
     info.innerHTML = `
         <div class="student-name">${currentStudent.name}</div>
-        <div class="student-details">ക്ലാസ്: ${currentStudent.class} | രജിസ്റ്റർ നമ്പർ: ${currentStudent.regno}</div>
+        <div class="student-details">ക്ലാസ്: ${currentStudent.class} | രജിസ്റ്റർ നമ്പർ: ${regNo}</div>
     `;
 }
 
