@@ -308,8 +308,8 @@
         }
     }
     function loadProfile(d) {
-            const madrasaName = d.name || d.madrasaName || d.title || "മദ്രസ";
-            const madrasaPlace = d.place || d.location || "";
+            const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
+            const madrasaPlace = (d.place || d.location || "").trim();
 
             // 1. പ്രൊഫൈൽ ഏരിയയിൽ വിവരങ്ങൾ കാണിക്കുന്നു
             const profileArea = document.getElementById('profileArea');
