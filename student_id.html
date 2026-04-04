@@ -183,15 +183,15 @@ const mId = urlParams.get('mid');
 async function loadMadrasa() {
     if(!mId) return alert("Madrasa ID Missing!");
     rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-        const d = snap.val();
-        if(d) {
-            document.getElementById('portalMName').innerText = d.name;
-            document.getElementById('portalMPlace').innerText = d.place;
-            document.getElementById('cardMName').innerText = d.name;
-            document.getElementById('cardMDetails').innerText = d.place + " | REG.NO: " + d.reg;
-            document.getElementById('pageTitle').innerText = d.name + " | ID Portal";
-            if(d.photo) document.documentElement.style.setProperty('--bg-image', "url(" + d.photo + ")");
-        }
+        const d = snap.val() || {};
+        const madrasaName = d.name || d.madrasaName || d.title || "മദ്രസ";
+        const madrasaPlace = d.place || d.location || "";
+        document.getElementById('portalMName').innerText = madrasaName;
+        document.getElementById('portalMPlace').innerText = madrasaPlace;
+        document.getElementById('cardMName').innerText = madrasaName;
+        document.getElementById('cardMDetails').innerText = (madrasaPlace ? madrasaPlace + " | " : "") + "REG.NO: " + (d.reg || "");
+        document.getElementById('pageTitle').innerText = madrasaName + " | ID Portal";
+        if(d.photo) document.documentElement.style.setProperty('--bg-image', "url(" + d.photo + ")");
     });
 }
 loadMadrasa();

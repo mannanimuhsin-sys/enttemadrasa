@@ -233,6 +233,7 @@
             db.ref('madrasa_requests/' + regNo).set({
                 userId: uId,
                 name: document.getElementById('rName').value,
+                place: document.getElementById('rPlace').value,
                 reg: regNo,
                 photo: document.getElementById('imagePrev').src.startsWith('data') ? document.getElementById('imagePrev').src : "",
                 usthadPass: uHash,
@@ -307,17 +308,20 @@
         }
     }
     function loadProfile(d) {
-        // 1. പ്രൊഫൈൽ ഏരിയയിൽ വിവരങ്ങൾ കാണിക്കുന്നു
-        const profileArea = document.getElementById('profileArea');
-        if (profileArea) {
-            profileArea.innerHTML = `
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
-                    <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
-                    <h1 style="margin:0; font-size:22px;">${d.name}</h1>
-                    <h2 style="margin:0; font-size:18px; opacity: 0.9;">${d.place}</h2>
-                    <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg}</div>
-                </div>`;
-        }
+            const madrasaName = d.name || d.madrasaName || d.title || "മദ്രസ";
+            const madrasaPlace = d.place || d.location || "";
+
+            // 1. പ്രൊഫൈൽ ഏരിയയിൽ വിവരങ്ങൾ കാണിക്കുന്നു
+            const profileArea = document.getElementById('profileArea');
+            if (profileArea) {
+                profileArea.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
+                        <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
+                        <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
+                        <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
+                        <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg || ''}</div>
+                    </div>`;
+            }
 
         // 2. പ്ലസ് ബട്ടൺ മറയ്ക്കുന്നു
         const plusBtn = document.getElementById('plusBtn');
@@ -343,7 +347,11 @@
     }
 
         function openDashboard() { window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashboard?id=${currentId}&role=${currentRole}`; }
-        function openIDPortal() { window.location.href = (currentRole === "admin") ? `https://mannanimuhsin-sys.github.io/madrasa/admin_id_portal.html?id=${currentId}` : `https://mannanimuhsin-sys.github.io/madrasa/student_id.html?mid=${currentId}`; }
+        function openIDPortal() {
+            const id = currentId || localStorage.getItem("madrasaId");
+            if (!id) return alert("Madrasa ID missing. Please login again.");
+            window.location.href = (currentRole === "admin") ? `https://mannanimuhsin-sys.github.io/madrasa/admin_id_portal.html?id=${id}` : `https://mannanimuhsin-sys.github.io/madrasa/student_id.html?mid=${id}`;
+        }
         function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
         function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
         function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
@@ -354,7 +362,8 @@
         window.onload = () => {
             const sid = localStorage.getItem("madrasaId");
             if(sid) {
-                currentId = sid; currentRole = localStorage.getItem("userRole");
+                currentId = sid;
+                currentRole = localStorage.getItem("userRole") || "";
                 db.ref('madrasa_requests/' + sid).once('value', snap => { if(snap.exists()) loadProfile(snap.val()); });
             }
         };

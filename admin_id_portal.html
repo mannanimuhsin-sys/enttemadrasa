@@ -153,11 +153,12 @@ let allStudents = [];
 
 // മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
 rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-    if(snap.val()) {
-        document.getElementById('mName').innerText = snap.val().name + " (" + snap.val().reg + ")";
-        document.getElementById('mPlace').innerText = snap.val().place;
-        if(snap.val().photo) document.documentElement.style.setProperty('--bg-image', "url(" + snap.val().photo + ")");
-    }
+    const data = snap.val() || {};
+    const madrasaName = data.name || data.madrasaName || data.title || "മദ്രസ";
+    const madrasaPlace = data.place || data.location || "";
+    document.getElementById('mName').innerText = madrasaName + " (" + (data.reg || "") + ")";
+    document.getElementById('mPlace').innerText = madrasaPlace;
+    if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
 });
 // സദർ മുഅല്ലിം വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു
 async function loadSadarDetails() {
