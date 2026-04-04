@@ -27,6 +27,10 @@
         .student-details { color: #666; margin-top: 5px; }
         
         .attendance-list { }
+        .summary-card { background: #eaf4ea; border: 1px solid #d4e8d4; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 20px; font-weight: bold; color: var(--primary); }
+        .summary-label { font-size: 12px; color: #555; margin-top: 5px; }
         .attendance-item { background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; }
         .month-header { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 16px; }
         .attendance-stats { display: flex; justify-content: space-between; align-items: center; }
@@ -70,7 +74,7 @@
     
     <div id="attendanceSection" class="attendance-section">
         <div id="studentInfo" class="student-info"></div>
-        
+        <div id="attendanceSummary" class="summary-card" style="display:none;"></div>
         <div id="attendanceList" class="attendance-list"></div>
         
         <div class="actions">
@@ -212,14 +216,55 @@ async function loadAttendance() {
             return b.month - a.month;
         });
 
-        const studentKey = currentStudent.regno || currentStudent.number || currentStudent.id;
+        const studentKey = currentStudent.id || currentStudent.regno || currentStudent.number;
+        const studentReg = currentStudent.regno || currentStudent.number || currentStudent.id;
+        const studentNum = currentStudent.number || currentStudent.regno || currentStudent.id;
+        let totalMonths = attendanceDocs.length;
+        let totalWorkingDays = 0;
+        let totalPresentDays = 0;
+
+        attendanceDocs.forEach(data => {
+            totalWorkingDays += data.total_days || 0;
+            const present = data.students ? (data.students[studentKey] || data.students[studentReg] || data.students[studentNum] || 0) : 0;
+            totalPresentDays += present;
+        });
+
+        const overallPercentage = totalWorkingDays > 0 ? Math.round((totalPresentDays / totalWorkingDays) * 100) : 0;
+        document.getElementById('attendanceSummary').innerHTML = `
+            <div class="summary-item">
+                <div class="summary-value">${totalMonths}</div>
+                <div class="summary-label">മാസങ്ങൾ</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${totalWorkingDays}</div>
+                <div class="summary-label">മൊത്തം പ്രവർത്തി ദിവസം</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${totalPresentDays}</div>
+                <div class="summary-label">നിങ്ങളുടെ ഹാജർ</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${overallPercentage}%</div>
+                <div class="summary-label">മൊത്തം ശതമാനം</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${currentStudent.class || '-'}</div>
+                <div class="summary-label">ക്ലാസ്</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${studentReg}</div>
+                <div class="summary-label">Reg No</div>
+            </div>
+        `;
+        document.getElementById('attendanceSummary').style.display = 'grid';
+
         const monthNames = [
             "ജനുവരി", "ഫെബ്രുവരി", "മാർച്ച്", "ഏപ്രിൽ", "മേയ്", "ജൂൺ",
             "ജುലൈ", "ആഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"
         ];
 
         attendanceDocs.forEach(data => {
-            const studentAttendance = data.students ? (data.students[studentKey] || 0) : 0;
+            const studentAttendance = data.students ? (data.students[studentKey] || data.students[studentReg] || data.students[studentNum] || 0) : 0;
             const percentage = data.total_days > 0 ? Math.round((studentAttendance / data.total_days) * 100) : 0;
             const item = document.createElement('div');
             item.className = 'attendance-item';

@@ -35,6 +35,11 @@
         .btn { padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .summary-card { background: #eaf4ea; border: 1px solid #d4e8d4; border-radius: 12px; padding: 15px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .summary-label { font-size: 12px; color: #555; margin-top: 4px; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
         
         .actions { text-align: center; margin-top: 20px; }
@@ -96,6 +101,12 @@
     <div class="student-list" id="studentSection" style="display: none;">
         <div class="student-header">വിദ്യാർത്ഥികളുടെ ഹാജർ</div>
         <div id="studentList"></div>
+    </div>
+
+    <div class="student-list" id="historySection" style="display: none; margin-top: 20px;">
+        <div class="student-header">വിദ്യാർത്ഥിയുടെ മാസിക ഹാജർ</div>
+        <div id="historySummary" class="summary-card" style="display:none; margin-bottom: 10px;"></div>
+        <div id="historyList"></div>
     </div>
     
     <div class="actions">
@@ -221,6 +232,7 @@ function renderStudentList() {
                    data-student-id="${student.id}" 
                    value="${attendance}" 
                    min="0" max="31" placeholder="ദിവസങ്ങൾ">
+            <button class="btn btn-secondary" style="margin-left:10px;" onclick="viewStudentHistory('${student.id}')">View History</button>
         `;
         list.appendChild(item);
     });
@@ -282,6 +294,101 @@ async function saveAttendance() {
     } catch(error) {
         console.error("Error saving attendance:", error);
         alert("സേവ് ചെയ്യുന്നതിൽ പിശക്!");
+    }
+}
+
+async function viewStudentHistory(studentId) {
+    const student = currentStudents.find(s => s.id === studentId);
+    if(!student) return alert("വിദ്യാർത്ഥി കണ്ടെത്താനായില്ല.");
+
+    const historySection = document.getElementById('historySection');
+    const historySummary = document.getElementById('historySummary');
+    const historyList = document.getElementById('historyList');
+
+    historySection.style.display = 'block';
+    historySummary.style.display = 'none';
+    historyList.innerHTML = '<div class="no-data">Loading attendance history...</div>';
+
+    try {
+        const attendanceSnap = await db.collection('attendance')
+            .where('madrasa_id', '==', madrasaId)
+            .where('class', '==', student.class)
+            .get();
+
+        const attendanceDocs = [];
+        attendanceSnap.forEach(doc => attendanceDocs.push({ id: doc.id, ...doc.data() }));
+        attendanceDocs.sort((a, b) => {
+            if(a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+        });
+
+        if(attendanceDocs.length === 0) {
+            historyList.innerHTML = '<div class="no-data">Attendance history not available.</div>';
+            return;
+        }
+
+        const studentKey = student.id || student.regno || student.number;
+        const studentReg = student.regno || student.number || student.id;
+        const studentNum = student.number || student.regno || student.id;
+
+        let totalMonths = attendanceDocs.length;
+        let totalWorkingDays = 0;
+        let totalPresentDays = 0;
+        const monthNames = [
+            'ജനുവരി', 'ഫെബ്രുവരി', 'മാർച്ച്', 'ഏപ്രിൽ', 'മേയ്', 'ജൂൺ',
+            'ജൂലൈ', 'ആഗസ്റ്റ്', 'സെപ്റ്റംബർ', 'ഒക്ടോബർ', 'നവംബർ', 'ഡിസംബർ'
+        ];
+
+        const rows = attendanceDocs.map(data => {
+            const present = data.students ? (data.students[studentKey] || data.students[studentReg] || data.students[studentNum] || 0) : 0;
+            totalWorkingDays += data.total_days || 0;
+            totalPresentDays += present;
+            const percentage = data.total_days > 0 ? Math.round((present / data.total_days) * 100) : 0;
+            return `
+                <div class="attendance-item">
+                    <div class="month-header">${monthNames[data.month - 1]} ${data.year}</div>
+                    <div class="attendance-stats">
+                        <div class="stat">
+                            <div class="stat-value">${data.total_days}</div>
+                            <div class="stat-label">മൊത്തം ദിവസം</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${present}</div>
+                            <div class="stat-label">ഹാജർ</div>
+                        </div>
+                        <div class="stat">
+                            <div class="percentage">${percentage}%</div>
+                            <div class="stat-label">ശതമാനം</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        const overallPercentage = totalWorkingDays > 0 ? Math.round((totalPresentDays / totalWorkingDays) * 100) : 0;
+        historySummary.innerHTML = `
+            <div class="summary-item">
+                <div class="summary-value">${totalMonths}</div>
+                <div class="summary-label">മാസങ്ങൾ</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${totalWorkingDays}</div>
+                <div class="summary-label">മൊത്തം ദിവസം</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${totalPresentDays}</div>
+                <div class="summary-label">ഉള്ളപ്പെട്ട ഹാജർ</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${overallPercentage}%</div>
+                <div class="summary-label">ശതമാനം</div>
+            </div>
+        `;
+        historySummary.style.display = 'grid';
+        historyList.innerHTML = rows.join('');
+    } catch(error) {
+        console.error('Error loading history:', error);
+        historyList.innerHTML = '<div class="no-data">റിപ്പോർട്ട് ലോഡ് ചെയ്യുന്നതിൽ പിശക്</div>';
     }
 }
 </script>
