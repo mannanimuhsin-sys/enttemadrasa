@@ -122,14 +122,22 @@ async function login() {
     try {
         const passHash = await hashPassword(password);
         
-        // Find student by document ID first, then fallback to number/regno field.
+        // Find student by document ID first, then fallback to number or regno fields.
         let studentDoc = await db.collection("students").doc(regNumber).get();
         if(!studentDoc.exists) {
             const fallbackSnap = await db.collection("students")
                 .where("number", "==", regNumber)
                 .limit(1)
                 .get();
-            if(!fallbackSnap.empty) {
+            if(fallbackSnap.empty) {
+                const fallbackSnap2 = await db.collection("students")
+                    .where("regno", "==", regNumber)
+                    .limit(1)
+                    .get();
+                if(!fallbackSnap2.empty) {
+                    studentDoc = fallbackSnap2.docs[0];
+                }
+            } else {
                 studentDoc = fallbackSnap.docs[0];
             }
         }
@@ -185,30 +193,34 @@ async function loadAttendance() {
     try {
         const attendanceQuery = db.collection("attendance")
             .where("madrasa_id", "==", madrasaId)
-            .where("class", "==", currentStudent.class)
-            .orderBy("year", "desc")
-            .orderBy("month", "desc");
+            .where("class", "==", currentStudent.class);
         
         const attendanceSnap = await attendanceQuery.get();
         
         const list = document.getElementById('attendanceList');
         list.innerHTML = '';
-        
+
         if(attendanceSnap.empty) {
             list.innerHTML = '<div class="no-data">ഹാജർ വിവരങ്ങൾ ലഭ്യമല്ല</div>';
             return;
         }
-        
+
+        const attendanceDocs = [];
+        attendanceSnap.forEach(doc => attendanceDocs.push({ id: doc.id, ...doc.data() }));
+        attendanceDocs.sort((a, b) => {
+            if(a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+        });
+
+        const studentKey = currentStudent.regno || currentStudent.number || currentStudent.id;
         const monthNames = [
             "ജനുവരി", "ഫെബ്രുവരി", "മാർച്ച്", "ഏപ്രിൽ", "മേയ്", "ജൂൺ",
-            "ജൂലൈ", "ആഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"
+            "ജುലൈ", "ആഗസ്റ്റ്", "സെപ്റ്റംബർ", "ഒക്ടോബർ", "നവംബർ", "ഡിസംബർ"
         ];
-        
-        attendanceSnap.forEach(doc => {
-            const data = doc.data();
-            const studentAttendance = data.students ? (data.students[currentStudent.id] || 0) : 0;
+
+        attendanceDocs.forEach(data => {
+            const studentAttendance = data.students ? (data.students[studentKey] || 0) : 0;
             const percentage = data.total_days > 0 ? Math.round((studentAttendance / data.total_days) * 100) : 0;
-            
             const item = document.createElement('div');
             item.className = 'attendance-item';
             item.innerHTML = `
@@ -230,7 +242,6 @@ async function loadAttendance() {
             `;
             list.appendChild(item);
         });
-        
     } catch(error) {
         console.error("Error loading attendance:", error);
         document.getElementById('attendanceList').innerHTML = '<div class="no-data">ഹാജർ വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നതിൽ പിശക്</div>';
