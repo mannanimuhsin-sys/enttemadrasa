@@ -311,10 +311,11 @@
         const profileArea = document.getElementById('profileArea');
         if (profileArea) {
             profileArea.innerHTML = `
-                <div class="profile-card">
-                    <img src="${d.photo || 'logo.png'}" class="profile-img">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
+                    <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
                     <h1 style="margin:0; font-size:22px;">${d.name}</h1>
-                    <div class="m-reg">REG NO: ${d.reg}</div>
+                    <h2 style="margin:0; font-size:18px; opacity: 0.9;">${d.place}</h2>
+                    <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg}</div>
                 </div>`;
         }
 
