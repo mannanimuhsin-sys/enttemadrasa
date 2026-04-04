@@ -23,8 +23,9 @@
         .status-pending { border-left-color: orange; }
         .status-blocked { border-left-color: var(--danger); }
 
-        .madrasa-info h3 { margin: 0; color: #333; }
-        .details { font-size: 13px; color: #666; margin-top: 5px; }
+        .madrasa-info { display: flex; align-items: center; gap: 15px; }
+        .madrasa-info img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; }
+        .madrasa-details { flex: 1; }
         .pass-view { background: #f0f0f0; padding: 8px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 12px; }
         
         /* ബട്ടണുകൾ */
@@ -58,14 +59,17 @@
 
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h3>പാസ്‌വേഡ് മാറ്റുക</h3>
+        <h3>മദ്രസ വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക</h3>
         <p id="targetName" style="font-weight: bold;"></p>
+        <label>പുതിയ മദ്രസ ഫോട്ടോ:</label>
+        <input type="file" id="newPhoto" accept="image/*" onchange="previewEditImage(this)">
+        <img id="editImagePrev" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 2px solid #ddd;">
         <label>പുതിയ ഉസ്താദ് പാസ്‌വേഡ്:</label>
         <input type="text" id="newUsthadPass" placeholder="New Usthad Password">
         <label>പുതിയ പാരന്റ് പാസ്‌വേഡ്:</label>
         <input type="text" id="newParentPass" placeholder="New Parent Password">
         <div class="action-row">
-            <button class="btn btn-approve" onclick="saveNewPassword()">SAVE</button>
+            <button class="btn btn-approve" onclick="saveEdits()">SAVE</button>
             <button class="btn btn-delete" onclick="closeModal()">CANCEL</button>
         </div>
     </div>
@@ -106,23 +110,27 @@
 
             // സമയം അനുസരിച്ച് റിവേഴ്സ് ചെയ്യുക
             madrasas.reverse().forEach(data => {
+                const photoSrc = data.photo || 'logo.png';
                 const card = `
                     <div class="madrasa-card status-${data.status}" data-reg="${data.reg}">
                         <div class="madrasa-info">
-                            <h3>${data.name}</h3>
-                            <div class="details">
-                                <b>REG:</b> ${data.reg} | <b>USER ID:</b> ${data.id}<br>
-                                <b>STATUS:</b> <span style="text-transform:uppercase">${data.status}</span>
-                            </div>
-                            <div class="pass-view">
-                                <b>Usthad Hash:</b> ${data.usthadPass ? data.usthadPass.substring(0,10)+'...' : 'N/A'}<br>
-                                <b>Parent Hash:</b> ${data.parentPass ? data.parentPass.substring(0,10)+'...' : 'N/A'}
+                            <img src="${photoSrc}" alt="Madrasa Photo">
+                            <div class="madrasa-details">
+                                <h3>${data.name}</h3>
+                                <div class="details">
+                                    <b>REG:</b> ${data.reg} | <b>USER ID:</b> ${data.id}<br>
+                                    <b>STATUS:</b> <span style="text-transform:uppercase">${data.status}</span>
+                                </div>
+                                <div class="pass-view">
+                                    <b>Usthad Hash:</b> ${data.usthadPass ? data.usthadPass.substring(0,10)+'...' : 'N/A'}<br>
+                                    <b>Parent Hash:</b> ${data.parentPass ? data.parentPass.substring(0,10)+'...' : 'N/A'}
+                                </div>
                             </div>
                         </div>
                         <div class="action-row">
                             ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')">APPROVE</button>` : ''}
                             ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked')">BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')">UNBLOCK</button>`}
-                            <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}')">EDIT PASS</button>
+                            <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}')">EDIT</button>
                             <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}')">DELETE</button>
                         </div>
                     </div>
@@ -151,29 +159,55 @@
         editingId = id;
         document.getElementById('targetName').innerText = name;
         document.getElementById('editModal').style.display = 'block';
+        // ഫോട്ടോ പ്രിവ്യൂ ക്ലിയർ ചെയ്യുക
+        document.getElementById('editImagePrev').style.display = 'none';
+        document.getElementById('editImagePrev').src = '';
+        document.getElementById('newPhoto').value = '';
+    }
+
+    function previewEditImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('editImagePrev').src = e.target.result;
+                document.getElementById('editImagePrev').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
     function closeModal() {
         document.getElementById('editModal').style.display = 'none';
         document.getElementById('newUsthadPass').value = "";
         document.getElementById('newParentPass').value = "";
+        document.getElementById('newPhoto').value = "";
+        document.getElementById('editImagePrev').style.display = 'none';
     }
 
-    // പുതിയ പാസ്‌വേഡ് സേവ് ചെയ്യാൻ (ഹാഷ് ചെയ്ത് മാത്രം)
-    async function saveNewPassword() {
+    // പുതിയ എഡിറ്റ്സ് സേവ് ചെയ്യാൻ (ഫോട്ടോ, പാസ്‌വേഡ്)
+    async function saveEdits() {
         const uPass = document.getElementById('newUsthadPass').value.trim();
         const pPass = document.getElementById('newParentPass').value.trim();
+        const photoSrc = document.getElementById('editImagePrev').src;
 
-        if(!uPass || !pPass) return alert("രണ്ട് പാസ്‌വേഡും നൽകണം!");
+        const updates = {};
 
-        const uHash = await hashPassword(uPass);
-        const pHash = await hashPassword(pPass);
+        if (uPass) {
+            updates.usthadPass = await hashPassword(uPass);
+        }
+        if (pPass) {
+            updates.parentPass = await hashPassword(pPass);
+        }
+        if (photoSrc && photoSrc.startsWith('data')) {
+            updates.photo = photoSrc;
+        }
 
-        db.ref('madrasa_requests/' + editingId).update({
-            usthadPass: uHash,
-            parentPass: pHash
-        }).then(() => {
-            alert("പാസ്‌വേഡ് വിജയകരമായി മാറ്റി!");
+        if (Object.keys(updates).length === 0) {
+            return alert("ഒരു മാറ്റവും നൽകിയിട്ടില്ല!");
+        }
+
+        db.ref('madrasa_requests/' + editingId).update(updates).then(() => {
+            alert("വിജയകരമായി മാറ്റി!");
             closeModal();
         });
     }
