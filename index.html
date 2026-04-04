@@ -132,6 +132,10 @@
             <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()" style="display: none;">
                 <i class="fa fa-mosque"></i><span>Salah Tracker</span>
             </div>
+
+            <div class="portal-card c-red" onclick="openAttendancePortal()">
+                <i class="fa fa-calendar-check"></i><span>Hajar Hotel</span>
+            </div>
         </div>
 
         <div id="adminArea" class="admin-section" style="display: none;">
@@ -342,6 +346,7 @@
         function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
         function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
         function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
+        function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
         function logout() { localStorage.clear(); location.reload(); }
 
         window.onload = () => {

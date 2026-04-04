@@ -223,6 +223,13 @@ function applyCrop(){
  document.getElementById('cropBox').style.display = "none";
 }
 
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function saveStudent(){
  const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
  const data = {};
@@ -247,9 +254,13 @@ async function saveStudent(){
     btn.disabled = false; return;
   }
 
+  // Hash the password
+  const hashedPassword = await hashPassword(data.regPass);
+
   const studentObj = {
    madrasa_id: mId, // ഏത് മദ്റസയിലെ കുട്ടിയാണെന്ന് രേഖപ്പെടുത്തുന്നു
    name: data.name,
+   regno: data.regno,
    number: data.regno,
    class: data.classN,
    father: data.father,
@@ -258,13 +269,13 @@ async function saveStudent(){
    gender: data.gender,
    blood: data.blood,
    dob: data.dob,
-   password: data.regPass,
+   password: hashedPassword,
    photo: photoData,
    status: "pending",
    timestamp: new Date().getTime()
   };
 
-  await db.collection("students").doc(studentObj.number).set(studentObj);
+  await db.collection("students").doc(studentObj.regno).set(studentObj);
   alert("രജിസ്ട്രേഷൻ വിജയകരമായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
   location.reload(); 
  } catch (e) { alert("Error!"); btn.disabled = false; }
@@ -279,11 +290,12 @@ async function login(){
  lBtn.disabled = true;
 
  try {
+   const hashedPass = await hashPassword(lPass);
    const doc = await db.collection("students").doc(rNo).get();
    if(doc.exists) {
      const s = doc.data();
      // സ്വന്തം മദ്റസയിലെ കുട്ടിയാണോ എന്ന് കൂടി നോക്കുന്നു
-     if(s.madrasa_id === mId && s.password === lPass) {
+     if(s.madrasa_id === mId && s.password === hashedPass) {
        if(s.status === "approved") { renderID(s); } 
        else { alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക! ⏳"); }
      } else { alert("തെറ്റായ വിവരങ്ങൾ!"); }

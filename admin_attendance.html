@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ഹാജർ ഹോട്ടൽ | Admin Panel</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: auto; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        .header { text-align: center; background: linear-gradient(135deg, var(--primary), #002b00); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        
+        .controls { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .control-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .control-group { flex: 1; min-width: 200px; }
+        label { display: block; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        
+        .total-attendance { background: #e8f5e8; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+        .total-input { font-size: 18px; font-weight: bold; text-align: center; }
+        
+        .student-list { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .student-header { background: var(--primary); color: white; padding: 15px; font-weight: bold; }
+        .student-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .student-item:last-child { border-bottom: none; }
+        .student-info { flex: 1; }
+        .student-name { font-weight: bold; }
+        .student-class { color: #666; font-size: 14px; }
+        .attendance-input { width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 5px; text-align: center; }
+        
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .actions { text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1><i class="fa fa-calendar-check"></i> ഹാജർ ഹോട്ടൽ</h1>
+        <p id="madrasaInfo">അഡ്മിൻ പാനൽ</p>
+    </div>
+    
+    <div class="controls">
+        <div class="control-row">
+            <div class="control-group">
+                <label>വർഷം</label>
+                <select id="yearSelect">
+                    <script>
+                        const currentYear = new Date().getFullYear();
+                        for(let y = currentYear - 2; y <= currentYear + 2; y++) {
+                            document.write(`<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>മാസം</label>
+                <select id="monthSelect">
+                    <option value="1">ജനുവരി</option>
+                    <option value="2">ഫെബ്രുവരി</option>
+                    <option value="3">മാർച്ച്</option>
+                    <option value="4">ഏപ്രിൽ</option>
+                    <option value="5">മേയ്</option>
+                    <option value="6">ജൂൺ</option>
+                    <option value="7">ജൂലൈ</option>
+                    <option value="8">ആഗസ്റ്റ്</option>
+                    <option value="9">സെപ്റ്റംബർ</option>
+                    <option value="10">ഒക്ടോബർ</option>
+                    <option value="11">നവംബർ</option>
+                    <option value="12">ഡിസംബർ</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>ക്ലാസ്</label>
+                <select id="classSelect">
+                    <option value="">ക്ലാസ് തെരഞ്ഞെടുക്കുക</option>
+                    <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="total-attendance" id="totalSection" style="display: none;">
+        <h3>മൊത്തം ഹാജർ ദിവസങ്ങൾ</h3>
+        <input type="number" id="totalAttendance" class="total-input" placeholder="എത്ര ദിവസം ക്ലാസ് നടന്നു?" min="1" max="31">
+    </div>
+    
+    <div class="student-list" id="studentSection" style="display: none;">
+        <div class="student-header">വിദ്യാർത്ഥികളുടെ ഹാജർ</div>
+        <div id="studentList"></div>
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="loadStudents()">ലോഡ് ചെയ്യുക</button>
+        <button class="btn btn-success" id="saveBtn" onclick="saveAttendance()" style="display: none;">സേവ് ചെയ്യുക</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+  authDomain: "mum-new-id.firebaseapp.com",
+  projectId: "mum-new-id",
+  storageBucket: "mum-new-id.firebasestorage.app",
+  messagingSenderId: "794343464244",
+  appId: "1:794343464244:web:f9083036490e3609bf1961",
+  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rtdb = firebase.database();
+
+const urlParams = new URLSearchParams(window.location.search);
+const madrasaId = urlParams.get('id');
+
+let currentStudents = [];
+let attendanceData = {};
+
+window.onload = () => {
+    if(!madrasaId) {
+        alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല!");
+        return;
+    }
+    
+    // Load madrasa info
+    rtdb.ref('madrasa_requests/' + madrasaId).once('value', snap => {
+        if(snap.val()) {
+            document.getElementById('madrasaInfo').innerText = snap.val().name + ' - ' + snap.val().place;
+        }
+    });
+    
+    // Set current month
+    const now = new Date();
+    document.getElementById('monthSelect').value = now.getMonth() + 1;
+};
+
+async function loadStudents() {
+    const year = document.getElementById('yearSelect').value;
+    const month = document.getElementById('monthSelect').value;
+    const classNum = document.getElementById('classSelect').value;
+    
+    if(!year || !month || !classNum) {
+        alert("ദയവായി എല്ലാ ഫീൽഡുകളും പൂരിപ്പിക്കുക!");
+        return;
+    }
+    
+    try {
+        // Load students for this class
+        const query = db.collection("students")
+            .where("madrasa_id", "==", madrasaId)
+            .where("class", "==", classNum)
+            .where("status", "==", "approved");
+        
+        const snap = await query.get();
+        currentStudents = [];
+        
+        snap.forEach(doc => {
+            currentStudents.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Load existing attendance data
+        const attendanceRef = db.collection("attendance")
+            .where("madrasa_id", "==", madrasaId)
+            .where("year", "==", parseInt(year))
+            .where("month", "==", parseInt(month))
+            .where("class", "==", classNum);
+        
+        const attendanceSnap = await attendanceRef.get();
+        attendanceData = {};
+        
+        if(!attendanceSnap.empty) {
+            attendanceSnap.forEach(doc => {
+                const data = doc.data();
+                attendanceData = data;
+                document.getElementById('totalAttendance').value = data.total_days || '';
+            });
+        }
+        
+        // Show sections
+        document.getElementById('totalSection').style.display = 'block';
+        document.getElementById('studentSection').style.display = 'block';
+        document.getElementById('saveBtn').style.display = 'inline-block';
+        
+        // Render student list
+        renderStudentList();
+        
+    } catch(error) {
+        console.error("Error loading students:", error);
+        alert("ഡാറ്റ ലോഡ് ചെയ്യുന്നതിൽ പിശക്!");
+    }
+}
+
+function renderStudentList() {
+    const list = document.getElementById('studentList');
+    list.innerHTML = '';
+    
+    currentStudents.forEach(student => {
+        const attendance = attendanceData.students ? (attendanceData.students[student.id] || 0) : 0;
+        
+        const item = document.createElement('div');
+        item.className = 'student-item';
+        item.innerHTML = `
+            <div class="student-info">
+                <div class="student-name">${student.name}</div>
+                <div class="student-class">Reg: ${student.regno}</div>
+            </div>
+            <input type="number" class="attendance-input" 
+                   data-student-id="${student.id}" 
+                   value="${attendance}" 
+                   min="0" max="31" placeholder="ദിവസങ്ങൾ">
+        `;
+        list.appendChild(item);
+    });
+}
+
+async function saveAttendance() {
+    const year = parseInt(document.getElementById('yearSelect').value);
+    const month = parseInt(document.getElementById('monthSelect').value);
+    const classNum = document.getElementById('classSelect').value;
+    const totalDays = parseInt(document.getElementById('totalAttendance').value);
+    
+    if(!totalDays || totalDays < 1) {
+        alert("മൊത്തം ഹാജർ ദിവസങ്ങൾ നൽകുക!");
+        return;
+    }
+    
+    // Collect student attendance
+    const studentAttendance = {};
+    document.querySelectorAll('.attendance-input').forEach(input => {
+        const studentId = input.getAttribute('data-student-id');
+        const days = parseInt(input.value) || 0;
+        if(days > 0) {
+            studentAttendance[studentId] = days;
+        }
+    });
+    
+    const attendanceRecord = {
+        madrasa_id: madrasaId,
+        year: year,
+        month: month,
+        class: classNum,
+        total_days: totalDays,
+        students: studentAttendance,
+        updated_at: new Date(),
+        updated_by: "admin"
+    };
+    
+    try {
+        // Check if record exists
+        const existingQuery = db.collection("attendance")
+            .where("madrasa_id", "==", madrasaId)
+            .where("year", "==", year)
+            .where("month", "==", month)
+            .where("class", "==", classNum);
+        
+        const existingSnap = await existingQuery.get();
+        
+        if(!existingSnap.empty) {
+            // Update existing
+            const docId = existingSnap.docs[0].id;
+            await db.collection("attendance").doc(docId).update(attendanceRecord);
+        } else {
+            // Create new
+            await db.collection("attendance").add(attendanceRecord);
+        }
+        
+        alert("ഹാജർ വിവരങ്ങൾ സേവ് ചെയ്തു!");
+        
+    } catch(error) {
+        console.error("Error saving attendance:", error);
+        alert("സേവ് ചെയ്യുന്നതിൽ പിശക്!");
+    }
+}
+</script>
+
+</body>
+</html>
