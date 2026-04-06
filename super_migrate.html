@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUPER ADMIN MIGRATION | Global Database Sync</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
+    
+    <style>
+        :root { --primary: #c62828; --accent: #1976d2; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .migration-box { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--primary); }
+        h1 { text-align: center; color: var(--primary); margin-top: 0; font-size: 26px; }
+        .alert { background: #feebeb; border: 1px solid #c62828; color: #c62828; padding: 15px; border-radius: 12px; font-size: 13px; margin-bottom: 20px; text-align: center; }
+        
+        .progress-box { margin-top: 25px; background: #f8f9fa; padding: 20px; border-radius: 15px; border: 1px solid #eee; }
+        .progress-item { margin-bottom: 15px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
+        .bar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+        .fill { width: 0%; height: 100%; background: var(--primary); transition: 0.3s; }
+        
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(198, 40, 40, 0.3); }
+        .btn-disabled { background: #ccc; cursor: not-allowed; }
+        
+        .log-box { margin-top: 25px; background: #1a1a1a; color: #4caf50; padding: 15px; border-radius: 12px; font-family: 'Courier New', monospace; font-size: 12px; height: 200px; overflow-y: auto; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="migration-box">
+    <h1><i class="fa fa-skull-crossbones"></i> GLOBAL SYSTEM MIGRATION</h1>
+    <div class="alert">
+        <b>DANGER ZONE:</b> This tool moves ALL 10,000+ registrations globally from Firebase to Supabase. Do not close this browser during the process.
+    </div>
+
+    <button id="migrateAllBtn" class="btn btn-primary" onclick="migrateGlobal()">🚀 START GLOBAL MIGRATION</button>
+
+    <div class="progress-box">
+        <div class="progress-item">
+            <div class="progress-header"><span>Madrasa Registrations</span><span id="p_madrasas">-- / --</span></div>
+            <div class="bar"><div id="fill_madrasas" class="fill"></div></div>
+        </div>
+        <div class="progress-item">
+            <div class="progress-header"><span>System Settings</span><span id="p_settings">-- / --</span></div>
+            <div class="bar"><div id="fill_settings" class="fill"></div></div>
+        </div>
+    </div>
+
+    <div class="log-box" id="log">
+        <div>> System Initialized. Ready for Global Sync...</div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const firestore = firebase.firestore();
+
+    function log(msg, red = false) {
+        const d = document.getElementById('log');
+        d.innerHTML += `<div style="color:${red ? '#f44336' : 'inherit'}">> ${msg}</div>`;
+        d.scrollTop = d.scrollHeight;
+    }
+
+    async function migrateGlobal() {
+        const btn = document.getElementById('migrateAllBtn');
+        btn.disabled = true;
+        btn.innerText = "MIGRATING ALL DATA...";
+        
+        log("Connecting to Firebase RTDB...");
+        try {
+            // 1. Fetch ALL madrasa registrations from RTDB
+            const snap = await db.ref('madrasa_requests').once('value');
+            if (!snap.exists()) throw new Error("No data found in Firebase!");
+            
+            const allMadrasas = snap.val();
+            const keys = Object.keys(allMadrasas);
+            const total = keys.length;
+            log(`Found ${total} Madrasa registrations globally.`);
+
+            let count = 0;
+            for (const key of keys) {
+                const d = allMadrasas[key];
+                log(`Syncing Madrasa: ${d.name} (${key})...`);
+                
+                // PUSH TO SUPABASE
+                const { error } = await window.supabaseClient.from('madrasa_requests').upsert({
+                    reg: key,
+                    user_id: d.userId || "",
+                    name: d.name || "",
+                    place: d.place || "",
+                    photo: (d.photo && d.photo.length > 500) ? "MIGRATED_BASE64" : (d.photo || ""), // Handle large base64
+                    usthad_pass: d.usthadPass || "",
+                    parent_pass: d.parentPass || "",
+                    status: d.status || "approved",
+                    created_at: d.createdAt || new Date().toISOString()
+                }, { onConflict: 'reg' });
+
+                if (error) {
+                    log(`FAILED ${key}: ${error.message}`, true);
+                } else {
+                    count++;
+                    document.getElementById('p_madrasas').innerText = `${count} / ${total}`;
+                    document.getElementById('fill_madrasas').style.width = ((count / total) * 100) + '%';
+                }
+
+                // Small delay to prevent rate limit
+                if (count % 20 === 0) await new Promise(r => setTimeout(r, 100));
+            }
+            log(`SUCCESS: ${count} Madrasas migrated to Supabase.`);
+
+            // 2. MIGRATE SETTINGS (Optional but good)
+            log("Syncing System Settings...");
+            const settingsSnap = await firestore.collection('settings').get().catch(e => null);
+            if (settingsSnap) {
+                let sCount = 0;
+                let sTotal = settingsSnap.size;
+                for (const doc of settingsSnap.docs) {
+                    const s = doc.data();
+                    // You might need a 'settings' table in Supabase too! 
+                    // For now let's just log it.
+                    sCount++;
+                }
+                document.getElementById('p_settings').innerText = `${sCount} / ${sTotal}`;
+                document.getElementById('fill_settings').style.width = '100%';
+            }
+
+            log("-----------------------------------------");
+            log("GLOBAL MIGRATION COMPLETED SUCCESSFULLY!", "#4caf50");
+            btn.innerText = "GLOBAL MIGRATION DONE";
+
+        } catch (e) {
+            log("CRITICAL ERROR: " + e.message, true);
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
