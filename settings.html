@@ -1,142 +1,104 @@
 <!DOCTYPE html>
 <html lang="ml">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>മദ്റസ കൺട്രോൾ പാനൽ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; }
-        .settings-box { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
-        .mid-tag { text-align: center; font-size: 14px; color: #666; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 5px; }
-        
+        :root { --primary: #004d00; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; margin: 0; }
+        .settings-box { max-width: 400px; margin: 20px auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; }
         .control-item { 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px; border-radius: 12px; margin-bottom: 10px; 
-            background: #fff; border: 1px solid #ececec;
+            padding: 15px; border-radius: 12px; margin-bottom: 12px; 
+            background: #fff; border: 1px solid #eee; transition: 0.2s;
         }
-        
         .toggle-btn { 
-            padding: 10px 20px; border-radius: 8px; border: none; 
-            cursor: pointer; font-weight: bold; min-width: 100px; font-size: 13px;
+            padding: 10px 18px; border-radius: 8px; border: none; 
+            cursor: pointer; font-weight: bold; min-width: 95px; font-size: 13px;
         }
-        
-        .btn-on { background: #4caf50; color: white; }
-        .btn-off { background: #f44336; color: white; }
-        
-        /* പശ്ചാത്തല നിറങ്ങൾ */
-        .salah-bg { background: #e8f5e9; }
-        .hajar-bg { background: #fff8e1; }
-        
+        .btn-on { background: #4caf50; color: white; box-shadow: 0 3px 6px rgba(76,175,80,0.2); }
+        .btn-off { background: #f44336; color: white; box-shadow: 0 3px 6px rgba(244,67,54,0.2); }
+        .salah-bg { background: #e8f5e9; border-color: #c8e6c9; }
+        .hajar-bg { background: #fff8e1; border-color: #ffecb3; }
         .save-btn { 
-            width: 100%; margin-top: 20px; padding: 15px; 
+            width: 100%; margin-top: 15px; padding: 15px; 
             background: var(--primary); color: white; border: none; 
             border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px;
         }
+        #status { text-align: center; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
-
 <body>
 
     <div class="settings-box">
         <h2>കൺട്രോൾ പാനൽ</h2>
-        <div id="mid_display" class="mid-tag">Madrasa ID: ...</div>
+        <div id="status" style="color: #666;">Madrasa ID: Loading...</div>
 
-        <div class="control-item">
-            <span>Dashboard</span>
-            <button id="btn_dash" class="toggle-btn btn-on" onclick="toggleFeature('dash')">SHOWING</button>
-        </div>
-
-        <div class="control-item">
-            <span>ID Card Portal</span>
-            <button id="btn_id" class="toggle-btn btn-on" onclick="toggleFeature('id')">SHOWING</button>
-        </div>
-
-        <div class="control-item">
-            <span>Special Quiz</span>
-            <button id="btn_quiz" class="toggle-btn btn-on" onclick="toggleFeature('quiz')">SHOWING</button>
-        </div>
-
-        <div class="control-item">
-            <span>Payment & Receipts</span>
-            <button id="btn_payment" class="toggle-btn btn-on" onclick="toggleFeature('payment')">SHOWING</button>
-        </div>
+        <div class="control-item"><span>Dashboard</span><button id="dash" class="toggle-btn btn-on" onclick="toggle('dash')">SHOWING</button></div>
+        <div class="control-item"><span>ID Card Portal</span><button id="id_card" class="toggle-btn btn-on" onclick="toggle('id_card')">SHOWING</button></div>
+        <div class="control-item"><span>Special Quiz</span><button id="quiz" class="toggle-btn btn-on" onclick="toggle('quiz')">SHOWING</button></div>
+        <div class="control-item"><span>Payment & Receipts</span><button id="payment" class="toggle-btn btn-on" onclick="toggle('payment')">SHOWING</button></div>
 
         <div class="control-item salah-bg">
-            <span style="font-weight: bold; color: #2e7d32;">Salah Tracker</span>
-            <button id="btn_salah" class="toggle-btn btn-on" onclick="toggleFeature('salah')">SHOWING</button>
+            <span style="color: #2e7d32; font-weight: bold;">Salah Tracker</span>
+            <button id="salah" class="toggle-btn btn-on" onclick="toggle('salah')">SHOWING</button>
         </div>
 
         <div class="control-item hajar-bg">
-            <span style="font-weight: bold; color: #fb8c00;">Hajar (Attendance)</span>
-            <button id="btn_hajar" class="toggle-btn btn-on" onclick="toggleFeature('hajar')">SHOWING</button>
+            <span style="color: #fb8c00; font-weight: bold;">Hajar (Attendance)</span>
+            <button id="hajar" class="toggle-btn btn-on" onclick="toggle('hajar')">SHOWING</button>
         </div>
 
         <button class="save-btn" onclick="window.history.back()">SAVE & BACK</button>
     </div>
 
     <script>
-        const firebaseConfig = {
+        const conf = {
             apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
             authDomain: "enttemadrasa.firebaseapp.com",
-            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
             projectId: "enttemadrasa",
-            storageBucket: "enttemadrasa.firebasestorage.app",
             appId: "1:623531881201:web:b863793340c3901cedaf50"
         };
-        firebase.initializeApp(firebaseConfig);
-        const firestore = firebase.firestore();
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const mID = urlParams.get('id');
-
-        // സർഗ്ഗവേദി ഒഴിവാക്കി, കൃത്യമായ ഫീച്ചറുകൾ മാത്രം
-        let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: true, hajar: true };
+        firebase.initializeApp(conf);
+        const fs = firebase.firestore();
+        const mID = new URLSearchParams(window.location.search).get('id');
+        let settings = { dash:true, id_card:true, quiz:true, payment:true, salah:true, hajar:true };
 
         if (mID) {
-            document.getElementById('mid_display').innerText = "Madrasa ID: " + mID;
-            loadSettings();
-        }
-
-        function loadSettings() {
-            firestore.collection('settings').doc(mID).onSnapshot(doc => {
+            document.getElementById('status').innerText = "ID: " + mID;
+            // വായന തുടങ്ങുന്നു
+            fs.collection('settings').doc(mID).onSnapshot(doc => {
                 if (doc.exists) {
-                    currentSettings = doc.data();
-                    updateUI();
+                    settings = doc.data();
+                    render();
                 }
             });
         }
 
-        function updateUI() {
-            const keys = ['dash', 'id', 'quiz', 'payment', 'salah', 'hajar'];
-            keys.forEach(key => {
-                const btn = document.getElementById('btn_' + key);
+        function render() {
+            Object.keys(settings).forEach(key => {
+                const btn = document.getElementById(key);
                 if (btn) {
-                    const isVisible = (currentSettings[key] !== false);
-                    btn.innerText = isVisible ? "SHOWING" : "HIDDEN";
-                    btn.className = isVisible ? "toggle-btn btn-on" : "toggle-btn btn-off";
+                    const val = settings[key] !== false;
+                    btn.innerText = val ? "SHOWING" : "HIDDEN";
+                    btn.className = val ? "toggle-btn btn-on" : "toggle-btn btn-off";
                 }
             });
         }
 
-        async function toggleFeature(feature) {
+        async function toggle(key) {
             if (!mID) return;
-            // വാല്യൂ മാറ്റുന്നു
-            currentSettings[feature] = !currentSettings[feature];
-            
-            // ഉടൻ തന്നെ UI അപ്‌ഡേറ്റ് ചെയ്യുന്നു (എറർ ഒഴിവാക്കാൻ)
-            updateUI();
+            settings[key] = !settings[key]; // ലോക്കലായി ഉടൻ മാറ്റുന്നു
+            render(); // സ്ക്രീനിൽ ഉടൻ കാണിക്കുന്നു
 
             try {
-                await firestore.collection('settings').doc(mID).set(currentSettings);
-            } catch (err) {
-                console.error("Save failed:", err);
-                alert("സേവ് ചെയ്യുന്നതിൽ പിശക്!");
+                await fs.collection('settings').doc(mID).set(settings);
+            } catch (e) {
+                alert("സേവ് ചെയ്യാൻ പറ്റിയില്ല!");
             }
         }
     </script>
