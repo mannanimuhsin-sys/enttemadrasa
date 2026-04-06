@@ -1,85 +1,293 @@
-    <!DOCTYPE html>
-    <html lang="ml">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>എന്‍റെ മദ്റസ | Smart Management</title>
-        
-        <link rel="manifest" href="manifest.json">
-        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script src="supabase_config.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        
-        <style>
-            :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
-            body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
-            .container { width: 100%; max-width: 500px; background: white; min-height: 100vh; margin: auto; position: relative; padding: 15px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-            .page { display: none; animation: fadeIn 0.4s; }
-            .active { display: block !important; }
-            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+<!DOCTYPE html>
+<html lang="ml">
 
-            /* ✅ ഹൈഡ് ചെയ്ത പ്ലസ് ബട്ടൺ (ഏറ്റവും മുകളിൽ) */
-            #plusBtn { 
-                position: fixed; top: 10px; right: 10px; 
-                width: 50px; height: 50px; 
-                background: transparent; border: none; 
-                font-size: 24px; color: rgba(0,0,0,0.06); 
-                cursor: pointer; z-index: 100000 !important; 
-                display: flex; align-items: center; justify-content: center;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>എന്‍റെ മദ്റസ | Smart Management</title>
+
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #004d00;
+            --gold: #d4af37;
+            --bg: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            min-height: 100vh;
+            margin: auto;
+            position: relative;
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s;
+        }
+
+        .active {
+            display: block !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
 
-            .profile-card { text-align: center; background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 30px 20px; border-radius: 20px; margin-bottom: 25px; }
-            .profile-img { width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--gold); object-fit: cover; background: white; margin-bottom: 15px; }
-            .m-reg { display: inline-block; background: var(--gold); color: black; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px; }
-            input { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; }
-            .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-            .btn-primary { background: var(--primary); color: white; }
-    /* ✅ ഗ്രിഡ് ലേഔട്ട് */
-    .card-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-        margin-top: 10px;
-    }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-    /* ✅ മനോഹരമായ കാർഡ് ഡിസൈൻ */
-    .portal-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px 10px;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        cursor: pointer;
-        border-left: 5px solid #ddd;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: #333;
-        transition: transform 0.2s;
-    }
+        /* ✅ ഹൈഡ് ചെയ്ത പ്ലസ് ബട്ടൺ (ഏറ്റവും മുകളിൽ) */
+        #plusBtn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            z-index: 100000 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .portal-card:active { transform: scale(0.95); }
-    .portal-card i { font-size: 26px; margin-bottom: 8px; }
-    .portal-card span { font-size: 13px; font-weight: bold; text-transform: uppercase; }
-    .c-green { border-left-color: #2e7d32; } .c-green i { color: #2e7d32; }
-    .c-blue { border-left-color: #0277bd; } .c-blue i { color: #0277bd; }
-    .c-gold { border-left-color: #d4af37; } .c-gold i { color: #d4af37; }
-    .c-red { border-left-color: #c62828; } .c-red i { color: #c62828; }
-    .c-purple { border-left-color: #6a1b9a; } .c-purple i { color: #6a1b9a; }
-    .admin-section { margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee; width: 100%; }
-    .admin-btn { width: 100%; padding: 12px; border-radius: 10px; border:none;  margin-bottom: 10px; font-weight: bold; color: white; cursor: pointer;  display: flex; align-items: center; justify-content: center; gap: 10px; }        #imagePrev { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--gold); }
-    .install-overlay { position: fixed; bottom: 20px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); z-index: 9999; display: none; text-align: center; border: 1px solid #eee; }
-    .install-btn { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
-    .ios-msg { color: #555; font-size: 13px; line-height: 1.5; }
-    .ios-icon { width: 25px; vertical-align: middle; margin: 0 5px; }
-        </style>
-    </head>
-    <body>
+        .profile-card {
+            text-align: center;
+            background: linear-gradient(135deg, #004d00, #002b00);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+
+        .profile-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 4px solid var(--gold);
+            object-fit: cover;
+            background: white;
+            margin-bottom: 15px;
+        }
+
+        .m-reg {
+            display: inline-block;
+            background: var(--gold);
+            color: black;
+            padding: 4px 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1.5px solid #eee;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ✅ ഗ്രിഡ് ലേഔട്ട് */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        /* ✅ മനോഹരമായ കാർഡ് ഡിസൈൻ */
+        .portal-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            border-left: 5px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s;
+        }
+
+        .portal-card:active {
+            transform: scale(0.95);
+        }
+
+        .portal-card i {
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .portal-card span {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .c-green {
+            border-left-color: #2e7d32;
+        }
+
+        .c-green i {
+            color: #2e7d32;
+        }
+
+        .c-blue {
+            border-left-color: #0277bd;
+        }
+
+        .c-blue i {
+            color: #0277bd;
+        }
+
+        .c-gold {
+            border-left-color: #d4af37;
+        }
+
+        .c-gold i {
+            color: #d4af37;
+        }
+
+        .c-red {
+            border-left-color: #c62828;
+        }
+
+        .c-red i {
+            color: #c62828;
+        }
+
+        .c-purple {
+            border-left-color: #6a1b9a;
+        }
+
+        .c-purple i {
+            color: #6a1b9a;
+        }
+
+        .admin-section {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 2px dashed #eee;
+            width: 100%;
+        }
+
+        .admin-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #imagePrev {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: none;
+            margin: 10px auto;
+            border: 3px solid var(--gold);
+        }
+
+        .install-overlay {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            display: none;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .install-btn {
+            background: #004d00;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .ios-msg {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .ios-icon {
+            width: 25px;
+            vertical-align: middle;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
 
     <button id="plusBtn" onclick="showPage('regPage')">➕</button>
 
@@ -92,20 +300,15 @@
             <input type="text" id="logReg" placeholder="മദ്റസ രജിസ്റ്റർ നമ്പർ">
             <input type="password" id="logPass" placeholder="പാസ്‌വേഡ്">
             <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">LOGIN</button>
-            
-            <div style="text-align: center; margin-top: 25px; padding: 15px; border: 1px dashed #ccc; border-radius: 12px; background: #fffcf0;">
-                <p style="font-size: 12px; color: #856404; margin-bottom: 5px;">കണക്ഷൻ പ്രശ്നം ഉണ്ടോ? (Firebase Storage Issue)</p>
-                <a href="full_migration.html" style="font-size: 13px; color: var(--primary); font-weight: bold; text-decoration: none;">
-                    🚀 FULL DATA MIGRATION TO CLOUD
-                </a>
-            </div>
+
         </div>
 
         <div id="regPage" class="page">
             <h2 style="text-align: center; color: var(--primary);">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
             <div style="text-align: center;">
                 <img id="imagePrev" src="">
-                <label for="mPhoto" style="cursor: pointer; color: var(--primary); font-weight: bold; display: block; margin: 10px 0;">
+                <label for="mPhoto"
+                    style="cursor: pointer; color: var(--primary); font-weight: bold; display: block; margin: 10px 0;">
                     <i class="fa fa-camera"></i> മദ്റസ ഫോട്ടോ ചേർക്കുക
                 </label>
                 <input type="file" id="mPhoto" accept="image/*" style="display: none;" onchange="previewImage(this)">
@@ -121,47 +324,49 @@
         </div>
 
         <div id="portalPage" class="page">
-        <div id="profileArea"></div>
-        
-        <div class="card-grid">
-            <div class="portal-card c-green" onclick="openDashboard()">
-                <i class="fa fa-chart-line"></i><span>Dashboard</span>
-            </div>
-            
-            <div class="portal-card c-blue" id="btnPayment" onclick="openPaymentPortal()">
-                <i class="fa fa-file-invoice-dollar"></i><span>Payments</span>
+            <div id="profileArea"></div>
+
+            <div class="card-grid">
+                <div class="portal-card c-green" onclick="openDashboard()">
+                    <i class="fa fa-chart-line"></i><span>Dashboard</span>
+                </div>
+
+                <div class="portal-card c-blue" id="btnPayment" onclick="openPaymentPortal()">
+                    <i class="fa fa-file-invoice-dollar"></i><span>Payments</span>
+                </div>
+
+                <div class="portal-card c-gold" onclick="openIDPortal()">
+                    <i class="fa fa-id-badge"></i><span>ID Card</span>
+                </div>
+
+                <div class="portal-card c-red" onclick="openQuizPortal()">
+                    <i class="fa fa-question-circle"></i><span>Special Quiz</span>
+                </div>
+
+                <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()" style="display: none;">
+                    <i class="fa fa-mosque"></i><span>Salah Tracker</span>
+                </div>
+
+                <div class="portal-card c-red" onclick="openAttendancePortal()">
+                    <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
+                </div>
             </div>
 
-            <div class="portal-card c-gold" onclick="openIDPortal()">
-                <i class="fa fa-id-badge"></i><span>ID Card</span>
-            </div>
+            <div id="adminArea" class="admin-section" style="display: none;">
+                <p style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 10px;">ADMIN CONTROLS</p>
 
-            <div class="portal-card c-red" onclick="openQuizPortal()">
-                <i class="fa fa-question-circle"></i><span>Special Quiz</span>
-            </div>
-            
-            <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()" style="display: none;">
-                <i class="fa fa-mosque"></i><span>Salah Tracker</span>
-            </div>
+                <button class="admin-btn" style="background: #2e7d32;" onclick="openAdminSalah()">
+                    <i class="fa fa-check-double"></i> MARK SALAH (ADMIN)
+                </button>
 
-            <div class="portal-card c-red" onclick="openAttendancePortal()">
-                <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
+                <button class="admin-btn" style="background: #607d8b;"
+                    onclick="window.location.href='settings.html?id='+currentId">
+                    <i class="fa fa-cog"></i> SETTINGS
+                </button>
             </div>
+            <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 30px;"
+                onclick="logout()">LOGOUT</button>
         </div>
-
-        <div id="adminArea" class="admin-section" style="display: none;">
-            <p style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 10px;">ADMIN CONTROLS</p>
-            
-            <button class="admin-btn" style="background: #2e7d32;" onclick="openAdminSalah()">
-                <i class="fa fa-check-double"></i> MARK SALAH (ADMIN)
-            </button>
-
-            <button class="admin-btn" style="background: #607d8b;" onclick="window.location.href='settings.html?id='+currentId">
-                <i class="fa fa-cog"></i> SETTINGS
-            </button>
-        </div>
-        <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 30px;" onclick="logout()">LOGOUT</button>
-    </div>
 
         <div id="pendingPage" class="page">
             <div style="text-align: center; padding: 50px 20px;">
@@ -173,23 +378,23 @@
     </div>
     <div id="appInstallOverlay" class="install-overlay">
         <h3 style="margin:0 0 10px 0; color:#333;">Get Our App</h3>
-        
+
         <div id="androidView" style="display:none;">
             <p style="font-size:13px; color:#666;">പ്ലേസ്റ്റോറിൽ പോകാതെ തന്നെ ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യാം.</p>
             <button id="pwaInstallBtn" class="install-btn">INSTALL NOW</button>
         </div>
-        
+
 
         <div id="iosView" style="display:none;">
             <div class="ios-msg">
-                ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ താഴെ കാണുന്ന <b>'Share'</b> 
-                <img src="https://img.icons8.com/ios/50/000000/export.png" class="ios-icon"> 
+                ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ താഴെ കാണുന്ന <b>'Share'</b>
+                <img src="https://img.icons8.com/ios/50/000000/export.png" class="ios-icon">
                 ബട്ടൺ അമർത്തി <b>'Add to Home Screen'</b> എന്നത് തിരഞ്ഞെടുക്കുക.
             </div>
         </div>
-        
-        <button onclick="document.getElementById('appInstallOverlay').style.display='none'" 
-                style="background:none; border:none; color:#999; margin-top:10px; font-size:12px;">Later</button>
+
+        <button onclick="document.getElementById('appInstallOverlay').style.display='none'"
+            style="background:none; border:none; color:#999; margin-top:10px; font-size:12px;">Later</button>
     </div>
 
     <script>
@@ -212,7 +417,7 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             document.getElementById('plusBtn').style.display = (pageId === 'loginPage') ? 'flex' : 'none';
-            window.scrollTo(0,0);
+            window.scrollTo(0, 0);
         }
 
         function previewImage(input) {
@@ -273,7 +478,7 @@
 
                 // ✅ ക്ലൗഡ് ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
                 await firestore.collection('madrasa_requests').doc(regNo).set(data);
-                
+
                 // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
                 if (window.supabaseClient) {
                     await window.supabaseClient.from('madrasa_requests').upsert({
@@ -299,82 +504,82 @@
             }
         }
 
-    async function handleLogin() {
-        const reg = document.getElementById('logReg').value.trim();
-        const pass = document.getElementById('logPass').value.trim();
-        const btn = document.getElementById('loginBtn');
+        async function handleLogin() {
+            const reg = document.getElementById('logReg').value.trim();
+            const pass = document.getElementById('logPass').value.trim();
+            const btn = document.getElementById('loginBtn');
 
-        if (!reg || !pass) {
-            alert("രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
-            return;
-        }
+            if (!reg || !pass) {
+                alert("രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+                return;
+            }
 
-        if(btn) {
-            btn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
-            btn.disabled = true;
-        }
+            if (btn) {
+                btn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
+                btn.disabled = true;
+            }
 
-        try {
-            const passHash = await hashPassword(pass);
-            let found = null;
-            
-            // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു (പുതിയ ഹൈ-കപ്പാസിറ്റി ലോഗിൻ)
-            if (window.supabaseClient) {
-                const { data: suData, error: suError } = await window.supabaseClient
-                    .from('madrasa_requests')
-                    .select('*')
-                    .eq('reg', reg)
-                    .single();
-                
-                if (suData && !suError) {
-                    if (suData.usthad_pass === passHash) { found = suData; currentId = reg; currentRole = "admin"; }
-                    else if (suData.parent_pass === passHash) { found = suData; currentId = reg; currentRole = "parent"; }
+            try {
+                const passHash = await hashPassword(pass);
+                let found = null;
+
+                // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു (പുതിയ ഹൈ-കപ്പാസിറ്റി ലോഗിൻ)
+                if (window.supabaseClient) {
+                    const { data: suData, error: suError } = await window.supabaseClient
+                        .from('madrasa_requests')
+                        .select('*')
+                        .eq('reg', reg)
+                        .single();
+
+                    if (suData && !suError) {
+                        if (suData.usthad_pass === passHash) { found = suData; currentId = reg; currentRole = "admin"; }
+                        else if (suData.parent_pass === passHash) { found = suData; currentId = reg; currentRole = "parent"; }
+                    }
                 }
-            }
 
-            // സുപാബേസിൽ ഇല്ലെങ്കിൽ ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
-            if (!found) {
-                let doc = await firestore.collection('madrasa_requests').doc(reg).get();
-                if (doc.exists) {
-                    const d = doc.data();
-                    if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                    else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                // സുപാബേസിൽ ഇല്ലെങ്കിൽ ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+                if (!found) {
+                    let doc = await firestore.collection('madrasa_requests').doc(reg).get();
+                    if (doc.exists) {
+                        const d = doc.data();
+                        if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                        else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                    }
                 }
-            }
 
-            // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു (മൈഗ്രേഷൻ സ്മൂത്ത് ആക്കാൻ)
-            if (!found) {
-                const snap = await db.ref('madrasa_requests/' + reg).once('value');
-                if (snap.exists()) {
-                    const d = snap.val();
-                    if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                    else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു (മൈഗ്രേഷൻ സ്മൂത്ത് ആക്കാൻ)
+                if (!found) {
+                    const snap = await db.ref('madrasa_requests/' + reg).once('value');
+                    if (snap.exists()) {
+                        const d = snap.val();
+                        if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                        else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                    }
                 }
-            }
 
-            if(btn) {
-                btn.innerText = "LOGIN";
-                btn.disabled = false;
-            }
+                if (btn) {
+                    btn.innerText = "LOGIN";
+                    btn.disabled = false;
+                }
 
-            if(found) {
-                if(found.status !== 'approved') return showPage('pendingPage');
-                localStorage.setItem("madrasaId", currentId);
-                localStorage.setItem("userRole", currentRole);
-                loadProfile(found);
-            } else {
-                alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                if (found) {
+                    if (found.status !== 'approved') return showPage('pendingPage');
+                    localStorage.setItem("madrasaId", currentId);
+                    localStorage.setItem("userRole", currentRole);
+                    loadProfile(found);
+                } else {
+                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                }
+            } catch (e) {
+                if (btn) {
+                    btn.innerText = "LOGIN";
+                    btn.disabled = false;
+                }
+                console.error("Login Error Details:", e);
+                alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
             }
-        } catch (e) {
-            if(btn) {
-                btn.innerText = "LOGIN";
-                btn.disabled = false;
-            }
-            console.error("Login Error Details:", e);
-            alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
         }
-    }
-    function loadProfile(d) {
+        function loadProfile(d) {
             const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
             const madrasaPlace = (d.place || d.location || "").trim();
 
@@ -390,28 +595,28 @@
                     </div>`;
             }
 
-        // 2. പ്ലസ് ബട്ടൺ മറയ്ക്കുന്നു
-        const plusBtn = document.getElementById('plusBtn');
-        if (plusBtn) plusBtn.style.display = 'none';
+            // 2. പ്ലസ് ബട്ടൺ മറയ്ക്കുന്നു
+            const plusBtn = document.getElementById('plusBtn');
+            if (plusBtn) plusBtn.style.display = 'none';
 
-        // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു (ഫയർസ്റ്റോറിൽ നിന്ന്)
-        firestore.collection('settings').doc(currentId).onSnapshot(doc => {
-            const settings = doc.data() || {};
-            const salahBtn = document.getElementById('btn_salah');
-            if (salahBtn) {
-                salahBtn.style.display = settings.salah ? 'flex' : 'none';
+            // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു (ഫയർസ്റ്റോറിൽ നിന്ന്)
+            firestore.collection('settings').doc(currentId).onSnapshot(doc => {
+                const settings = doc.data() || {};
+                const salahBtn = document.getElementById('btn_salah');
+                if (salahBtn) {
+                    salahBtn.style.display = settings.salah ? 'flex' : 'none';
+                }
+            });
+
+            // 4. അഡ്മിൻ ആണെങ്കിൽ മാത്രം അഡ്മിൻ ഏരിയ കാണിക്കുന്നു
+            const adminBox = document.getElementById('adminArea');
+            if (adminBox) {
+                adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
             }
-        });
 
-        // 4. അഡ്മിൻ ആണെങ്കിൽ മാത്രം അഡ്മിൻ ഏരിയ കാണിക്കുന്നു
-        const adminBox = document.getElementById('adminArea');
-        if (adminBox) {
-            adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
+            // 5. അവസാനം പോർട്ടൽ പേജ് തുറക്കുന്നു
+            showPage('portalPage');
         }
-
-        // 5. അവസാനം പോർട്ടൽ പേജ് തുറക്കുന്നു
-        showPage('portalPage');
-    }
 
         function openDashboard() { window.location.href = `dashboard.html?id=${currentId}&role=${currentRole}`; }
         function openIDPortal() {
@@ -428,18 +633,18 @@
 
         window.onload = async () => {
             const sid = localStorage.getItem("madrasaId");
-            if(sid) {
+            if (sid) {
                 currentId = sid;
                 currentRole = localStorage.getItem("userRole") || "";
-                
+
                 // ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
                 const doc = await firestore.collection('madrasa_requests').doc(sid).get();
-                if(doc.exists) {
+                if (doc.exists) {
                     loadProfile(doc.data());
                 } else {
                     // അവിടെ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു
-                    db.ref('madrasa_requests/' + sid).once('value', snap => { 
-                        if(snap.exists()) loadProfile(snap.val()); 
+                    db.ref('madrasa_requests/' + sid).once('value', snap => {
+                        if (snap.exists()) loadProfile(snap.val());
                     });
                 }
             }
@@ -481,5 +686,6 @@
         }
 
     </script>
-    </body>
-    </html>
+</body>
+
+</html>
