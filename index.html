@@ -43,7 +43,7 @@
 
         .page {
             display: none;
-            animation: fadeIn 0.4s;
+            animation: fadeIn 0.15s ease-out;
         }
 
         .active {
@@ -53,7 +53,7 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(5px);
             }
 
             to {
@@ -72,7 +72,7 @@
             background: transparent;
             border: none;
             font-size: 24px;
-            color: rgba(0, 0, 0, 0.06);
+            color: rgba(0, 0, 0, 0.15); /* Slightly more visible */
             cursor: pointer;
             z-index: 100000 !important;
             display: flex;
@@ -523,37 +523,50 @@
                 const passHash = await hashPassword(pass);
                 let found = null;
 
-                // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു (പുതിയ ഹൈ-കപ്പാസിറ്റി ലോഗിൻ)
+                // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും ഒരേസമയം തിരയുന്നു (സ്പീഡ് കൂട്ടാൻ)
+                const promises = [];
+                
+                // 1. സുപാബേസ് പ്രോമിസ്
                 if (window.supabaseClient) {
-                    const { data: suData, error: suError } = await window.supabaseClient
-                        .from('madrasa_requests')
-                        .select('*')
-                        .eq('reg', reg)
-                        .single();
-
-                    if (suData && !suError) {
-                        if (suData.usthad_pass === passHash) { found = suData; currentId = reg; currentRole = "admin"; }
-                        else if (suData.parent_pass === passHash) { found = suData; currentId = reg; currentRole = "parent"; }
-                    }
+                    promises.push(
+                        window.supabaseClient.from('madrasa_requests').select('*').eq('reg', reg).single()
+                        .then(res => ({ source: 'supabase', data: res.data, error: res.error }))
+                        .catch(err => ({ source: 'supabase', data: null, error: err }))
+                    );
                 }
+                
+                // 2. ഫയർസ്റ്റോർ പ്രോമിസ്
+                promises.push(
+                    firestore.collection('madrasa_requests').doc(reg).get()
+                    .then(doc => ({ source: 'firestore', data: doc.exists ? doc.data() : null }))
+                    .catch(err => ({ source: 'firestore', data: null, error: err }))
+                );
+                
+                // 3. RTDB പ്രോമിസ്
+                promises.push(
+                    db.ref('madrasa_requests/' + reg).once('value')
+                    .then(snap => ({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
+                    .catch(err => ({ source: 'rtdb', data: null, error: err }))
+                );
 
-                // സുപാബേസിൽ ഇല്ലെങ്കിൽ ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
-                if (!found) {
-                    let doc = await firestore.collection('madrasa_requests').doc(reg).get();
-                    if (doc.exists) {
-                        const d = doc.data();
-                        if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                        else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
-                    }
-                }
+                const results = await Promise.all(promises);
 
-                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു (മൈഗ്രേഷൻ സ്മൂത്ത് ആക്കാൻ)
-                if (!found) {
-                    const snap = await db.ref('madrasa_requests/' + reg).once('value');
-                    if (snap.exists()) {
-                        const d = snap.val();
-                        if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                        else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                for (const res of results) {
+                    const d = res.data;
+                    if (!d) continue;
+
+                    // പാസ്‌വേഡ് ചെക്കിംഗ് (സുപാബേസിൽ usthad_pass ഉം ബാക്കിയുള്ളവയിൽ usthadPass ഉം ആണ് കീ)
+                    const uPass = d.usthad_pass || d.usthadPass;
+                    const pPass = d.parent_pass || d.parentPass;
+
+                    if (uPass === passHash) {
+                        found = d;
+                        currentRole = "admin";
+                        break;
+                    } else if (pPass === passHash) {
+                        found = d;
+                        currentRole = "parent";
+                        break;
                     }
                 }
 
@@ -563,6 +576,7 @@
                 }
 
                 if (found) {
+                    currentId = reg;
                     if (found.status !== 'approved') return showPage('pendingPage');
                     localStorage.setItem("madrasaId", currentId);
                     localStorage.setItem("userRole", currentRole);
@@ -637,15 +651,20 @@
                 currentId = sid;
                 currentRole = localStorage.getItem("userRole") || "";
 
-                // ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
-                const doc = await firestore.collection('madrasa_requests').doc(sid).get();
-                if (doc.exists) {
-                    loadProfile(doc.data());
-                } else {
-                    // അവിടെ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു
-                    db.ref('madrasa_requests/' + sid).once('value', snap => {
-                        if (snap.exists()) loadProfile(snap.val());
-                    });
+                // ഒരേസമയം ഫയർസ്റ്റോറിലും RTDB ലും നോക്കുന്നു
+                try {
+                    const [doc, snap] = await Promise.all([
+                        firestore.collection('madrasa_requests').doc(sid).get(),
+                        db.ref('madrasa_requests/' + sid).once('value')
+                    ]);
+
+                    if (doc.exists) {
+                        loadProfile(doc.data());
+                    } else if (snap.exists()) {
+                        loadProfile(snap.val());
+                    }
+                } catch (err) {
+                    console.error("Auto-login failed:", err);
                 }
             }
         };
