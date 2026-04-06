@@ -223,6 +223,15 @@
             return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        function dataURLtoBlob(dataurl) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], {type:mime});
+        }
+
         async function saveStudent() {
             const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
             const data = {};
@@ -249,10 +258,10 @@
                 }
 
                 // Upload photo to storage
-                const blob = await (await fetch(photoData)).blob();
+                const blob = dataURLtoBlob(photoData);
                 const storageRef = storage.ref(`student_photos/${mId}/${data.regno}`);
-                await storageRef.put(blob);
-                const photoUrl = await storageRef.getDownloadURL();
+                const uploadTask = await storageRef.put(blob);
+                const photoUrl = await uploadTask.ref.getDownloadURL();
 
                 const studentObj = {
                     madrasa_id: mId,
@@ -290,8 +299,8 @@
                 alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
                 location.reload();
             } catch (e) {
-                console.error(e);
-                alert("Error saving data!");
+                console.error("Save error:", e);
+                alert("വിവരങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്! (Error: " + e.message + ")");
                 btn.disabled = false;
                 btn.innerText = "SAVE & REGISTER";
             }

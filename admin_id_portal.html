@@ -129,13 +129,12 @@
 <script>
 // Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ തന്നെ)
 const firebaseConfig = {
-  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-  authDomain: "mum-new-id.firebaseapp.com",
-  projectId: "mum-new-id",
-  storageBucket: "mum-new-id.firebasestorage.app",
-  messagingSenderId: "794343464244",
-  appId: "1:794343464244:web:f9083036490e3609bf1961",
-  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+    authDomain: "enttemadrasa.firebaseapp.com",
+    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+    projectId: "enttemadrasa",
+    storageBucket: "enttemadrasa.firebasestorage.app",
+    appId: "1:623531881201:web:b863793340c3901cedaf50"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -275,7 +274,14 @@ function renderStudents(students) {
 
 // Quick Approve
 async function quickApprove(id) {
+    if(!id) return;
     await db.collection("students").doc(id).update({ status: "approved" });
+    
+    // ✅ സുപാബേസിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
+    if (window.supabaseClient) {
+        await window.supabaseClient.from('students').update({ status: 'approved' }).eq('regno', id);
+    }
+    
     loadStudents();
 }
 
@@ -300,14 +306,23 @@ async function updateStudent() {
     };
 
     if(passwordValue) {
-        // If the admin entered a plain password, hash it before storing.
-        // If the value already looks like a SHA-256 hex hash, keep it as-is.
         updateObj.password = /^[0-9a-f]{64}$/.test(passwordValue)
             ? passwordValue
             : await hashPassword(passwordValue);
     }
 
     await db.collection("students").doc(id).update(updateObj);
+    
+    // ✅ സുപാബേസിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
+    if (window.supabaseClient) {
+        const sUpdate = { 
+            name: updateObj.name, 
+            class: updateObj.class, 
+            status: updateObj.status 
+        };
+        await window.supabaseClient.from('students').update(sUpdate).eq('regno', id);
+    }
+    
     document.getElementById('editModal').style.display = 'none';
     loadStudents();
 }
@@ -316,6 +331,12 @@ async function updateStudent() {
 async function deleteStudent(id) {
     if(confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) {
         await db.collection("students").doc(id).delete();
+        
+        // ✅ സുപാബേസിലും ഡിലീറ്റ് ചെയ്യുന്നു
+        if (window.supabaseClient) {
+            await window.supabaseClient.from('students').delete().eq('regno', id);
+        }
+        
         loadStudents();
     }
 }
