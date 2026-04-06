@@ -309,6 +309,7 @@
 
         try {
             const passHash = await hashPassword(pass);
+            let found = null;
             
             // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു (പുതിയ ഹൈ-കപ്പാസിറ്റി ലോഗിൻ)
             if (window.supabaseClient) {
