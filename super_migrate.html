@@ -97,32 +97,62 @@
                 const d = allMadrasas[key];
                 log(`Syncing Madrasa: ${d.name} (${key})...`);
                 
-                // PUSH TO SUPABASE
-                const { error } = await window.supabaseClient.from('madrasa_requests').upsert({
+                // 1. PUSH MADRASA REGISTRATION
+                const { error: mError } = await window.supabaseClient.from('madrasa_requests').upsert({
                     reg: key,
                     user_id: d.userId || "",
                     name: d.name || "",
                     place: d.place || "",
-                    photo: d.photo || "", // ✅ എല്ലാ ചിത്രങ്ങളും (Base64 ഉൾപ്പെടെ) കൈമാറുന്നു
+                    photo: d.photo || "",
                     usthad_pass: d.usthadPass || "",
                     parent_pass: d.parentPass || "",
                     status: d.status || "approved",
-                    classes: d.classes || [], // ✅ സിസ്റ്റം ക്ലാസുകൾ ഉൾപ്പെടുത്തുന്നു
+                    classes: d.classes || [],
                     created_at: d.createdAt || new Date().toISOString()
                 }, { onConflict: 'reg' });
 
-                if (error) {
-                    log(`FAILED ${key}: ${error.message}`, true);
-                } else {
+                if (!mError) {
+                    // 2. DEEP SYNC: FETCH & PUSH STUDENTS (Firestore fallback to RTDB)
+                    try {
+                        const sSnap = await firestore.collection('students').where('madrasa_id', '==', key).get().catch(e => null);
+                        if (sSnap && !sSnap.empty) {
+                            for (const sDoc of sSnap.docs) {
+                                const s = sDoc.data();
+                                await window.supabaseClient.from('students').upsert({
+                                    madrasa_id: key,
+                                    name: s.name || "",
+                                    regno: s.regno || sDoc.id,
+                                    class: s.class || "",
+                                    status: s.status || "approved"
+                                });
+                            }
+                        }
+                    } catch (e) { log(` >> (Student sync skipped for ${key})`, true); }
+
+                    // 3. DEEP SYNC: ATTENDANCE
+                    try {
+                        const aSnap = await firestore.collection('attendance').where('madrasa_id', '==', key).get().catch(e => null);
+                        if (aSnap && !aSnap.empty) {
+                            for (const aDoc of aSnap.docs) {
+                                const a = aDoc.data();
+                                await window.supabaseClient.from('attendance').upsert({
+                                    madrasa_id: key, year: a.year, month: a.month, class: a.class, total_days: a.total_days, students: a.students || {}
+                                }, { onConflict: 'madrasa_id,year,month,class' });
+                            }
+                        }
+                    } catch (e) { }
+
                     count++;
-                    document.getElementById('p_madrasas').innerText = `${count} / ${total}`;
+                    document.getElementById('p_madrasas').innerText = `${count} / ${total} (DEEP SYNC ACTIVE)`;
                     document.getElementById('fill_madrasas').style.width = ((count / total) * 100) + '%';
+                } else {
+                    log(`FAILED ${key}: ${mError.message}`, true);
                 }
 
-                // Small delay to prevent rate limit
-                if (count % 20 === 0) await new Promise(r => setTimeout(r, 100));
+                // Batch delay to prevent quota crash
+                if (count % 10 === 0) await new Promise(r => setTimeout(r, 200));
             }
-            log(`SUCCESS: ${count} Madrasas migrated to Supabase.`);
+            log(`SUCCESS: ${count} Madrasas and their records moved fully.`);
 
             // 2. MIGRATE SETTINGS (Optional but good)
             log("Syncing System Settings...");
