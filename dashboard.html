@@ -8,6 +8,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; background-image: var(--bg-image); background-size: cover; background-attachment: fixed; padding: 15px; margin: 0; }
@@ -170,10 +172,31 @@
     }
 
     // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
-    function loadData() {
+    async function loadData() {
         if (!mId) return;
 
-        // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ റിയൽ-ടൈം ലിസണർ വെക്കുന്നു
+        // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു
+        if (window.supabaseClient) {
+            const { data, error } = await window.supabaseClient
+                .from('madrasa_requests')
+                .select('*')
+                .eq('reg', mId)
+                .single();
+            
+            if (data && !error) {
+                renderContent(data);
+                // Real-time listener for Supabase
+                const sub = window.supabaseClient
+                    .channel('m_req_changes')
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'madrasa_requests', filter: `reg=eq.${mId}` }, payload => {
+                        renderContent(payload.new);
+                    })
+                    .subscribe();
+                return;
+            }
+        }
+
+        // ✅ ഫയർസ്റ്റോറിൽ റിയൽ-ടൈം ലിസണർ വെക്കുന്നു (Fallback)
         firestore.collection('madrasa_requests').doc(mId).onSnapshot(doc => {
             if (doc.exists) {
                 renderContent(doc.data());
@@ -192,7 +215,11 @@
 
         document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || "") + ")";
         document.getElementById('mPlaceHead').innerText = data.place || "";
-        if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
+        
+        // ✅ ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് ലോഡിംഗ്
+        if(data.photo && data.photo !== "MIGRATED_TO_CLOUD") {
+            document.body.style.backgroundImage = "url(" + data.photo + ")";
+        }
 
         let classes = data.classes || [];
 

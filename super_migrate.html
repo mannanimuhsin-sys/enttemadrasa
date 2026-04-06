@@ -107,6 +107,7 @@
                     usthad_pass: d.usthadPass || "",
                     parent_pass: d.parentPass || "",
                     status: d.status || "approved",
+                    classes: d.classes || [], // ✅ സിസ്റ്റം ക്ലാസുകൾ ഉൾപ്പെടുത്തുന്നു
                     created_at: d.createdAt || new Date().toISOString()
                 }, { onConflict: 'reg' });
 
