@@ -186,16 +186,18 @@
 
         // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
         try {
-            supabase.from('quizzes').upsert({
-                madrasa_id: mID,
-                heading: heading,
-                start_time: new Date(time).getTime(),
-                questions: questions,
-                status: "published",
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'madrasa_id' }).then(({ error }) => {
-                if (error) console.error("Supabase Save Error:", error);
-            });
+            if (window.supabaseClient) {
+                window.supabaseClient.from('quizzes').upsert({
+                    madrasa_id: mID,
+                    heading: heading,
+                    start_time: new Date(time).getTime(),
+                    questions: questions,
+                    status: "published",
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'madrasa_id' }).then(({ error }) => {
+                    if (error) console.error("Supabase Save Error:", error);
+                });
+            }
         } catch (e) {
             console.error("Supabase Sync Failed:", e);
         }

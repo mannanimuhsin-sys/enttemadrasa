@@ -297,14 +297,16 @@
 
             // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
             try {
-                supabase.from('quiz_submissions').insert({
-                    madrasa_id: mID,
-                    student_name: currentStudent.name,
-                    score: resultData.score,
-                    submitted_at: new Date().toISOString()
-                }).then(({ error }) => {
-                    if (error) console.error("Supabase Submission Error:", error);
-                });
+                if (window.supabaseClient) {
+                    window.supabaseClient.from('quiz_submissions').insert({
+                        madrasa_id: mID,
+                        student_name: currentStudent.name,
+                        score: resultData.score,
+                        submitted_at: new Date().toISOString()
+                    }).then(({ error }) => {
+                        if (error) console.error("Supabase Submission Error:", error);
+                    });
+                }
             } catch (e) {
                 console.error("Supabase Sync Failed:", e);
             }

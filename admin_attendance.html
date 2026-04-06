@@ -299,20 +299,22 @@ async function saveAttendance() {
         
         // ✅ സബ്മിഷൻ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
         try {
-            const { data, error } = await supabase
-                .from('attendance')
-                .upsert({
-                    madrasa_id: madrasaId,
-                    year: year,
-                    month: month,
-                    class: classNum,
-                    total_days: totalDays,
-                    students: studentAttendance,
-                    updated_at: new Date().toISOString(),
-                    updated_by: "admin"
-                }, { onConflict: 'madrasa_id,year,month,class' });
-            
-            if (error) throw error;
+            if (window.supabaseClient) {
+                const { data, error } = await window.supabaseClient
+                    .from('attendance')
+                    .upsert({
+                        madrasa_id: madrasaId,
+                        year: year,
+                        month: month,
+                        class: classNum,
+                        total_days: totalDays,
+                        students: studentAttendance,
+                        updated_at: new Date().toISOString(),
+                        updated_by: "admin"
+                    }, { onConflict: 'madrasa_id,year,month,class' });
+                
+                if (error) throw error;
+            }
         } catch (supabaseError) {
             console.error("Supabase Save Error:", supabaseError);
             // Non-blocking error for now

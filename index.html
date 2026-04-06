@@ -379,11 +379,11 @@
         showPage('portalPage');
     }
 
-        function openDashboard() { window.location.href = `https://mannanimuhsin-sys.github.io/madrasa/dashboard?id=${currentId}&role=${currentRole}`; }
+        function openDashboard() { window.location.href = `dashboard.html?id=${currentId}&role=${currentRole}`; }
         function openIDPortal() {
             const id = currentId || localStorage.getItem("madrasaId");
             if (!id) return alert("Madrasa ID missing. Please login again.");
-            window.location.href = (currentRole === "admin") ? `https://mannanimuhsin-sys.github.io/madrasa/admin_id_portal.html?id=${id}` : `https://mannanimuhsin-sys.github.io/madrasa/student_id.html?mid=${id}`;
+            window.location.href = (currentRole === "admin") ? `admin_id_portal.html?id=${id}` : `student_id.html?mid=${id}`;
         }
         function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
         function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
