@@ -6,6 +6,9 @@
     <title>മദ്റസ കൺട്രോൾ പാനൽ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <style>
         :root { --primary: #004d00; --bg: #f0f2f5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; margin: 0; }
@@ -60,7 +63,9 @@
         const conf = {
             apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
             authDomain: "enttemadrasa.firebaseapp.com",
+            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
             projectId: "enttemadrasa",
+            storageBucket: "enttemadrasa.firebasestorage.app",
             appId: "1:623531881201:web:b863793340c3901cedaf50"
         };
         firebase.initializeApp(conf);
@@ -69,14 +74,25 @@
         let settings = { dash:true, id_card:true, quiz:true, payment:true, salah:true, hajar:true };
 
         if (mID) {
-            document.getElementById('status').innerText = "ID: " + mID;
-            // വായന തുടങ്ങുന്നു
+            document.getElementById('status').innerText = "Madrasa ID: " + mID;
+            
+            // 1. ഫയർസ്റ്റോറിൽ നിന്ന് വായിക്കുന്നു
             fs.collection('settings').doc(mID).onSnapshot(doc => {
                 if (doc.exists) {
-                    settings = doc.data();
+                    settings = { ...settings, ...doc.data() };
                     render();
                 }
             });
+
+            // 2. സുപാബേസിൽ നിന്ന് വായിക്കുന്നു (Fallback/Sync)
+            if (window.supabaseClient) {
+                window.supabaseClient.from('settings').select('*').eq('id', mID).single().then(res => {
+                    if (res.data) {
+                        settings = { ...settings, ...res.data.data };
+                        render();
+                    }
+                });
+            }
         }
 
         function render() {
@@ -92,13 +108,26 @@
 
         async function toggle(key) {
             if (!mID) return;
-            settings[key] = !settings[key]; // ലോക്കലായി ഉടൻ മാറ്റുന്നു
-            render(); // സ്ക്രീനിൽ ഉടൻ കാണിക്കുന്നു
+            settings[key] = !settings[key]; 
+            render(); 
 
             try {
+                // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു
                 await fs.collection('settings').doc(mID).set(settings);
+                
+                // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('settings').upsert({
+                        id: mID,
+                        data: settings,
+                        updated_at: new Date().toISOString()
+                    });
+                }
+                
+                console.log("Settings saved successfully.");
             } catch (e) {
-                alert("സേവ് ചെയ്യാൻ പറ്റിയില്ല!");
+                console.error("Save Error:", e);
+                alert("സേവ് ചെയ്യുന്നതിൽ പിശക്! (Error: " + e.message + ")");
             }
         }
     </script>
