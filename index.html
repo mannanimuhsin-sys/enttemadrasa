@@ -50,6 +50,20 @@
             display: block !important;
         }
 
+        /* ✅ ലോഡിംഗ് സ്ക്രീൻ */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -291,8 +305,23 @@
 
     <button id="plusBtn" onclick="showPage('regPage')">➕</button>
 
+    <div id="loadingOverlay">
+        <div style="text-align: center;">
+            <img src="logo.png" style="width: 80px; animation: pulse 1.5s infinite;">
+            <p style="color: var(--primary); font-weight: bold; margin-top: 10px;">ലോഡ് ചെയ്യുന്നു...</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+
     <div class="container">
-        <div id="loginPage" class="page active">
+        <div id="loginPage" class="page">
             <div style="text-align: center; margin-top: 40px;">
                 <img src="logo.png" style="width: 90px;">
                 <h1 style="color: var(--primary); margin: 10px 0;">എന്‍റെ മദ്റസ</h1>
@@ -647,27 +676,44 @@
 
         window.onload = async () => {
             const sid = localStorage.getItem("madrasaId");
+            const role = localStorage.getItem("userRole");
+            
             if (sid) {
                 currentId = sid;
-                currentRole = localStorage.getItem("userRole") || "";
+                currentRole = role || "";
 
-                // ഒരേസമയം ഫയർസ്റ്റോറിലും RTDB ലും നോക്കുന്നു
                 try {
-                    const [doc, snap] = await Promise.all([
-                        firestore.collection('madrasa_requests').doc(sid).get(),
-                        db.ref('madrasa_requests/' + sid).once('value')
-                    ]);
-
+                    // ആദ്യം ടാറ്റാബേസിൽ വിവരമുണ്ടോ എന്ന് നോക്കുന്നു
+                    const doc = await firestore.collection('madrasa_requests').doc(sid).get();
                     if (doc.exists) {
                         loadProfile(doc.data());
-                    } else if (snap.exists()) {
+                        hideLoader();
+                        return;
+                    } 
+                    
+                    const snap = await db.ref('madrasa_requests/' + sid).once('value');
+                    if (snap.exists()) {
                         loadProfile(snap.val());
+                        hideLoader();
+                        return;
                     }
                 } catch (err) {
-                    console.error("Auto-login failed:", err);
+                    console.error("Auto-login error:", err);
                 }
             }
+            
+            // ലോഗിൻ ചെയ്തിട്ടില്ലെങ്കിൽ ലോഗിൻ പേജ് കാണിക്കുന്നു
+            showPage('loginPage');
+            hideLoader();
         };
+
+        function hideLoader() {
+            const loader = document.getElementById('loadingOverlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 300);
+            }
+        }
         let deferredPrompt;
         const overlay = document.getElementById('appInstallOverlay');
         const androidView = document.getElementById('androidView');

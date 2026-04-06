@@ -24,7 +24,12 @@
 <body>
 
 <div class="admin-box">
-    <h2 id="madrasaName">Loading...</h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <button onclick="history.back()" style="background: var(--bg); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <h2 id="madrasaName" style="margin:0; flex-grow: 1;">Loading...</h2>
+    </div>
     <p id="quizStatus" style="text-align:center; font-weight:bold; color:#444; margin-bottom:8px;">Quiz Status: Draft</p>
     <h4 style="text-align:center;">Special Day Quiz Creator</h4>
 
