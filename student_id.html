@@ -258,13 +258,23 @@
             btn.innerText = "അപ്ലോഡ് ചെയ്യുന്നു...";
 
             try {
-                const checkDoc = await db.collection("students").doc(data.regno).get();
-                if (checkDoc.exists) {
-                    alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
-                    btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
+                // 1. പരിശോധന (Supabase-ൽ ഉണ്ടോ എന്ന് നോക്കുന്നു)
+                if (window.supabaseClient) {
+                    const { data: existing } = await window.supabaseClient.from('students').select('regno').eq('regno', data.regno).single();
+                    if (existing) {
+                        alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
+                        btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
+                    }
+                } else {
+                    // Fallback to Firebase for check if Supabase missing
+                    const checkDoc = await db.collection("students").doc(data.regno).get().catch(() => null);
+                    if (checkDoc && checkDoc.exists) {
+                        alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
+                        btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
+                    }
                 }
 
-                // Upload photo to storage
+                // Upload photo to storage (Keep Firebase Storage for photos as it usually works)
                 const blob = dataURLtoBlob(photoData);
                 const storageRef = storage.ref(`student_photos/${mId}/${data.regno}`);
                 const uploadTask = await storageRef.put(blob);
@@ -288,11 +298,10 @@
                     timestamp: new Date().getTime()
                 };
 
-                await db.collection("students").doc(studentObj.number).set(studentObj);
-
-                // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+                // ✅ 2. സേവിംഗ് (Supabase-ലേക്ക് മുൻഗണന നൽകുന്നു)
+                let supabaseSuccess = false;
                 if (window.supabaseClient) {
-                    await window.supabaseClient.from('students').upsert({
+                    const { error } = await window.supabaseClient.from('students').upsert({
                         madrasa_id: mId,
                         name: studentObj.name,
                         regno: studentObj.regno,
@@ -301,13 +310,23 @@
                         status: "pending",
                         created_at: new Date().toISOString()
                     });
+                    if (!error) supabaseSuccess = true;
+                    else console.error("Supabase Save Error:", error);
+                }
+
+                // ✅ 3. ഫയർസ്റ്റോറിലേക്ക് ബാക്കപ്പ് (എറർ ഉണ്ടായാലും പ്രശ്നമില്ല)
+                try {
+                    await db.collection("students").doc(studentObj.number).set(studentObj);
+                } catch (fireError) {
+                    console.warn("Firebase Sync Failed (Permissions), but Supabase might be okay:", fireError);
+                    if (!supabaseSuccess) throw fireError; // If both failed, then show error
                 }
 
                 alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
                 location.reload();
             } catch (e) {
                 console.error("Save error:", e);
-                alert("വിവരങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്! (Error: " + e.message + ")");
+                alert("വിവരങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്! (Error: " + (e.message || "Unknown Error") + ")");
                 btn.disabled = false;
                 btn.innerText = "SAVE & REGISTER";
             }
