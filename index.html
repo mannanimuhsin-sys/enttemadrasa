@@ -267,8 +267,20 @@
                 // ✅ ക്ലൗഡ് ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
                 await firestore.collection('madrasa_requests').doc(regNo).set(data);
                 
-                // പഴയ ബാക്കപ്പിന് വേണ്ടി RTDB-ലും സേവ് ചെയ്യാം (വേണമെങ്കിൽ മാത്രം)
-                // db.ref('madrasa_requests/' + regNo).set(data);
+                // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('madrasa_requests').upsert({
+                        reg: regNo,
+                        user_id: uId,
+                        name: data.name,
+                        place: data.place,
+                        photo: photoUrl,
+                        usthad_pass: uHash,
+                        parent_pass: pHash,
+                        status: "pending",
+                        created_at: new Date().toISOString()
+                    });
+                }
 
                 alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക.");
                 location.reload();
@@ -298,14 +310,28 @@
         try {
             const passHash = await hashPassword(pass);
             
-            // ✅ ആദ്യം ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
-            let doc = await firestore.collection('madrasa_requests').doc(reg).get();
-            let found = null;
+            // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു (പുതിയ ഹൈ-കപ്പാസിറ്റി ലോഗിൻ)
+            if (window.supabaseClient) {
+                const { data: suData, error: suError } = await window.supabaseClient
+                    .from('madrasa_requests')
+                    .select('*')
+                    .eq('reg', reg)
+                    .single();
+                
+                if (suData && !suError) {
+                    if (suData.usthad_pass === passHash) { found = suData; currentId = reg; currentRole = "admin"; }
+                    else if (suData.parent_pass === passHash) { found = suData; currentId = reg; currentRole = "parent"; }
+                }
+            }
 
-            if (doc.exists) {
-                const d = doc.data();
-                if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+            // സുപാബേസിൽ ഇല്ലെങ്കിൽ ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            if (!found) {
+                let doc = await firestore.collection('madrasa_requests').doc(reg).get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                    else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                }
             }
 
             // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു (മൈഗ്രേഷൻ സ്മൂത്ത് ആക്കാൻ)
