@@ -52,8 +52,11 @@
 <body>
 
 <div class="quiz-container">
-    <div id="quizHeader" style="text-align: center; display: none;">
-        <h2 id="programTitle" style="color: var(--primary); margin-bottom: 5px;"></h2>
+    <div id="quizHeader" style="text-align: center; display: none; position: relative;">
+        <button onclick="window.location.href='index.html'" style="position: absolute; left: 0; top: 0; background: #eee; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <h2 id="programTitle" style="color: var(--primary); margin-bottom: 5px; padding: 0 40px;"></h2>
         <hr>
     </div>
 

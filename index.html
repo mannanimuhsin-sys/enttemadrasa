@@ -622,11 +622,31 @@
                 alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
             }
         }
-        function loadProfile(d) {
+        async function loadProfile(d, sid) {
+            if (!d && sid) {
+                // സിസ്റ്റം ഓട്ടോമാറ്റിക്കായി ടാറ്റ ലോഡ് ചെയ്യുന്നു
+                try {
+                    const [doc, snap] = await Promise.all([
+                        firestore.collection('madrasa_requests').doc(sid).get(),
+                        db.ref('madrasa_requests/' + sid).once('value')
+                    ]);
+                    d = doc.exists ? doc.data() : (snap.exists() ? snap.val() : null);
+                } catch (e) {
+                    console.error("Profile load error:", e);
+                }
+            }
+            
+            if (!d) return;
+
+            // അപ്രൂവൽ കിട്ടിയിട്ടില്ലെങ്കിൽ പെൻഡിംഗ് പേജിലേക്ക് വിടുന്നു
+            if (d.status !== 'approved') {
+                showPage('pendingPage');
+                return;
+            }
+
             const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
             const madrasaPlace = (d.place || d.location || "").trim();
 
-            // 1. പ്രൊഫൈൽ ഏരിയയിൽ വിവരങ്ങൾ കാണിക്കുന്നു
             const profileArea = document.getElementById('profileArea');
             if (profileArea) {
                 profileArea.innerHTML = `
@@ -638,11 +658,9 @@
                     </div>`;
             }
 
-            // 2. പ്ലസ് ബട്ടൺ മറയ്ക്കുന്നു
             const plusBtn = document.getElementById('plusBtn');
             if (plusBtn) plusBtn.style.display = 'none';
 
-            // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു (ഫയർസ്റ്റോറിൽ നിന്ന്)
             firestore.collection('settings').doc(currentId).onSnapshot(doc => {
                 const settings = doc.data() || {};
                 const salahBtn = document.getElementById('btn_salah');
@@ -651,13 +669,11 @@
                 }
             });
 
-            // 4. അഡ്മിൻ ആണെങ്കിൽ മാത്രം അഡ്മിൻ ഏരിയ കാണിക്കുന്നു
             const adminBox = document.getElementById('adminArea');
             if (adminBox) {
                 adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
             }
 
-            // 5. അവസാനം പോർട്ടൽ പേജ് തുറക്കുന്നു
             showPage('portalPage');
         }
 
@@ -681,25 +697,14 @@
             if (sid) {
                 currentId = sid;
                 currentRole = role || "";
+                
+                // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ പേജ് കാണിക്കുന്നു (Instant feel)
+                showPage('portalPage');
+                hideLoader();
 
-                try {
-                    // ആദ്യം ടാറ്റാബേസിൽ വിവരമുണ്ടോ എന്ന് നോക്കുന്നു
-                    const doc = await firestore.collection('madrasa_requests').doc(sid).get();
-                    if (doc.exists) {
-                        loadProfile(doc.data());
-                        hideLoader();
-                        return;
-                    } 
-                    
-                    const snap = await db.ref('madrasa_requests/' + sid).once('value');
-                    if (snap.exists()) {
-                        loadProfile(snap.val());
-                        hideLoader();
-                        return;
-                    }
-                } catch (err) {
-                    console.error("Auto-login error:", err);
-                }
+                // ബാക്ക്ഗ്രൗണ്ടിൽ ടാറ്റ അപ്ഡേറ്റ് ചെയ്യുന്നു
+                loadProfile(null, sid);
+                return;
             }
             
             // ലോഗിൻ ചെയ്തിട്ടില്ലെങ്കിൽ ലോഗിൻ പേജ് കാണിക്കുന്നു
