@@ -151,15 +151,28 @@ async function hashPassword(password) {
 
 let allStudents = [];
 
-// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു
-rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-    const data = snap.val() || {};
+// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു (Supabase Priority)
+async function loadMadrasaProfile() {
+    if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
+        if (data && !error) {
+            updateMadrasaUI(data);
+            return;
+        }
+    }
+    rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+        updateMadrasaUI(snap.val() || {});
+    });
+}
+
+function updateMadrasaUI(data) {
     const madrasaName = data.name || data.madrasaName || data.title || "മദ്രസ";
     const madrasaPlace = data.place || data.location || "";
     document.getElementById('mName').innerText = madrasaName + " (" + (data.reg || "") + ")";
     document.getElementById('mPlace').innerText = madrasaPlace;
     if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
-});
+}
+loadMadrasaProfile();
 // സദർ മുഅല്ലിം വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു
 async function loadSadarDetails() {
     if(!mId) return;
@@ -192,9 +205,24 @@ window.onload = () => {
 async function loadStudents() {
     if(!mId) return alert("Madrasa ID Missing!");
     
+    let snap;
+    // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു
+    if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient.from('students').select('*').eq('madrasa_id', mId);
+        if (data && !error) {
+            renderStudents(data);
+            return;
+        }
+    }
+
+    // ഫയർസ്റ്റോർ Fallback
     const query = db.collection("students").where("madrasa_id", "==", mId);
-    const snap = await query.get();
-    
+    snap = await query.get();
+    const students = snap.docs.map(doc => doc.data());
+    renderStudents(students);
+}
+
+function renderStudents(students) {
     allStudents = [];
     let html = "";
     let stats = { total: 0, pending: 0, male: 0, female: 0 };
@@ -202,8 +230,7 @@ async function loadStudents() {
     const filterClass = document.getElementById('filterClass').value;
     const filterGender = document.getElementById('filterGender').value;
 
-    snap.forEach(doc => {
-        const s = doc.data();
+    students.forEach(s => {
         
         // Filters
         if(filterClass && s.class != filterClass) return;
