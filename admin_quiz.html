@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <style>
         body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
         .admin-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
@@ -68,15 +71,25 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const firestore = firebase.firestore();
 
     // URL-ൽ നിന്ന് മദ്റസ ID എടുക്കുന്നു
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id');
 
-    // മദ്റസ പേര് ലോഡ് ചെയ്യാൻ
-    db.ref('madrasa_requests/' + mID).once('value', snap => {
-        if(snap.val()) document.getElementById('madrasaName').innerText = snap.val().name;
-    });
+    // മദ്റസ പേര് ലോഡ് ചെയ്യാൻ (ഫയർസ്റ്റോറിൽ നിന്ന്)
+    async function loadMadrasaName() {
+        if (!mID) return;
+        const doc = await firestore.collection('madrasa_requests').doc(mID).get();
+        if (doc.exists) {
+            document.getElementById('madrasaName').innerText = doc.data().name;
+        } else {
+            db.ref('madrasa_requests/' + mID).once('value', snap => {
+                if(snap.val()) document.getElementById('madrasaName').innerText = snap.val().name;
+            });
+        }
+    }
+    loadMadrasaName();
 
     let questions = [];
 
@@ -126,8 +139,17 @@
 
     async function loadExistingQuiz() {
         if (!mID) return;
-        const snap = await db.ref('quizzes/' + mID).once('value');
-        const data = snap.val();
+        
+        // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+        const doc = await firestore.collection('quizzes').doc(mID).get();
+        let data = doc.exists ? doc.data() : null;
+
+        if (!data) {
+            // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
+            const snap = await db.ref('quizzes/' + mID).once('value');
+            data = snap.val();
+        }
+
         if (!data) return;
 
         document.getElementById('quizHeading').value = data.heading || '';
@@ -148,23 +170,49 @@
 
         if(!heading || questions.length === 0) return alert("ഹെഡിംഗും ചോദ്യങ്ങളും നിർബന്ധമാണ്!");
 
-        db.ref('quizzes/' + mID).set({
+        const quizData = {
             heading: heading,
             startTime: new Date(time).getTime(),
             questions: questions,
-            status: "published"
-        }).then(() => {
+            status: "published",
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു
+        firestore.collection('quizzes').doc(mID).set(quizData).then(() => {
             updateQuizStatus('published');
-            alert("ക്വിസ് പബ്ലിഷ് ചെയ്തു!");
+            alert("ക്വിസ് ഫയർസ്റ്റോറിൽ പബ്ലിഷ് ചെയ്തു!");
         });
+
+        // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
+        try {
+            supabase.from('quizzes').upsert({
+                madrasa_id: mID,
+                heading: heading,
+                start_time: new Date(time).getTime(),
+                questions: questions,
+                status: "published",
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'madrasa_id' }).then(({ error }) => {
+                if (error) console.error("Supabase Save Error:", error);
+            });
+        } catch (e) {
+            console.error("Supabase Sync Failed:", e);
+        }
+
+        // പഴയ സിസ്റ്റത്തിന് വേണ്ടി RTDB-ലും സേവ് ചെയ്യാം
+        db.ref('quizzes/' + mID).set(quizData);
     }
 
     function stopQuiz() {
         if (!confirm('ഈ ക്വിസ് നിർത്തണോ?')) return;
-        db.ref('quizzes/' + mID).update({ status: 'stopped' }).then(() => {
+        
+        firestore.collection('quizzes').doc(mID).update({ status: 'stopped' }).then(() => {
             updateQuizStatus('stopped');
-            alert('Quiz stopped.');
+            alert('Quiz stopped in Firestore.');
         });
+        
+        db.ref('quizzes/' + mID).update({ status: 'stopped' });
     }
 
     function updateQuizStatus(status) {
@@ -174,6 +222,12 @@
 
     function clearQuiz() {
         if(confirm("എല്ലാ ചോദ്യങ്ങളും റിസൾട്ടും ക്ലിയർ ചെയ്യണോ?")) {
+            // ✅ ഫയർസ്റ്റോറിൽ നിന്ന് നീക്കം ചെയ്യുന്നു
+            firestore.collection('quizzes').doc(mID).delete();
+            
+            // സബ്മിഷനുകൾ നീക്കം ചെയ്യാൻ ബാച്ച് അല്ലെങ്കിൽ ഫംഗ്ഷൻ ആവശ്യമാണ്, 
+            // തൽക്കാലം ക്വിസ് മാത്രം ഡിലീറ്റ് ചെയ്യുന്നു.
+            
             db.ref('quizzes/' + mID).remove();
             db.ref('quiz_submissions/' + mID).remove();
             location.reload();

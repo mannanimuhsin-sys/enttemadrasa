@@ -7,6 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --primary: #004d00; --gold: #d4af37; }
@@ -83,13 +85,12 @@
 <script>
     // Firebase Config (മദ്രസയും ID പോർട്ടലും ഒരേ അടിസ്ഥാനത്തിൽ പ്രവർത്തിക്കണം)
     const firebaseConfig = {
-        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-        authDomain: "mum-new-id.firebaseapp.com",
-        projectId: "mum-new-id",
-        storageBucket: "mum-new-id.firebasestorage.app",
-        messagingSenderId: "794343464244",
-        appId: "1:794343464244:web:f9083036490e3609bf1961",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -128,6 +129,14 @@
             }
 
             currentStudent = { ...s, regNo: reg };
+            
+            // ✅ ലോഗിൻ ചെയ്ത ശേഷം സബ്മിഷൻ ഉണ്ടോ എന്ന് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            const submissionDoc = await db.collection('quiz_submissions').doc(mID).collection('students').doc(reg).get();
+            if (submissionDoc.exists) {
+                return showAlreadySubmitted();
+            }
+            
+            // ബാക്ക്-അപ്പ് RTDB
             const submissionSnap = await rtdb.ref('quiz_submissions/' + mID + '/' + reg).once('value');
             if (submissionSnap.exists()) {
                 return showAlreadySubmitted();
@@ -171,8 +180,16 @@
     // 3. ക്വിസ് വിവരങ്ങളും ടൈമറും ലോഡ് ചെയ്യുന്നു
     async function loadQuizInfo() {
         try {
-            const snap = await rtdb.ref('quizzes/' + mID).once('value');
-            quizData = snap.val();
+            // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            const doc = await db.collection('quizzes').doc(mID).get();
+            quizData = doc.exists ? doc.data() : null;
+
+            if (!quizData) {
+                // ബാക്ക്-അപ്പ് RTDB
+                const snap = await rtdb.ref('quizzes/' + mID).once('value');
+                quizData = snap.val();
+            }
+
             if (!quizData || quizData.status !== 'published') {
                 document.getElementById('timerBox').innerHTML = '<h3>നിലവിൽ ക്വിസ് ലഭ്യമല്ല!</h3>';
                 return;
@@ -238,7 +255,7 @@
         selectedOption = val;
     }
 
-    function submitAnswer() {
+    async function submitAnswer() {
         if (!selectedOption) return alert('ദയവായി ഒരു ഓപ്ഷൻ തിരഞ്ഞെടുക്കുക!');
         if (!quizData || !quizData.questions || !quizData.questions.length) return;
 
@@ -265,26 +282,39 @@
             answers: answers,
             score: answers.filter(a => a.isCorrect).length,
             totalQuestions: answers.length,
-            submitTime: firebase.database.ServerValue.TIMESTAMP
+            submitTime: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        const submissionRef = rtdb.ref('quiz_submissions/' + mID + '/' + currentStudent.regNo);
-        submissionRef.transaction(current => {
-            if (current === null) {
-                return resultData;
+        try {
+            // ✅ ഫയർസ്റ്റോറിലേക്ക് സബ്മിറ്റ് ചെയ്യുന്നു
+            await db.collection('quiz_submissions').doc(mID).collection('students').doc(currentStudent.regNo).set(resultData);
+            
+            // RTDB സിങ്ക് (പഴയ അഡ്മിൻ പാനലുകൾക്കായി)
+            rtdb.ref('quiz_submissions/' + mID + '/' + currentStudent.regNo).set({
+                ...resultData,
+                submitTime: new Date().getTime()
+            });
+
+            // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
+            try {
+                supabase.from('quiz_submissions').insert({
+                    madrasa_id: mID,
+                    student_name: currentStudent.name,
+                    score: resultData.score,
+                    submitted_at: new Date().toISOString()
+                }).then(({ error }) => {
+                    if (error) console.error("Supabase Submission Error:", error);
+                });
+            } catch (e) {
+                console.error("Supabase Sync Failed:", e);
             }
-            return; // Already submitted
-        }, (error, committed) => {
-            if (error) {
-                console.error(error);
-                return alert('സബ്മിഷൻ പിഴവ്. ദയവായി വീണ്ടും ശ്രമിക്കുക.');
-            }
-            if (!committed) {
-                return alert('നിങ്ങൾ ഇതിനകം ഈ ക്വിസ് സബ്മിറ്റ് ചെയ്തിട്ടുണ്ട്!');
-            }
+
             alert(`സബ്മിഷൻ പൂർത്തിയായി! സ്കോർ: ${resultData.score}/${resultData.totalQuestions}`);
             location.reload();
-        });
+        } catch (error) {
+            console.error(error);
+            alert('സബ്മിഷൻ പിഴവ്. ദയവായി വീണ്ടും ശ്രമിക്കുക.');
+        }
     }
 </script>
 

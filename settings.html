@@ -6,6 +6,7 @@
     <title>മദ്റസ സെറ്റിംഗ്സ്</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
@@ -50,6 +51,13 @@
     </div>
 
     <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
+
+    <div style="margin-top: 30px; padding: 20px; border: 2px solid #ffc107; border-radius: 15px; background: #fffcf0; text-align: center;">
+        <h3 style="color: #856404; margin-top:0;"><i class="fa fa-broom"></i> Fix Database Storage</h3>
+        <p style="font-size: 13px; color: #856404;">നിങ്ങളുടെ ഡാറ്റാബേസ് സ്റ്റോറേജ് ക്ലിയർ ചെയ്യാനും സ്പീഡ് കൂട്ടാനുമായി ഈ ബട്ടൺ അമർത്തുക (Move Images to Cloud Storage).</p>
+        <button id="migrateBtn" class="toggle-btn btn-on" style="width:100%; height:auto; padding:15px;" onclick="runMigration()">START MIGRATION</button>
+        <p id="migrateStatus" style="font-size: 11px; margin-top:10px; color: #666;"></p>
+    </div>
 </div>
 
 <script>
@@ -63,6 +71,8 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const firestore = firebase.firestore();
+    const storage = firebase.storage();
 
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id');
@@ -71,13 +81,24 @@
     let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: false };
 
     if (mID) {
-        db.ref('settings/' + mID).on('value', snap => {
-            if (snap.exists()) {
-                currentSettings = snap.val();
+        // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+        firestore.collection('settings').doc(mID).onSnapshot(doc => {
+            if (doc.exists) {
+                currentSettings = doc.data();
                 if (currentSettings.payment === undefined) currentSettings.payment = true;
                 if (currentSettings.salah === undefined) currentSettings.salah = false;
+                updateUI();
+            } else {
+                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB നോക്കുന്നു
+                db.ref('settings/' + mID).on('value', snap => {
+                    if (snap.exists()) {
+                        currentSettings = snap.val();
+                        if (currentSettings.payment === undefined) currentSettings.payment = true;
+                        if (currentSettings.salah === undefined) currentSettings.salah = false;
+                    }
+                    updateUI();
+                });
             }
-            updateUI();
         });
     }
 
@@ -97,9 +118,107 @@
         }
     }
 
+
     function toggleFeature(feature) {
         currentSettings[feature] = !currentSettings[feature];
+        // ✅ ഫയർസ്റ്റോറിൽ അപ്‌ഡേറ്റ് ചെയ്യുന്നു
+        firestore.collection('settings').doc(mID).set(currentSettings);
+        
+        // RTDB-ലും സിങ്ക് ചെയ്യാം (വേണമെങ്കിൽ)
         db.ref('settings/' + mID).set(currentSettings);
+    }
+
+    async function runMigration() {
+        if (!mID) return;
+        const btn = document.getElementById('migrateBtn');
+        const status = document.getElementById('migrateStatus');
+        
+        if (!confirm("മദ്റസ വിവരങ്ങൾ ക്ലൗഡ്‌ സ്റ്റോറേജിലേക്ക് മാറ്റാൻ താങ്കൾ തയ്യാറാണോ? ഇത് ചെയ്താൽ നിങ്ങളുടെ ഡാറ്റാബേസ് സ്റ്റോറേജ് പ്രശ്നം പരിഹരിക്കപ്പെടും.")) return;
+
+        btn.disabled = true;
+        btn.innerText = "MIGRATING...";
+        status.innerText = "Fetching data from Realtime Database...";
+
+        try {
+            const snap = await db.ref('madrasa_requests/' + mID).once('value');
+            if (!snap.exists()) throw new Error("No data found in RTDB!");
+
+            const data = snap.val();
+            let newPhotoUrl = data.photo || "";
+
+            // 1. ഫോട്ടോ പീർസ് ചെയ്ത് മാറ്റുന്നു
+            if (data.photo && data.photo.startsWith('data:image')) {
+                status.innerText = "Uploading image to Cloud Storage...";
+                // Base64 to Blob
+                const blob = await (await fetch(data.photo)).blob();
+                const storageRef = storage.ref(`madrasa_photos/${mID}_profile`);
+                await storageRef.put(blob);
+                newPhotoUrl = await storageRef.getDownloadURL();
+            }
+
+            status.innerText = "Moving data to Cloud Firestore...";
+            const updatedData = { ...data, photo: newPhotoUrl, migratedAt: new Date().toISOString() };
+            
+            // 2. ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
+            await firestore.collection('madrasa_requests').doc(mID).set(updatedData);
+
+            // 3. RTDB-യിൽ നിന്ന് ലാർജ് ഫോട്ടോ ഡിലീറ്റ് ചെയ്യുന്നു (സ്റ്റോറേജ് ഫ്രീ ആക്കാൻ)
+            status.innerText = "Cleaning up Realtime Database...";
+            await db.ref('madrasa_requests/' + mID + '/photo').set("MIGRATED");
+
+            status.innerText = "Migration Completed!";
+            btn.innerText = "COMPLETED!";
+            alert("മൈഗ്രേഷൻ വിജയകരമായി പൂർത്തിയായി! നിങ്ങളുടെ സ്റ്റോറേജ് പ്രശ്നം പരിഹരിക്കപ്പെട്ടു.");
+        } catch (error) {
+            console.error(error);
+            status.innerText = "Error: " + error.message;
+            btn.disabled = false;
+            btn.innerText = "TRY AGAIN";
+        }
+    }
+
+    async function migrateStudents() {
+        if (!mID) return;
+        const btn = document.getElementById('migrateBtn');
+        const status = document.getElementById('migrateStatus');
+        
+        if (!confirm("20,000+ വിദ്യാർത്ഥികളുടെ ഫോട്ടോകൾ കൺവർട്ട് ചെയ്യുന്നത് വലിയൊരു പ്രോസസ്സ് ആണ്. ഇത് ചെയ്യാൻ നിങ്ങൾ തയ്യാറാണോ? (Slow process)")) return;
+
+        btn.disabled = true;
+        btn.innerText = "MIGRATING STUDENTS...";
+        
+        try {
+            // സ്കെയിലബിളിറ്റിക്കായി ബാച്ച് ആയി ചെയ്യണം
+            const studentsSnap = await firestore.collection('students').where('madrasa_id', '==', mID).get();
+            let count = 0;
+            let total = studentsSnap.size;
+
+            for (const doc of studentsSnap.docs) {
+                const s = doc.data();
+                if (s.photo && s.photo.startsWith('data:image')) {
+                    count++;
+                    status.innerText = `Migrating student ${count}/${total}...`;
+                    
+                    const blob = await (await fetch(s.photo)).blob();
+                    const storageRef = storage.ref(`student_photos/${mID}/${doc.id}`);
+                    await storageRef.put(blob);
+                    const url = await storageRef.getDownloadURL();
+                    
+                    await firestore.collection('students').doc(doc.id).update({
+                        photo: url,
+                        photo_migrated: true
+                    });
+                }
+            }
+            
+            status.innerText = `Successfully migrated ${count} student photos!`;
+            btn.disabled = false;
+            btn.innerText = "MIGRATE STUDENTS DONE";
+        } catch (error) {
+            console.error(error);
+            status.innerText = "Error: " + error.message;
+            btn.disabled = false;
+        }
     }
 </script>
 </body>

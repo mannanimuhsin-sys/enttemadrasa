@@ -119,16 +119,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase_config.js"></script>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-  authDomain: "mum-new-id.firebaseapp.com",
-  projectId: "mum-new-id",
-  storageBucket: "mum-new-id.firebasestorage.app",
-  messagingSenderId: "794343464244",
-  appId: "1:794343464244:web:f9083036490e3609bf1961",
-  databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+    authDomain: "enttemadrasa.firebaseapp.com",
+    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+    projectId: "enttemadrasa",
+    storageBucket: "enttemadrasa.firebasestorage.app",
+    appId: "1:623531881201:web:b863793340c3901cedaf50"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -141,18 +142,24 @@ const madrasaId = urlParams.get('id');
 let currentStudents = [];
 let attendanceData = {};
 
-window.onload = () => {
+window.onload = async () => {
     if(!madrasaId) {
         alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല!");
         return;
     }
     
-    // Load madrasa info
-    rtdb.ref('madrasa_requests/' + madrasaId).once('value', snap => {
-        if(snap.val()) {
-            document.getElementById('madrasaInfo').innerText = snap.val().name + ' - ' + snap.val().place;
-        }
-    });
+    // ✅ ലോഡ് മദ്റസ ഇൻഫോ (ഫയർസ്റ്റോറിൽ നിന്ന്)
+    const doc = await db.collection('madrasa_requests').doc(madrasaId).get();
+    if(doc.exists) {
+        document.getElementById('madrasaInfo').innerText = doc.data().name + ' - ' + doc.data().place;
+    } else {
+        // ബാക്ക്-അപ്പ് RTDB
+        rtdb.ref('madrasa_requests/' + madrasaId).once('value', snap => {
+            if(snap.exists()) {
+                document.getElementById('madrasaInfo').innerText = snap.val().name + ' - ' + snap.val().place;
+            }
+        });
+    }
     
     // Set current month
     const now = new Date();
@@ -290,6 +297,27 @@ async function saveAttendance() {
             await db.collection("attendance").add(attendanceRecord);
         }
         
+        // ✅ സബ്മിഷൻ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
+        try {
+            const { data, error } = await supabase
+                .from('attendance')
+                .upsert({
+                    madrasa_id: madrasaId,
+                    year: year,
+                    month: month,
+                    class: classNum,
+                    total_days: totalDays,
+                    students: studentAttendance,
+                    updated_at: new Date().toISOString(),
+                    updated_by: "admin"
+                }, { onConflict: 'madrasa_id,year,month,class' });
+            
+            if (error) throw error;
+        } catch (supabaseError) {
+            console.error("Supabase Save Error:", supabaseError);
+            // Non-blocking error for now
+        }
+
         alert("ഹാജർ വിവരങ്ങൾ സേവ് ചെയ്തു!");
         
     } catch(error) {

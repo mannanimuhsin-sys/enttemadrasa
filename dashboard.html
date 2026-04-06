@@ -6,6 +6,8 @@
     <title>മദ്റസ ഡാഷ്‌ബോർഡ് | Student Details</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; background-image: var(--bg-image); background-size: cover; background-attachment: fixed; padding: 15px; margin: 0; }
@@ -155,6 +157,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const firestore = firebase.firestore();
+    const storage = firebase.storage();
 
     const urlParams = new URLSearchParams(window.location.search);
     const mId = urlParams.get('id');
@@ -165,110 +169,120 @@
         document.getElementById('adminArea').style.display = 'block';
     }
 
-  // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
+    // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
     function loadData() {
         if (!mId) return;
-        db.ref('madrasa_requests/' + mId).on('value', snap => {
-            const data = snap.val();
-            if(!data) return;
 
-            document.getElementById('mNameHead').innerText = data.name + " (" + data.reg + ")";
-            document.getElementById('mPlaceHead').innerText = data.place;
-            if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
+        // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ റിയൽ-ടൈം ലിസണർ വെക്കുന്നു
+        firestore.collection('madrasa_requests').doc(mId).onSnapshot(doc => {
+            if (doc.exists) {
+                renderContent(doc.data());
+            } else {
+                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
+                db.ref('madrasa_requests/' + mId).on('value', snap => {
+                    const data = snap.val();
+                    if(data) renderContent(data);
+                });
+            }
+        });
+    }
 
-            let classes = data.classes || [];
+    function renderContent(data) {
+        if(!data) return;
 
-            // --- സോർട്ടിങ് ലോജിക് ഇവിടെ തുടങ്ങുന്നു ---
-            classes.sort((a, b) => {
-                // റോമൻ അക്കങ്ങളോ (I, II) സാധാരണ അക്കങ്ങളോ (1, 2) ആയാലും തരംതിരിക്കാൻ വേണ്ടി
-                const getVal = (name) => {
-                    const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
-                    return roman[name.toUpperCase()] || parseInt(name) || 0;
-                };
+        document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || "") + ")";
+        document.getElementById('mPlaceHead').innerText = data.place || "";
+        if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
 
-                let valA = getVal(a.name);
-                let valB = getVal(b.name);
+        let classes = data.classes || [];
 
-                if (valA !== valB) {
-                    return valA - valB; // ക്ലാസ് അടിസ്ഥാനത്തിൽ തരംതിരിക്കുന്നു (1, 2, 3...)
-                } else {
-                    // ക്ലാസ് ഒന്നാണെങ്കിൽ ഡിവിഷൻ (A, B, C) അടിസ്ഥാനത്തിൽ തരംതിരിക്കുന്നു
-                    let divA = (a.div || "").toUpperCase();
-                    let divB = (b.div || "").toUpperCase();
-                    return divA.localeCompare(divB);
-                }
-            });
-            // --- സോർട്ടിങ് ലോജിക് അവസാനിക്കുന്നു ---
+        // --- സോർട്ടിങ് ലോജിക് ---
+        classes.sort((a, b) => {
+            const getVal = (name) => {
+                const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
+                return roman[name ? name.toUpperCase() : ""] || parseInt(name) || 0;
+            };
 
-            let html = "";
-            let totalBoys = 0, totalGirls = 0, totalAll = 0;
+            let valA = getVal(a.name);
+            let valB = getVal(b.name);
 
-            let cardHtml = "";
+            if (valA !== valB) {
+                return valA - valB;
+            } else {
+                let divA = (a.div || "").toUpperCase();
+                let divB = (b.div || "").toUpperCase();
+                return divA.localeCompare(divB);
+            }
+        });
 
-            classes.forEach((item, index) => {
-                let b = parseInt(item.b) || 0;
-                let g = parseInt(item.g) || 0;
-                let rowTotal = b + g;
+        let html = "";
+        let totalBoys = 0, totalGirls = 0, totalAll = 0;
+        let cardHtml = "";
 
-                totalBoys += b;
-                totalGirls += g;
-                totalAll += rowTotal;
+        classes.forEach((item, index) => {
+            let b = parseInt(item.b) || 0;
+            let g = parseInt(item.g) || 0;
+            let rowTotal = b + g;
 
-                let divDisplay = (item.div && item.div.trim() !== "") ? `<b>${item.div}</b>` : "";
+            totalBoys += b;
+            totalGirls += g;
+            totalAll += rowTotal;
 
-                html += `
-                <tr>
-                    <td><b>${item.name}</b></td>
-                    <td>${divDisplay}</td>
-                    <td class="boys">${b}</td>
-                    <td class="girls">${g}</td>
-                    <td class="total-cell">${rowTotal}</td>
-                    <td class="usthad-name">${item.u}</td>
-                    <td>
-                        <div class="contact-btns">
-                            <a href="tel:${item.p}" class="call-icon" title="Call"><i class="fa fa-phone-alt"></i></a>
-                            ${role === 'admin' ? `
-                            <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
-                            <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
-                            <a href="https://wa.me/91${item.p}" class="whatsapp-icon" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                        </div>
-                    </td>
-                </tr>`;
+            let divDisplay = (item.div && item.div.trim() !== "") ? `<b>${item.div}</b>` : "";
 
-                cardHtml += `
-                <div class="class-card">
-                    <div class="card-title">
-                        <span>${item.name}${item.div ? ' (' + item.div + ')' : ''}</span>
-                        <span class="card-total">${rowTotal} students</span>
-                    </div>
-                    <div class="card-row"><span>BOYS</span><strong>${b}</strong></div>
-                    <div class="card-row"><span>GIRLS</span><strong>${g}</strong></div>
-                    <div class="card-row"><span>TOTAL</span><strong>${rowTotal}</strong></div>
-                    <div class="card-row"><span>USTHAD</span><strong>${item.u || '-'}</strong></div>
-                    <div class="card-row contact-row">
-                        <a href="tel:${item.p}" title="Call"><i class="fa fa-phone-alt"></i> CALL</a>
+            html += `
+            <tr>
+                <td><b>${item.name}</b></td>
+                <td>${divDisplay}</td>
+                <td class="boys">${b}</td>
+                <td class="girls">${g}</td>
+                <td class="total-cell">${rowTotal}</td>
+                <td class="usthad-name">${item.u}</td>
+                <td>
+                    <div class="contact-btns">
+                        <a href="tel:${item.p}" class="call-icon" title="Call"><i class="fa fa-phone-alt"></i></a>
                         ${role === 'admin' ? `
                         <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
                         <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
-                        <a href="https://wa.me/91${item.p}" title="WhatsApp"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
+                        <a href="https://wa.me/91${item.p}" class="whatsapp-icon" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
-                </div>`;
-            });
-            document.getElementById('tableBody').innerHTML = html;
-            document.getElementById('cardView').innerHTML = cardHtml;
-            document.getElementById('totalBoysCard').innerText = totalBoys;
-            document.getElementById('totalGirlsCard').innerText = totalGirls;
-            document.getElementById('totalAllCard').innerText = totalAll;
-            
-            document.getElementById('tableFoot').innerHTML = `
-                <tr>
-                    <td colspan="2">ആകെ (TOTAL)</td>
-                    <td>${totalBoys}</td>
-                    <td>${totalGirls}</td>
-                    <td>${totalAll}</td>
-                    <td colspan="2">TOTAL STRENGTH</td>
-                </tr>`;
+                </td>
+            </tr>`;
+
+            cardHtml += `
+            <div class="class-card">
+                <div class="card-title">
+                    <span>${item.name}${item.div ? ' (' + item.div + ')' : ''}</span>
+                    <span class="card-total">${rowTotal} students</span>
+                </div>
+                <div class="card-row"><span>BOYS</span><strong>${b}</strong></div>
+                <div class="card-row"><span>GIRLS</span><strong>${g}</strong></div>
+                <div class="card-row"><span>TOTAL</span><strong>${rowTotal}</strong></div>
+                <div class="card-row"><span>USTHAD</span><strong>${item.u || '-'}</strong></div>
+                <div class="card-row contact-row">
+                    <a href="tel:${item.p}" title="Call"><i class="fa fa-phone-alt"></i> CALL</a>
+                    ${role === 'admin' ? `
+                    <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
+                    <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
+                    <a href="https://wa.me/91${item.p}" title="WhatsApp"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
+                </div>
+            </div>`;
         });
+
+        document.getElementById('tableBody').innerHTML = html;
+        document.getElementById('cardView').innerHTML = cardHtml;
+        document.getElementById('totalBoysCard').innerText = totalBoys;
+        document.getElementById('totalGirlsCard').innerText = totalGirls;
+        document.getElementById('totalAllCard').innerText = totalAll;
+        
+        document.getElementById('tableFoot').innerHTML = `
+            <tr>
+                <td colspan="2">ആകെ (TOTAL)</td>
+                <td>${totalBoys}</td>
+                <td>${totalGirls}</td>
+                <td>${totalAll}</td>
+                <td colspan="2">TOTAL STRENGTH</td>
+            </tr>`;
     }
     // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
     async function saveClass() {
@@ -282,12 +296,22 @@
         if(!name || !u || !p) return alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
 
         try {
-            const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-            let currentClasses = snap.val() || [];
+            // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+            let data = doc.data();
             
-            currentClasses.push({ name, div, b, g, u, p });
+            if (!doc.exists) {
+                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
+                const snap = await db.ref('madrasa_requests/' + mId).once('value');
+                data = snap.val();
+                if (!data) return alert("Madrasa data not found!");
+            }
 
-            await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
+            let classes = data.classes || [];
+            classes.push({ name, div, b, g, u, p });
+
+            // ✅ ഫയർസ്റ്റോറിൽ പുതിയ ഡാറ്റ സേവ് ചെയ്യുന്നു
+            await firestore.collection('madrasa_requests').doc(mId).update({ classes: classes });
             
             // ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
             document.getElementById('cName').value = "";
@@ -305,8 +329,16 @@
 
     // എഡിറ്റ് ചെയ്യാൻ
     async function editClass(index) {
-        const snap = await db.ref('madrasa_requests/' + mId + '/classes/' + index).once('value');
-        const data = snap.val();
+        let classes = [];
+        const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+        if (doc.exists) {
+            classes = doc.data().classes || [];
+        } else {
+            const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
+            classes = snap.val() || [];
+        }
+        
+        const data = classes[index];
         
         if(data) {
             document.getElementById('cName').value = data.name;
@@ -325,10 +357,18 @@
     // ഡിലീറ്റ് ചെയ്യാൻ
     async function deleteClass(index, ask = true) {
         if(!ask || confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
-            const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-            let currentClasses = snap.val() || [];
-            currentClasses.splice(index, 1);
-            await db.ref('madrasa_requests/' + mId + '/classes').set(currentClasses);
+            let classes = [];
+            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+            if (doc.exists) {
+                classes = doc.data().classes || [];
+                classes.splice(index, 1);
+                await firestore.collection('madrasa_requests').doc(mId).update({ classes: classes });
+            } else {
+                const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
+                classes = snap.val() || [];
+                classes.splice(index, 1);
+                await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+            }
         }
     }
 

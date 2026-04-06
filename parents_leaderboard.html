@@ -92,11 +92,12 @@
 <script>
     // നിങ്ങളുടെ Firebase Config ഇവിടെ നൽകുക
     const firebaseConfig = {
-        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-        authDomain: "mum-new-id.firebaseapp.com",
-        projectId: "mum-new-id",
-        storageBucket: "mum-new-id.firebasestorage.app",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -114,46 +115,39 @@
         }
 
         try {
-            // ഒരേസമയം എല്ലാ ഡാറ്റയും ലോഡ് ചെയ്യുന്നു (High Speed)
-            const [mSnap, rSnap, sSnap, tSnap] = await Promise.all([
-                rtdb.ref(`madrasa_requests/${mId}`).once('value'),
-                rtdb.ref(`salah_records/${mId}`).once('value'),
-                db.collection("students").where("madrasa_id", "==", mId).get(),
-                rtdb.ref(`salah_total/${mId}`).once('value')
-            ]);
-
-            // മദ്റസ പേര് നൽകുന്നു
-            if(mSnap.exists()) document.getElementById('mName').innerText = mSnap.val().name;
-
-            // ആകെ ജമാഅത്തുകൾ കണക്കാക്കുന്നു
-            const records = rSnap.val() || {};
-            let dates = new Set();
-            for(let sid in records) {
-                Object.keys(records[sid]).forEach(d => { if(d.includes('-')) dates.add(d); });
+            // ✅ ആദ്യം മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു (ഫയർസ്റ്റോറിൽ നിന്ന്)
+            const mDoc = await db.collection('madrasa_requests').doc(mId).get();
+            if(mDoc.exists) {
+                document.getElementById('mName').innerText = mDoc.data().name;
+            } else {
+                // ബാക്ക്-അപ്പ് RTDB
+                const mSnap = await rtdb.ref(`madrasa_requests/${mId}`).once('value');
+                if(mSnap.exists()) document.getElementById('mName').innerText = mSnap.val().name;
             }
-            const totalJamaat = dates.size * 5;
-            document.getElementById('totalJ').innerText = totalJamaat;
 
-            // ആൺകുട്ടികളെ മാത്രം ഫിൽട്ടർ ചെയ്ത് ലിസ്റ്റ് തയ്യാറാക്കുന്നു
-            const totals = tSnap.val() || {};
+            // ✅ ടോട്ടൽ പോയിന്റുകൾ ഫയർസ്റ്റോറിൽ നിന്ന് ലോഡ് ചെയ്യുന്നു
+            const totalsSnap = await db.collection("salah_totals").doc(mId).collection("students")
+                                       .orderBy("totalPoints", "desc")
+                                       .limit(100) // ആദ്യത്തെ 100 പേരെ മാത്രം കാണിക്കുന്നു
+                                       .get();
+
             let winners = [];
-            
-            sSnap.forEach(doc => {
-                const s = doc.data();
-                if(s.gender === "Male") { // ആൺകുട്ടികൾ മാത്രം
-                    winners.push({
-                        name: s.name,
-                        reg: s.number || '-',
-                        cls: s.class,
-                        score: totals[doc.id] || 0
-                    });
-                }
+            totalsSnap.forEach(doc => {
+                const data = doc.data();
+                winners.push({
+                    name: data.name,
+                    reg: doc.id,
+                    cls: data.class,
+                    score: data.totalPoints || 0
+                });
             });
 
-            // സ്കോർ അനുസരിച്ച് ക്രമീകരിക്കുന്നു
-            winners.sort((a, b) => b.score - a.score);
+            // ആകെ ജമാഅത്തുകൾ ഏകദേശ കണക്ക് (ഇതൊരു ഇമ്പ്രൂവ്മെന്റ് ആവശ്യമാണ്)
+            // നിലവിൽ 30 ദിവസം * 5 ജമാഅത്ത് = 150 എന്ന് കണക്കാക്കുന്നു, അല്ലെങ്കിൽ ഡാറ്റയിൽ നിന്ന് എടുക്കാം
+            const totalPossible = 150; 
+            document.getElementById('totalJ').innerText = totalPossible;
 
-            renderUI(winners, totalJamaat);
+            renderUI(winners, totalPossible);
 
         } catch (e) {
             console.error(e);

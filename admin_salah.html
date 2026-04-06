@@ -64,11 +64,12 @@
 <script>
     // നിങ്ങളുടെ ഐഡി കാർഡ് സിസ്റ്റത്തിലെ അതേ കോൺഫിഗറേഷൻ
     const firebaseConfig = {
-        apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-        authDomain: "mum-new-id.firebaseapp.com",
-        projectId: "mum-new-id",
-        storageBucket: "mum-new-id.firebasestorage.app",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -91,7 +92,7 @@
         listDiv.style.display = 'block';
 
         try {
-            // Firestore-ൽ നിന്ന് ആ മദ്റസയിലെ ആ ക്ലാസ്സിലെ കുട്ടികളെ തിരയുന്നു
+            // ✅ Firestore-ൽ നിന്ന് കുട്ടികളെ തിരയുന്നു
             const snap = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
                                  .where("class", "==", cls)
@@ -100,17 +101,17 @@
             listDiv.innerHTML = "";
             let found = false;
 
-            // നേരത്തെ സേവ് ചെയ്ത റെക്കോർഡുകൾ Realtime DB-ൽ നിന്ന് എടുക്കുന്നു
-            const savedSnap = await rtdb.ref(`salah_records/${mId}`).once('value');
-            const savedData = savedSnap.val() || {};
-
-            snap.forEach(doc => {
+            // ✅ ഓരോ കുട്ടിയുടെയും ഇന്നത്തെ സലാഹ് റെക്കോർഡ് ഫയർസ്റ്റോറിൽ നിന്ന് നോക്കുന്നു
+            for (const doc of snap.docs) {
                 const s = doc.data();
-                // ആൺകുട്ടികളെ മാത്രം കാണിക്കുന്നു
                 if(s.gender === "Male" || !s.gender) {
                     found = true;
                     const sid = doc.id;
-                    const dayData = (savedData[sid] && savedData[sid][date]) ? savedData[sid][date] : {f:0, d:0, a:0, m:0, i:0};
+                    
+                    // സബ്-കളക്ഷനിൽ നിന്ന് ഇന്നത്തെ ഡാറ്റ
+                    const sDoc = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).get();
+                    const dayData = sDoc.exists ? sDoc.data() : {f:0, d:0, a:0, m:0, i:0};
+                    
                     currentSalahs[sid] = dayData;
 
                     listDiv.innerHTML += `
@@ -128,7 +129,7 @@
                             </div>
                         </div>`;
                 }
-            });
+            }
 
             if(!found) {
                 listDiv.innerHTML = "<div class='card' style='text-align:center;'>കുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
@@ -149,34 +150,59 @@
 
     async function saveAllSalah() {
         const date = document.getElementById('salahDate').value;
-        const updates = {};
-        
-        for(let sid in currentSalahs) {
-            const data = currentSalahs[sid];
-            updates[`salah_records/${mId}/${sid}/${date}`] = data;
-            
-            // ടോട്ടൽ സ്കോർ കണക്കാക്കുന്നു
-            const total = data.f + data.d + data.a + data.m + data.i;
-            updatePoints(sid, total);
-        }
+        const btn = document.querySelector('.btn-save');
+        btn.disabled = true;
+        btn.innerText = "SAVING...";
 
-        rtdb.ref().update(updates).then(() => {
+        try {
+            for(let sid in currentSalahs) {
+                const data = currentSalahs[sid];
+                // ✅ ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
+                await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).set(data);
+                
+                // ടോട്ടൽ സ്കോർ അപഡേറ്റ് ചെയ്യുന്നു
+                const total = (data.f||0) + (data.d||0) + (data.a||0) + (data.m||0) + (data.i||0);
+                await updatePoints(sid, total, date);
+            }
             alert("വിജയകരമായി സേവ് ചെയ്തു!");
-        });
+        } catch (e) {
+            alert("Error saving: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "SAVE DATA";
+        }
     }
 
-    function updatePoints(sid, dayScore) {
-        // എല്ലാ ദിവസത്തെയും സ്കോർ കൂട്ടി കാണിക്കാൻ
-        rtdb.ref(`salah_records/${mId}/${sid}`).once('value', snap => {
-            let grandTotal = 0;
-            snap.forEach(day => {
-                if(day.key.includes('-')) {
-                    const d = day.val();
-                    grandTotal += (d.f||0) + (d.d||0) + (d.a||0) + (d.m||0) + (d.i||0);
-                }
+    async function updatePoints(sid, dayScore, date) {
+        // ടോട്ടൽ റെക്കോർഡ് അപ്ഡേറ്റ് ചെയ്യാൻ
+        const totalRef = db.collection("salah_totals").doc(mId).collection("students").doc(sid);
+        const doc = await totalRef.get();
+        
+        let grandTotal = dayScore;
+        if (doc.exists) {
+            // ഇതിനകം ഉള്ള സ്കോർ ഉണ്ടെങ്കിൽ അത് അപ്ഡേറ്റ് ചെയ്യണം (പക്ഷേ ഒരേ ദിവസം വീണ്ടും സേവ് ചെയ്താൽ ഡ്യൂപ്ലിക്കേറ്റ് ആവാതിരിക്കാൻ ശ്രദ്ധിക്കണം)
+            // ലളിതമായി: എല്ലാ റെക്കോർഡുകളും വീണ്ടും കൂട്ടി നോക്കാം അല്ലെങ്കിൽ ട്രാൻസാക്ഷൻ ഉപയോഗിക്കാം.
+            // തത്കാലം ലളിതമായ വഴി:
+            const daysSnap = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").get();
+            grandTotal = 0;
+            daysSnap.forEach(d => {
+                const val = d.data();
+                grandTotal += (val.f||0) + (val.d||0) + (val.a||0) + (val.m||0) + (val.i||0);
             });
-            rtdb.ref(`salah_total/${mId}/${sid}`).set(grandTotal);
+        }
+
+        const studentSnap = await db.collection("students").doc(sid).get();
+        const sData = studentSnap.data();
+
+        await totalRef.set({
+            name: sData.name,
+            class: sData.class,
+            totalPoints: grandTotal,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        // RTDB-ലും സിങ്ക് ചെയ്യുന്നു (പഴയ ലീഡർബോർഡിനായി)
+        rtdb.ref(`salah_total/${mId}/${sid}`).set(grandTotal);
     }
 </script>
 

@@ -8,6 +8,10 @@
         <link rel="manifest" href="manifest.json">
         <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="supabase_config.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         
         <style>
@@ -192,6 +196,8 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const firestore = firebase.firestore();
+        const storage = firebase.storage();
 
         let currentId = "", currentRole = "";
 
@@ -225,30 +231,59 @@
             const uId = document.getElementById('rUser').value.trim();
             const uPass = document.getElementById('rUsthad').value.trim();
             const pPass = document.getElementById('rParent').value.trim();
+            const regBtn = document.getElementById('regBtn');
+
             if (!regNo || !uId || !uPass) return alert("വിവരങ്ങൾ നൽകുക!");
 
-            const uHash = await hashPassword(uPass);
-            const pHash = await hashPassword(pPass);
+            regBtn.innerText = "തയ്യാറാക്കുന്നു...";
+            regBtn.disabled = true;
 
-            db.ref('madrasa_requests/' + regNo).set({
-                userId: uId,
-                name: document.getElementById('rName').value,
-                place: document.getElementById('rPlace').value,
-                reg: regNo,
-                photo: document.getElementById('imagePrev').src.startsWith('data') ? document.getElementById('imagePrev').src : "",
-                usthadPass: uHash,
-                parentPass: pHash,
-                status: "pending",
-                createdAt: new Date().toISOString()
-            }).then(() => { alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക."); location.reload(); });
+            try {
+                const uHash = await hashPassword(uPass);
+                const pHash = await hashPassword(pPass);
+                let photoUrl = "";
+
+                // ✅ ഇമേജ് കണ്ടന്റ് സ്റ്റോറേജിലേക്ക് അപ്‌ലോഡ് ചെയ്യുന്നു (RTDB-ൽ സേവ് ചെയ്യാതെ)
+                const photoInput = document.getElementById('mPhoto');
+                if (photoInput.files && photoInput.files[0]) {
+                    const file = photoInput.files[0];
+                    const storageRef = storage.ref(`madrasa_photos/${regNo}_${Date.now()}`);
+                    await storageRef.put(file);
+                    photoUrl = await storageRef.getDownloadURL();
+                }
+
+                const data = {
+                    userId: uId,
+                    name: document.getElementById('rName').value,
+                    place: document.getElementById('rPlace').value,
+                    reg: regNo,
+                    photo: photoUrl, // ✅ ഇപ്പോൾ ലിങ്ക് മാത്രം സേവ് ചെയ്യുന്നു
+                    usthadPass: uHash,
+                    parentPass: pHash,
+                    status: "pending",
+                    createdAt: new Date().toISOString()
+                };
+
+                // ✅ ക്ലൗഡ് ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
+                await firestore.collection('madrasa_requests').doc(regNo).set(data);
+                
+                // പഴയ ബാക്കപ്പിന് വേണ്ടി RTDB-ലും സേവ് ചെയ്യാം (വേണമെങ്കിൽ മാത്രം)
+                // db.ref('madrasa_requests/' + regNo).set(data);
+
+                alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക.");
+                location.reload();
+            } catch (error) {
+                console.error("Registration Error:", error);
+                alert("രജിസ്‌ട്രേഷൻ പരാജയപ്പെട്ടു: " + error.message);
+                regBtn.innerText = "REGISTER NOW";
+                regBtn.disabled = false;
+            }
         }
 
     async function handleLogin() {
         const reg = document.getElementById('logReg').value.trim();
         const pass = document.getElementById('logPass').value.trim();
-        
-        // ബട്ടൺ സെലക്ട് ചെയ്യുന്നത് കൂടുതൽ കൃത്യമാക്കുന്നു
-        const btn = document.getElementById('loginBtn') || document.querySelector('button[onclick="handleLogin()"]');
+        const btn = document.getElementById('loginBtn');
 
         if (!reg || !pass) {
             alert("രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
@@ -262,41 +297,39 @@
 
         try {
             const passHash = await hashPassword(pass);
-            const snap = await db.ref('madrasa_requests/' + reg).once('value');
+            
+            // ✅ ആദ്യം ക്ലൗഡ് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            let doc = await firestore.collection('madrasa_requests').doc(reg).get();
+            let found = null;
+
+            if (doc.exists) {
+                const d = doc.data();
+                if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+            }
+
+            // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു (മൈഗ്രേഷൻ സ്മൂത്ത് ആക്കാൻ)
+            if (!found) {
+                const snap = await db.ref('madrasa_requests/' + reg).once('value');
+                if (snap.exists()) {
+                    const d = snap.val();
+                    if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
+                    else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
+                }
+            }
 
             if(btn) {
                 btn.innerText = "LOGIN";
                 btn.disabled = false;
             }
 
-            let found = null;
-
-            if (snap.exists()) {
-                const d = snap.val();
-                if (d.usthadPass === passHash) { found = d; currentId = reg; currentRole = "admin"; }
-                else if (d.parentPass === passHash) { found = d; currentId = reg; currentRole = "parent"; }
-            }
-
-            if (!found) {
-                const legacyQuery = db.ref('madrasa_requests').orderByChild('reg').equalTo(reg).limitToFirst(1);
-                const legacySnap = await legacyQuery.once('value');
-                if (legacySnap.exists()) {
-                    legacySnap.forEach(c => {
-                        const d = c.val();
-                        if(d.usthadPass === passHash) { found = d; currentId = c.key; currentRole = "admin"; }
-                        else if(d.parentPass === passHash) { found = d; currentId = c.key; currentRole = "parent"; }
-                    });
-                }
-            }
-
             if(found) {
                 if(found.status !== 'approved') return showPage('pendingPage');
                 localStorage.setItem("madrasaId", currentId);
                 localStorage.setItem("userRole", currentRole);
-                loadProfile(found); // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു
+                loadProfile(found);
             } else {
-                alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!"
-                    + "\nനോക്കുക: പുതിയ രജിസ്ട്രേഷനുകൾ ഉപയോഗിക്കുന്നത് റെഗ് നമ്പർ ആണ്.");
+                alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
             }
         } catch (e) {
             if(btn) {
@@ -327,9 +360,9 @@
         const plusBtn = document.getElementById('plusBtn');
         if (plusBtn) plusBtn.style.display = 'none';
 
-        // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു
-        db.ref('settings/' + currentId).on('value', snap => {
-            const settings = snap.val() || {};
+        // 3. Salah Tracker സെറ്റിംഗ്സ് പരിശോധിക്കുന്നു (ഫയർസ്റ്റോറിൽ നിന്ന്)
+        firestore.collection('settings').doc(currentId).onSnapshot(doc => {
+            const settings = doc.data() || {};
             const salahBtn = document.getElementById('btn_salah');
             if (salahBtn) {
                 salahBtn.style.display = settings.salah ? 'flex' : 'none';
@@ -359,12 +392,22 @@
         function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
         function logout() { localStorage.clear(); location.reload(); }
 
-        window.onload = () => {
+        window.onload = async () => {
             const sid = localStorage.getItem("madrasaId");
             if(sid) {
                 currentId = sid;
                 currentRole = localStorage.getItem("userRole") || "";
-                db.ref('madrasa_requests/' + sid).once('value', snap => { if(snap.exists()) loadProfile(snap.val()); });
+                
+                // ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+                const doc = await firestore.collection('madrasa_requests').doc(sid).get();
+                if(doc.exists) {
+                    loadProfile(doc.data());
+                } else {
+                    // അവിടെ ഇല്ലെങ്കിൽ പഴയ RTDB-ൽ നോക്കുന്നു
+                    db.ref('madrasa_requests/' + sid).once('value', snap => { 
+                        if(snap.exists()) loadProfile(snap.val()); 
+                    });
+                }
             }
         };
         let deferredPrompt;

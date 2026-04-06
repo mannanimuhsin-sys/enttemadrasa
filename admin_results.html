@@ -4,6 +4,7 @@
     <title>Quiz Results & Winner Poster</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <style>
         body { font-family: sans-serif; background: #eee; padding: 20px; text-align: center; }
         .result-container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 15px; }
@@ -80,6 +81,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const firestore = firebase.firestore();
 
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id');
@@ -88,27 +90,48 @@
 
     // 1. ഫലങ്ങൾ ലോഡ് ചെയ്യുന്നു
     function loadResults() {
-        db.ref('quiz_submissions/' + mID).on('value', snap => {
+        // ✅ ആദ്യം ഫയർസ്റ്റോറിലെ തത്സമയ മാറ്റങ്ങൾ നോക്കുന്നു
+        firestore.collection('quiz_submissions').doc(mID).collection('students').onSnapshot(snap => {
             let data = [];
-            snap.forEach(child => {
-                const res = child.val();
-                if (res && typeof res.score === 'number') {
-                    data.push(res);
-                }
+            snap.forEach(doc => {
+                data.push(doc.data());
             });
 
-            data.sort((a, b) => {
-                const scoreA = a.score ?? 0;
-                const scoreB = b.score ?? 0;
-                if (scoreA !== scoreB) return scoreB - scoreA;
-                const timeA = a.submitTime ?? 0;
-                const timeB = b.submitTime ?? 0;
-                return timeA - timeB;
-            });
-
-            topWinners = data.slice(0, 3); // ആദ്യത്തെ 3 പേരെ എടുക്കുന്നു
-            renderTable(data);
+            if (data.length === 0) {
+                // ഫയർസ്റ്റോറിൽ ഡാറ്റാ ഇല്ലെങ്കിൽ മാത്രം RTDB നോക്കുന്നു
+                db.ref('quiz_submissions/' + mID).once('value', rSnap => {
+                    let rData = [];
+                    rSnap.forEach(child => {
+                        const res = child.val();
+                        if (res && typeof res.score === 'number') rData.push(res);
+                    });
+                    processAndRender(rData);
+                });
+            } else {
+                processAndRender(data);
+            }
         });
+    }
+
+    function processAndRender(data) {
+        data.sort((a, b) => {
+            const scoreA = a.score ?? 0;
+            const scoreB = b.score ?? 0;
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            
+            // Time logic
+            let timeA = a.submitTime;
+            let timeB = b.submitTime;
+            
+            // Handle Firestore Timestamp vs RTDB Number
+            if (timeA && typeof timeA.toMillis === 'function') timeA = timeA.toMillis();
+            if (timeB && typeof timeB.toMillis === 'function') timeB = timeB.toMillis();
+            
+            return (timeA || 0) - (timeB || 0);
+        });
+
+        topWinners = data.slice(0, 3);
+        renderTable(data);
     }
 
     function formatSubmitTime(ts) {
@@ -135,7 +158,7 @@
         `).join('');
     }
 
-    function generatePoster() {
+    async function submitAnswer() {
         if(topWinners.length === 0) return alert("വിജയികൾ ലഭ്യമല്ല!");
 
         document.getElementById('posterArea').style.display = 'block';
@@ -152,8 +175,14 @@
         `).join('');
 
         // മദ്റസ പേര് ഫൂട്ടറിൽ ചേർക്കാൻ
-        db.ref('madrasa_requests/' + mID).once('value', s => {
-            document.getElementById('mNameFooter').innerText = s.val().name;
+        firestore.collection('madrasa_requests').doc(mID).get().then(doc => {
+            if (doc.exists) {
+                document.getElementById('mNameFooter').innerText = doc.data().name;
+            } else {
+                db.ref('madrasa_requests/' + mID).once('value', s => {
+                    if(s.exists()) document.getElementById('mNameFooter').innerText = s.val().name;
+                });
+            }
         });
     }
 
