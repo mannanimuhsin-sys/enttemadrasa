@@ -4,25 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>മദ്റസ സെറ്റിംഗ്സ്</title>
+    <title>മദ്റസ കൺട്രോൾ പാനൽ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 10px; }
-        .settings-box { max-width: 450px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 5px; }
-        .control-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; margin-bottom: 8px; border-radius: 8px; background: #fff; }
-        .toggle-btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; min-width: 100px; transition: 0.3s; font-size: 12px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; }
+        .settings-box { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); font-size: 22px; margin-bottom: 20px; }
+        .mid-tag { text-align: center; font-size: 14px; color: #666; margin-bottom: 15px; background: #eee; padding: 5px; border-radius: 5px; }
+        
+        .control-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px; border-radius: 12px; margin-bottom: 10px; 
+            background: #fff; border: 1px solid #ececec;
+        }
+        
+        .toggle-btn { 
+            padding: 10px 20px; border-radius: 8px; border: none; 
+            cursor: pointer; font-weight: bold; min-width: 100px; font-size: 13px;
+        }
+        
         .btn-on { background: #4caf50; color: white; }
         .btn-off { background: #f44336; color: white; }
-        .back-btn { width: 100%; margin-top: 20px; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
         
-        /* ഫീച്ചർ കളറുകൾ */
-        .salah-row { background: #e8f5e9 !important; }
-        .hajar-row { background: #fff8e1 !important; }
-        .gallery-row { background: #f3e5f5 !important; }
+        /* പശ്ചാത്തല നിറങ്ങൾ */
+        .salah-bg { background: #e8f5e9; }
+        .hajar-bg { background: #fff8e1; }
+        
+        .save-btn { 
+            width: 100%; margin-top: 20px; padding: 15px; 
+            background: var(--primary); color: white; border: none; 
+            border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px;
+        }
     </style>
 </head>
 
@@ -30,30 +45,39 @@
 
     <div class="settings-box">
         <h2>കൺട്രോൾ പാനൽ</h2>
-        <p id="mid_display" style="text-align: center; font-size: 13px; color: #888;">Madrasa ID: Loading...</p>
-        <p id="sync_status" style="text-align: center; font-size: 11px; color: blue;">Syncing...</p>
+        <div id="mid_display" class="mid-tag">Madrasa ID: ...</div>
 
-        <div class="control-item"><span>Dashboard</span><button id="btn_dash" class="toggle-btn btn-on" onclick="toggleFeature('dash')">SHOWING</button></div>
-        <div class="control-item"><span>ID Card Portal</span><button id="btn_id" class="toggle-btn btn-on" onclick="toggleFeature('id')">SHOWING</button></div>
-        <div class="control-item"><span>Special Quiz</span><button id="btn_quiz" class="toggle-btn btn-on" onclick="toggleFeature('quiz')">SHOWING</button></div>
-        <div class="control-item"><span>Payment & Receipts</span><button id="btn_payment" class="toggle-btn btn-on" onclick="toggleFeature('payment')">SHOWING</button></div>
-        
-        <div class="control-item salah-row">
+        <div class="control-item">
+            <span>Dashboard</span>
+            <button id="btn_dash" class="toggle-btn btn-on" onclick="toggleFeature('dash')">SHOWING</button>
+        </div>
+
+        <div class="control-item">
+            <span>ID Card Portal</span>
+            <button id="btn_id" class="toggle-btn btn-on" onclick="toggleFeature('id')">SHOWING</button>
+        </div>
+
+        <div class="control-item">
+            <span>Special Quiz</span>
+            <button id="btn_quiz" class="toggle-btn btn-on" onclick="toggleFeature('quiz')">SHOWING</button>
+        </div>
+
+        <div class="control-item">
+            <span>Payment & Receipts</span>
+            <button id="btn_payment" class="toggle-btn btn-on" onclick="toggleFeature('payment')">SHOWING</button>
+        </div>
+
+        <div class="control-item salah-bg">
             <span style="font-weight: bold; color: #2e7d32;">Salah Tracker</span>
             <button id="btn_salah" class="toggle-btn btn-on" onclick="toggleFeature('salah')">SHOWING</button>
         </div>
 
-        <div class="control-item hajar-row">
+        <div class="control-item hajar-bg">
             <span style="font-weight: bold; color: #fb8c00;">Hajar (Attendance)</span>
             <button id="btn_hajar" class="toggle-btn btn-on" onclick="toggleFeature('hajar')">SHOWING</button>
         </div>
 
-        <div class="control-item gallery-row">
-            <span style="font-weight: bold; color: #7b1fa2;">Sargavedi Gallery</span>
-            <button id="btn_gallery" class="toggle-btn btn-on" onclick="toggleFeature('gallery')">SHOWING</button>
-        </div>
-
-        <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
+        <button class="save-btn" onclick="window.history.back()">SAVE & BACK</button>
     </div>
 
     <script>
@@ -71,55 +95,48 @@
         const urlParams = new URLSearchParams(window.location.search);
         const mID = urlParams.get('id');
 
-        // ഡിഫോൾട്ടായി എല്ലാം ഓൺ ആക്കി വെക്കുന്നു (ബട്ടണുകൾ ബ്ലാങ്ക് ആകാതിരിക്കാൻ)
-        let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: true, hajar: true, gallery: true };
+        // സർഗ്ഗവേദി ഒഴിവാക്കി, കൃത്യമായ ഫീച്ചറുകൾ മാത്രം
+        let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: true, hajar: true };
 
         if (mID) {
             document.getElementById('mid_display').innerText = "Madrasa ID: " + mID;
-            loadData();
+            loadSettings();
         }
 
-        function loadData() {
-            // Firestore-ൽ നിന്ന് ഡാറ്റ എടുക്കുന്നു
+        function loadSettings() {
             firestore.collection('settings').doc(mID).onSnapshot(doc => {
                 if (doc.exists) {
                     currentSettings = doc.data();
-                    document.getElementById('sync_status').innerText = "Cloud Synced ✅";
-                } else {
-                    document.getElementById('sync_status').innerText = "Initial Setup";
+                    updateUI();
                 }
-                updateUI();
-            }, error => {
-                console.log("Error:", error);
-                document.getElementById('sync_status').innerText = "Offline Mode";
-                updateUI();
             });
         }
 
         function updateUI() {
-            const keys = ['dash', 'id', 'quiz', 'payment', 'salah', 'hajar', 'gallery'];
+            const keys = ['dash', 'id', 'quiz', 'payment', 'salah', 'hajar'];
             keys.forEach(key => {
                 const btn = document.getElementById('btn_' + key);
                 if (btn) {
-                    // ഇവിടെ കൃത്യമായ ചെക്കിംഗ് നടക്കുന്നു
-                    const state = (currentSettings[key] !== false); 
-                    btn.innerText = state ? "SHOWING" : "HIDDEN";
-                    btn.className = state ? "toggle-btn btn-on" : "toggle-btn btn-off";
+                    const isVisible = (currentSettings[key] !== false);
+                    btn.innerText = isVisible ? "SHOWING" : "HIDDEN";
+                    btn.className = isVisible ? "toggle-btn btn-on" : "toggle-btn btn-off";
                 }
             });
         }
 
         async function toggleFeature(feature) {
             if (!mID) return;
+            // വാല്യൂ മാറ്റുന്നു
             currentSettings[feature] = !currentSettings[feature];
-            updateUI(); // ഉടൻ തന്നെ ബട്ടൺ മാറ്റുന്നു
+            
+            // ഉടൻ തന്നെ UI അപ്‌ഡേറ്റ് ചെയ്യുന്നു (എറർ ഒഴിവാക്കാൻ)
+            updateUI();
 
             try {
                 await firestore.collection('settings').doc(mID).set(currentSettings);
-                document.getElementById('sync_status').innerText = "Saved!";
-                setTimeout(() => { document.getElementById('sync_status').innerText = "Cloud Synced ✅"; }, 1500);
             } catch (err) {
-                alert("Error saving settings!");
+                console.error("Save failed:", err);
+                alert("സേവ് ചെയ്യുന്നതിൽ പിശക്!");
             }
         }
     </script>
