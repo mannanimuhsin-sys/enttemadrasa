@@ -7,6 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
@@ -55,7 +57,8 @@
     <div style="margin-top: 30px; padding: 20px; border: 2px solid #ffc107; border-radius: 15px; background: #fffcf0; text-align: center;">
         <h3 style="color: #856404; margin-top:0;"><i class="fa fa-broom"></i> Fix Database Storage</h3>
         <p style="font-size: 13px; color: #856404;">നിങ്ങളുടെ ഡാറ്റാബേസ് സ്റ്റോറേജ് ക്ലിയർ ചെയ്യാനും സ്പീഡ് കൂട്ടാനുമായി ഈ ബട്ടൺ അമർത്തുക (Move Images to Cloud Storage).</p>
-        <button id="migrateBtn" class="toggle-btn btn-on" style="width:100%; height:auto; padding:15px;" onclick="runMigration()">START MIGRATION</button>
+        <button id="migrateBtn" class="toggle-btn btn-on" style="width:100%; height:auto; padding:15px;" onclick="runMigration()">START MAIN MIGRATION</button>
+        <button id="migrateStuBtn" class="toggle-btn btn-on" style="width:100%; height:auto; padding:15px; margin-top:10px; background:#1976d2;" onclick="migrateStudents()">MIGRATE STUDENTS TO CLOUD</button>
         <p id="migrateStatus" style="font-size: 11px; margin-top:10px; color: #666;"></p>
     </div>
 </div>
@@ -162,9 +165,28 @@
             // 2. ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
             await firestore.collection('madrasa_requests').doc(mID).set(updatedData);
 
-            // 3. RTDB-യിൽ നിന്ന് ലാർജ് ഫോട്ടോ ഡിലീറ്റ് ചെയ്യുന്നു (സ്റ്റോറേജ് ഫ്രീ ആക്കാൻ)
+            // ✅ 3. സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+            if (window.supabaseClient) {
+                status.innerText = "Syncing to High-Capacity Supabase Cloud...";
+                const { error: suError } = await window.supabaseClient
+                    .from('madrasa_requests')
+                    .upsert({
+                        reg: mID,
+                        user_id: data.userId || "",
+                        name: updatedData.name || "",
+                        place: updatedData.place || "",
+                        photo: updatedData.photo || "",
+                        usthad_pass: data.usthadPass || "",
+                        parent_pass: data.parentPass || "",
+                        status: data.status || "approved",
+                        created_at: data.createdAt || new Date().toISOString()
+                    }, { onConflict: 'reg' });
+                if (suError) throw suError;
+            }
+
+            // 4. RTDB-യിൽ നിന്ന് ലാർജ് ഫോട്ടോ ഡിലീറ്റ് ചെയ്യുന്നു (സ്റ്റോറേജ് ഫ്രീ ആക്കാൻ)
             status.innerText = "Cleaning up Realtime Database...";
-            await db.ref('madrasa_requests/' + mID + '/photo').set("MIGRATED");
+            await db.ref('madrasa_requests/' + mID + '/photo').set("MIGRATED_TO_CLOUD");
 
             status.innerText = "Migration Completed!";
             btn.innerText = "COMPLETED!";
@@ -179,7 +201,7 @@
 
     async function migrateStudents() {
         if (!mID) return;
-        const btn = document.getElementById('migrateBtn');
+        const btn = document.getElementById('migrateStuBtn');
         const status = document.getElementById('migrateStatus');
         
         if (!confirm("20,000+ വിദ്യാർത്ഥികളുടെ ഫോട്ടോകൾ കൺവർട്ട് ചെയ്യുന്നത് വലിയൊരു പ്രോസസ്സ് ആണ്. ഇത് ചെയ്യാൻ നിങ്ങൾ തയ്യാറാണോ? (Slow process)")) return;
@@ -208,6 +230,18 @@
                         photo: url,
                         photo_migrated: true
                     });
+
+                    // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+                    if (window.supabaseClient) {
+                        await window.supabaseClient.from('students').upsert({
+                            madrasa_id: mID,
+                            name: s.name || "",
+                            regno: s.regno || doc.id,
+                            class: s.class || "",
+                            status: s.status || "approved",
+                            created_at: s.created_at || new Date().toISOString()
+                        });
+                    }
                 }
             }
             
