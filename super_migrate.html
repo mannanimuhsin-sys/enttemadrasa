@@ -103,7 +103,7 @@
                     user_id: d.userId || "",
                     name: d.name || "",
                     place: d.place || "",
-                    photo: (d.photo && d.photo.length > 500) ? "MIGRATED_BASE64" : (d.photo || ""), // Handle large base64
+                    photo: d.photo || "", // ✅ എല്ലാ ചിത്രങ്ങളും (Base64 ഉൾപ്പെടെ) കൈമാറുന്നു
                     usthad_pass: d.usthadPass || "",
                     parent_pass: d.parentPass || "",
                     status: d.status || "approved",
