@@ -609,7 +609,8 @@
                     if (found.status !== 'approved') return showPage('pendingPage');
                     localStorage.setItem("madrasaId", currentId);
                     localStorage.setItem("userRole", currentRole);
-                    loadProfile(found);
+                    localStorage.setItem("madrasaData", JSON.stringify(found));
+                    renderProfile(found);
                 } else {
                     alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
                 }
@@ -623,23 +624,47 @@
             }
         }
         async function loadProfile(d, sid) {
+            // Fetch missing data if sid is provided
             if (!d && sid) {
-                // സിസ്റ്റം ഓട്ടോമാറ്റിക്കായി ടാറ്റ ലോഡ് ചെയ്യുന്നു
+                // Try to load from cache first for instant feel
+                const cached = localStorage.getItem("madrasaData");
+                if (cached) {
+                    try {
+                        const cachedObj = JSON.parse(cached);
+                        renderProfile(cachedObj);
+                    } catch (e) {
+                        console.error("Cache parse error:", e);
+                    }
+                }
+
                 try {
-                    const [doc, snap] = await Promise.all([
-                        firestore.collection('madrasa_requests').doc(sid).get(),
-                        db.ref('madrasa_requests/' + sid).once('value')
-                    ]);
-                    d = doc.exists ? doc.data() : (snap.exists() ? snap.val() : null);
+                    // Fetch from all sources (Supabase, Firestore, RTDB)
+                    const promises = [];
+                    if (window.supabaseClient) {
+                        promises.push(window.supabaseClient.from('madrasa_requests').select('*').eq('reg', sid).single().then(r => r.data));
+                    }
+                    promises.push(firestore.collection('madrasa_requests').doc(sid).get().then(doc => doc.data()));
+                    promises.push(db.ref('madrasa_requests/' + sid).once('value').then(snap => snap.val()));
+                    
+                    const results = await Promise.all(promises);
+                    const freshData = results.find(x => x);
+                    if (freshData) {
+                        d = freshData;
+                        localStorage.setItem("madrasaData", JSON.stringify(d));
+                    }
                 } catch (e) {
-                    console.error("Profile load error:", e);
+                    console.error("Profile load from remote error:", e);
                 }
             }
             
+            if (d) renderProfile(d);
+        }
+
+        function renderProfile(d) {
             if (!d) return;
 
             // അപ്രൂവൽ കിട്ടിയിട്ടില്ലെങ്കിൽ പെൻഡിംഗ് പേജിലേക്ക് വിടുന്നു
-            if (d.status !== 'approved') {
+            if (d.status !== 'approved' && d.status !== undefined) {
                 showPage('pendingPage');
                 return;
             }
@@ -650,7 +675,7 @@
             const profileArea = document.getElementById('profileArea');
             if (profileArea) {
                 profileArea.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
+                    <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
                         <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
                         <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
                         <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
@@ -661,13 +686,17 @@
             const plusBtn = document.getElementById('plusBtn');
             if (plusBtn) plusBtn.style.display = 'none';
 
-            firestore.collection('settings').doc(currentId).onSnapshot(doc => {
-                const settings = doc.data() || {};
-                const salahBtn = document.getElementById('btn_salah');
-                if (salahBtn) {
-                    salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
-                }
-            });
+            // Settings load for currentId
+            const sid = d.reg || currentId || localStorage.getItem("madrasaId");
+            if (sid) {
+                firestore.collection('settings').doc(sid).onSnapshot(doc => {
+                    const settings = doc.data() || {};
+                    const salahBtn = document.getElementById('btn_salah');
+                    if (salahBtn) {
+                        salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
+                    }
+                });
+            }
 
             const adminBox = document.getElementById('adminArea');
             if (adminBox) {
@@ -688,11 +717,15 @@
         function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
         function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
         function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
-        function logout() { localStorage.clear(); location.reload(); }
+        function logout() { 
+            localStorage.clear(); 
+            location.reload(); 
+        }
 
         window.onload = async () => {
             const sid = localStorage.getItem("madrasaId");
             const role = localStorage.getItem("userRole");
+            const cachedData = localStorage.getItem("madrasaData");
             
             if (sid) {
                 currentId = sid;
@@ -702,7 +735,18 @@
                 showPage('portalPage');
                 hideLoader();
 
-                // ബാക്ക്ഗ്രൗണ്ടിൽ ടാറ്റ അപ്ഡേറ്റ് ചെയ്യുന്നു
+                if (cachedData) {
+                    try {
+                        const d = JSON.parse(cachedData);
+                        renderProfile(d);
+                    } catch (e) {
+                         loadProfile(null, sid);
+                    }
+                } else {
+                     loadProfile(null, sid);
+                }
+
+                // background refresh to keep it fresh
                 loadProfile(null, sid);
                 return;
             }
