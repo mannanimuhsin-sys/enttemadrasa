@@ -336,8 +336,8 @@
                 btn.innerText = "LOGIN";
                 btn.disabled = false;
             }
-            console.error("Login Error:", e);
-            alert("കണക്ഷൻ പ്രശ്നം! വീണ്ടും ശ്രമിക്കുക.");
+            console.error("Login Error Details:", e);
+            alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
         }
     }
     function loadProfile(d) {
