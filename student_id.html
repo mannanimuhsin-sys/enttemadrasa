@@ -148,21 +148,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
 
     <script>
         let cropper, photoData = "";
         const firebaseConfig = {
-            apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-            authDomain: "mum-new-id.firebaseapp.com",
-            projectId: "mum-new-id",
-            storageBucket: "mum-new-id.firebasestorage.app",
-            messagingSenderId: "794343464244",
-            appId: "1:794343464244:web:f9083036490e3609bf1961",
-            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+            authDomain: "enttemadrasa.firebaseapp.com",
+            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+            projectId: "enttemadrasa",
+            storageBucket: "enttemadrasa.firebasestorage.app",
+            appId: "1:623531881201:web:b863793340c3901cedaf50"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -238,7 +239,7 @@
             if (!photoData) { alert("ഫോട്ടോ തിരഞ്ഞെടുക്കുക!"); return; }
 
             btn.disabled = true;
-            btn.innerText = "UPLOADING...";
+            btn.innerText = "അപ്ലോഡ് ചെയ്യുന്നു...";
 
             try {
                 const checkDoc = await db.collection("students").doc(data.regno).get();
@@ -272,6 +273,20 @@
                 };
 
                 await db.collection("students").doc(studentObj.number).set(studentObj);
+
+                // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('students').upsert({
+                        madrasa_id: mId,
+                        name: studentObj.name,
+                        regno: studentObj.regno,
+                        class: studentObj.class,
+                        photo: studentObj.photo,
+                        status: "pending",
+                        created_at: new Date().toISOString()
+                    });
+                }
+
                 alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
                 location.reload();
             } catch (e) {
