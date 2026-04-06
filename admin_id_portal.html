@@ -254,9 +254,9 @@ function renderStudents(students) {
                 <td><span class="status-badge ${s.status}">${s.status.toUpperCase()}</span></td>
                 <td>
                     <div class="action-btns">
-                        ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${doc.id}')">Approve</button>` : ''}
-                        <button class="btn-small btn-edit" onclick="openEdit('${doc.id}', '${s.name}', '${s.class}', '${s.password}', '${s.status}')"><i class="fa fa-edit"></i></button>
-                        <button class="btn-small btn-delete" onclick="deleteStudent('${doc.id}')"><i class="fa fa-trash"></i></button>
+                        ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${s.number}')">Approve</button>` : ''}
+                        <button class="btn-small btn-edit" onclick="openEdit('${s.number}', '${s.name}', '${s.class}', '${s.password}', '${s.status}')"><i class="fa fa-edit"></i></button>
+                        <button class="btn-small btn-delete" onclick="deleteStudent('${s.number}')"><i class="fa fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
