@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FULL DATA MIGRATION | Firebase to Supabase</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root { --primary: #004d00; --accent: #1976d2; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .migration-box { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); margin-top: 0; font-size: 24px; }
+        .alert { background: #fffcf0; border: 1px solid #ffc107; color: #856404; padding: 15px; border-radius: 12px; font-size: 13px; margin-bottom: 20px; text-align: center; }
+        
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; color: #333; margin-bottom: 8px; }
+        input { width: 100%; padding: 14px; border: 1.5px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; }
+        
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-disabled { background: #ccc; cursor: not-allowed; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 12px; border-left: 5px solid #ccc; }
+        .stat-card.active { border-left-color: var(--primary); background: #e8f5e9; }
+        .stat-card h4 { margin: 0; font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 18px; font-weight: bold; color: #333; }
+        
+        .log-box { margin-top: 25px; background: #222; color: #00ff00; padding: 15px; border-radius: 12px; font-family: 'Courier New', monospace; font-size: 12px; height: 150px; overflow-y: auto; }
+        .log-entry { margin-bottom: 5px; }
+        .progress-bar { width: 100%; background: #eee; border-radius: 10px; height: 8px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--primary); transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="migration-box">
+    <h1><i class="fa fa-database"></i> FULL DATA MIGRATION</h1>
+    <div class="alert">
+        <i class="fa fa-info-circle"></i> <b>10,000+ Users Cloud Migration Tool</b><br>
+        Firebase-ൽ നിന്ന് നിങ്ങളുടെ എല്ലാ ഡാറ്റയും സുപാബേസിലേക്ക് മാറ്റാൻ ഈ പേജ് ഉപയോഗിക്കുക.
+    </div>
+
+    <div id="authSection">
+        <div class="input-group">
+            <label>Madrasa Register Number</label>
+            <input type="text" id="mID" placeholder="Ex: 1234">
+        </div>
+        <div class="input-group">
+            <label>Admin Password</label>
+            <input type="password" id="mPass" placeholder="ഉസ്താദ് പാസ്‌വേഡ്">
+        </div>
+        <button id="startBtn" class="btn btn-primary" onclick="validateAndStart()">START FULL MIGRATION</button>
+    </div>
+
+    <div id="migrationSection" style="display: none;">
+        <h3 id="currentAction" style="text-align:center; color: var(--accent); margin-bottom:5px;">Initializing...</h3>
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+
+        <div class="stats-grid">
+            <div class="stat-card" id="card_madrasa"><h4>Admin Account</h4><p id="stat_madrasa">Pending</p></div>
+            <div class="stat-card" id="card_students"><h4>Students</h4><p id="stat_students">0 / --</p></div>
+            <div class="stat-card" id="card_attendance"><h4>Attendance Docs</h4><p id="stat_attendance">0</p></div>
+            <div class="stat-card" id="card_quiz"><h4>Quiz Records</h4><p id="stat_quiz">0</p></div>
+        </div>
+
+        <div class="log-box" id="logBox">
+            <div class="log-entry">> Migration tool ready for action.</div>
+        </div>
+        
+        <button id="finishBtn" class="btn btn-primary" style="display:none; margin-top:20px;" onclick="location.href='index.html'">GO TO LOGIN</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+        authDomain: "enttemadrasa.firebaseapp.com",
+        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+        projectId: "enttemadrasa",
+        storageBucket: "enttemadrasa.firebasestorage.app",
+        appId: "1:623531881201:web:b863793340c3901cedaf50"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const firestore = firebase.firestore();
+
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function addLog(msg, color = "#00ff00") {
+        const log = document.getElementById('logBox');
+        log.innerHTML += `<div class="log-entry" style="color:${color}">> ${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function updateProgress(p) {
+        document.getElementById('progressFill').style.width = p + '%';
+    }
+
+    async function validateAndStart() {
+        const id = document.getElementById('mID').value.trim();
+        const pass = document.getElementById('mPass').value.trim();
+
+        if (!id || !pass) return alert("Please enter ID and Password!");
+        if (!window.supabaseClient) return alert("Supabase config not found! Update supabase_config.js first.");
+
+        const startBtn = document.getElementById('startBtn');
+        startBtn.innerText = "VERIFYING CREDENTIALS...";
+        startBtn.disabled = true;
+
+        try {
+            const passHash = await hashPassword(pass);
+            addLog(`Attempting to verify credentials for Madrasa ${id}...`);
+
+            // Check RTDB or Firestore for admin
+            let foundData = null;
+            const snap = await db.ref('madrasa_requests/' + id).once('value').catch(e => null);
+            if (snap && snap.exists() && snap.val().usthadPass === passHash) {
+                foundData = snap.val();
+                addLog("Verified via RTDB Backup.");
+            } else {
+                const doc = await firestore.collection('madrasa_requests').doc(id).get().catch(e => null);
+                if (doc && doc.exists && doc.data().usthadPass === passHash) {
+                    foundData = doc.data();
+                    addLog("Verified via Cloud Firestore.");
+                }
+            }
+
+            if (!foundData) {
+                throw new Error("Invalid Register Number or Password! (Or Firebase is blocking requests)");
+            }
+
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('migrationSection').style.display = 'block';
+            
+            await startMigration(id, foundData);
+
+        } catch (e) {
+            console.error(e);
+            alert("Error: " + e.message);
+            startBtn.innerText = "START FULL MIGRATION";
+            startBtn.disabled = false;
+        }
+    }
+
+    async function startMigration(mID, adminData) {
+        updateProgress(5);
+        addLog(`Starting Full Migration for Madrasa: ${adminData.name}...`);
+
+        // 1. MIGRATE ADMIN PROFILE
+        try {
+            document.getElementById('card_madrasa').classList.add('active');
+            addLog("Migrating Admin Profile to Supabase...");
+            const { error } = await window.supabaseClient.from('madrasa_requests').upsert({
+                reg: mID,
+                user_id: adminData.userId || "",
+                name: adminData.name || "",
+                place: adminData.place || "",
+                photo: adminData.photo || "",
+                usthad_pass: adminData.usthadPass || "",
+                parent_pass: adminData.parentPass || "",
+                status: "approved",
+                created_at: adminData.createdAt || new Date().toISOString()
+            }, { onConflict: 'reg' });
+
+            if (error) throw error;
+            document.getElementById('stat_madrasa').innerText = "MIGRATED ✅";
+            addLog("Admin Profile migrated successfully.");
+        } catch (e) {
+            addLog("ERROR Admin Profile: " + e.message, "red");
+        }
+
+        updateProgress(20);
+
+        // 2. MIGRATE STUDENTS (10,000+ support)
+        try {
+            document.getElementById('card_students').classList.add('active');
+            addLog("Fetching Students from Firestore...");
+            const studentsSnap = await firestore.collection('students').where('madrasa_id', '==', mID).get();
+            const total = studentsSnap.size;
+            addLog(`Found ${total} students to migrate.`);
+            
+            let count = 0;
+            for (const doc of studentsSnap.docs) {
+                const s = doc.data();
+                const { error: sError } = await window.supabaseClient.from('students').upsert({
+                    madrasa_id: mID,
+                    name: s.name || "",
+                    regno: s.regno || doc.id,
+                    class: s.class || "",
+                    status: s.status || "approved",
+                    created_at: s.created_at || new Date().toISOString()
+                });
+                
+                if (!sError) {
+                    count++;
+                    if (count % 10 === 0 || count === total) {
+                        document.getElementById('stat_students').innerText = `${count} / ${total}`;
+                        updateProgress(20 + ((count / total) * 30));
+                    }
+                }
+            }
+            addLog(`Student migration complete: ${count} synced.`);
+        } catch (e) {
+            addLog("ERROR Students: " + e.message, "red");
+        }
+
+        updateProgress(55);
+
+        // 3. MIGRATE ATTENDANCE
+        try {
+            document.getElementById('card_attendance').classList.add('active');
+            addLog("Fetching Attendance records...");
+            const attSnap = await firestore.collection('attendance').where('madrasa_id', '==', mID).get();
+            let count = 0;
+            for (const doc of attSnap.docs) {
+                const d = doc.data();
+                const { error: aError } = await window.supabaseClient.from('attendance').upsert({
+                    madrasa_id: mID,
+                    year: d.year,
+                    month: d.month,
+                    class: d.class,
+                    total_days: d.total_days,
+                    students: d.students || {},
+                    updated_at: d.updated_at?.toDate?.()?.toISOString() || new Date().toISOString()
+                }, { onConflict: 'madrasa_id,year,month,class' });
+                
+                if (!aError) {
+                    count++;
+                    document.getElementById('stat_attendance').innerText = count;
+                }
+            }
+            addLog(`Attendance migration complete: ${count} synced.`);
+        } catch (e) {
+            addLog("ERROR Attendance: " + e.message, "red");
+        }
+
+        updateProgress(80);
+
+        // 4. MIGRATE QUIZZES
+        try {
+            document.getElementById('card_quiz').classList.add('active');
+            addLog("Fetching Quiz data...");
+            const quizSnap = await firestore.collection('quizzes').doc(mID).get();
+            let count = 0;
+            if (quizSnap.exists) {
+                const q = quizSnap.data();
+                const { error: qError } = await window.supabaseClient.from('quizzes').upsert({
+                    madrasa_id: mID,
+                    heading: q.heading,
+                    start_time: q.startTime,
+                    questions: q.questions,
+                    status: q.status || "published",
+                    updated_at: q.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+                }, { onConflict: 'madrasa_id' });
+                if (!qError) {
+                    count = 1;
+                    document.getElementById('stat_quiz').innerText = count;
+                }
+            }
+            addLog(`Quiz migration complete.`);
+        } catch (e) {
+            addLog("ERROR Quiz: " + e.message, "red");
+        }
+
+        updateProgress(100);
+        document.getElementById('currentAction').innerText = "SUCCESS! FULL MIGRATION COMPLETE";
+        document.getElementById('currentAction').style.color = "var(--primary)";
+        addLog("-------------------------------------------");
+        addLog("ALL DATA MIGRATED TO SUPABASE SUCCESSFULLY!", "#00dd00");
+        document.getElementById('finishBtn').style.display = "block";
+    }
+</script>
+
+</body>
+</html>
