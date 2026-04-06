@@ -618,7 +618,7 @@
                 const settings = doc.data() || {};
                 const salahBtn = document.getElementById('btn_salah');
                 if (salahBtn) {
-                    salahBtn.style.display = settings.salah ? 'flex' : 'none';
+                    salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
                 }
             });
 

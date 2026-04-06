@@ -87,32 +87,32 @@
 
         <div class="control-item">
             <span>Dashboard</span>
-            <button id="btn_dash" class="toggle-btn" onclick="toggleFeature('dash')">Loading...</button>
+            <button id="btn_dash" class="toggle-btn btn-on" onclick="toggleFeature('dash')">SHOWING</button>
         </div>
 
         <div class="control-item">
             <span>ID Card Portal</span>
-            <button id="btn_id" class="toggle-btn" onclick="toggleFeature('id')">Loading...</button>
+            <button id="btn_id" class="toggle-btn btn-on" onclick="toggleFeature('id')">SHOWING</button>
         </div>
 
         <div class="control-item">
             <span>Special Quiz</span>
-            <button id="btn_quiz" class="toggle-btn" onclick="toggleFeature('quiz')">Loading...</button>
+            <button id="btn_quiz" class="toggle-btn btn-on" onclick="toggleFeature('quiz')">SHOWING</button>
         </div>
 
         <div class="control-item">
             <span>Payment & Receipts</span>
-            <button id="btn_payment" class="toggle-btn" onclick="toggleFeature('payment')">Loading...</button>
+            <button id="btn_payment" class="toggle-btn btn-on" onclick="toggleFeature('payment')">SHOWING</button>
         </div>
 
         <div class="control-item" style="background: #e8f5e9; border-radius: 8px;">
             <span style="font-weight: bold; color: #2e7d32;">Salah Tracker</span>
-            <button id="btn_salah" class="toggle-btn" onclick="toggleFeature('salah')">Loading...</button>
+            <button id="btn_salah" class="toggle-btn btn-on" onclick="toggleFeature('salah')">SHOWING</button>
         </div>
 
         <div class="control-item" style="background: #fff8e1; border-radius: 8px;">
             <span style="font-weight: bold; color: #fb8c00;">Hajar Portal (Attendance)</span>
-            <button id="btn_hajar" class="toggle-btn" onclick="toggleFeature('hajar')">Loading...</button>
+            <button id="btn_hajar" class="toggle-btn btn-on" onclick="toggleFeature('hajar')">SHOWING</button>
         </div>
 
         <button class="back-btn" onclick="window.history.back()">SAVE & BACK</button>
@@ -135,14 +135,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const mID = urlParams.get('id');
 
-        // Default settings including 'salah' and 'hajar'
-        let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: false, hajar: true };
+        // സലാ ട്രാക്കർ ഉൾപ്പെടെ എല്ലാം ഡിഫോൾട്ടായി ഓൺ ആക്കുന്നു
+        let currentSettings = { dash: true, id: true, quiz: true, payment: true, salah: true, hajar: true };
 
         if (mID) {
             loadSettings();
         }
 
         async function loadSettings() {
+            // ഉടൻ തന്നെ ഡിഫോൾട്ട് സെറ്റിംഗ്സ് കാണിക്കുന്നു
+            updateUI();
+            if (!mID) return;
             // ✅ ആദ്യം സുപാബേസിൽ പുതിയ സെറ്റിംഗ്സ് നോക്കുന്നു
             if (window.supabaseClient) {
                 const { data, error } = await window.supabaseClient.from('settings').select('*').eq('mID', mID).single();
@@ -175,7 +178,7 @@
             if (currentSettings.id === undefined) currentSettings.id = true;
             if (currentSettings.quiz === undefined) currentSettings.quiz = true;
             if (currentSettings.payment === undefined) currentSettings.payment = true;
-            if (currentSettings.salah === undefined) currentSettings.salah = false;
+            if (currentSettings.salah === undefined) currentSettings.salah = true;
             if (currentSettings.hajar === undefined) currentSettings.hajar = true;
 
             updateBtn('btn_dash', currentSettings.dash);
