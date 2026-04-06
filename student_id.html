@@ -3,294 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>വിദ്യാർത്ഥി ഐഡി കാർഡ് പോർട്ടൽ</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title id="pageTitle">ID Card Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
     <style>
-        :root { --primary: #004d00; --gold: #d4af37; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        .container { max-width: 500px; margin: auto; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box; }
-        
-        .header { text-align: center; margin-bottom: 30px; padding-top: 20px; }
-        .header img { width: 80px; }
-        .header h2 { color: var(--primary); margin: 10px 0 5px; }
-        .header p { margin: 0; color: #666; font-size: 14px; }
+        :root { --green: #0b5d1e; --orange: #f39c12; }
+        body { margin: 0; background: #e9ecef; font-family: Roboto, 'Segoe UI', sans-serif; }
+        .container { max-width: 430px; margin: auto; padding: 15px; }
+        .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, .15); }
+        .tabs { display: flex; margin-bottom: 15px; gap: 5px; }
+        .tabs button { flex: 1; padding: 12px; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; background: #eee; transition: 0.3s; }
+        .tabs .active { background: var(--green); color: #fff; }
+        input, select { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; display: block; outline: none; }
+        label { font-size: 12px; font-weight: bold; color: var(--green); margin-top: 10px; display: block; }
+        .main-btn { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 10px; background: var(--green); color: #fff; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .main-btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        .tabs { display: flex; background: #eee; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
-        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; transition: 0.3s; color: #666; }
-        .tab.active { background: var(--primary); color: white; }
-
-        .form-section { display: none; }
-        .form-section.active { display: block; animation: fadeIn 0.3s ease-out; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
-        label { display: block; margin-top: 10px; font-weight: bold; color: #444; font-size: 14.5px; }
-
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-
-        .photo-preview-wrap { text-align: center; margin: 15px 0; }
-        .photo-preview { width: 110px; height: 135px; border: 2px dashed #ddd; border-radius: 10px; object-fit: cover; display: none; margin: 10px auto; }
-        .photo-label { cursor: pointer; color: var(--primary); font-weight: bold; border: 2px solid var(--primary); padding: 8px 15px; border-radius: 8px; display: inline-block; }
-
-        /* ID Card Styles */
-        #idArea { display: none; text-align: center; }
-        #idCard { 
-            width: 320px; 
-            height: 480px; 
-            background: white; 
-            margin: 20px auto; 
-            border-radius: 15px; 
-            overflow: hidden; 
-            position: relative; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border: 5px solid var(--primary);
-            text-align: left;
+        /* ID CARD DESIGN (Original Model) */
+        #idArea { display: none; text-align: center; padding: 20px 10px; }
+        #idCard {
+            width: 280px; background: #fff; margin: auto; border-radius: 12px;
+            overflow: hidden; box-shadow: 0 20px 45px rgba(0, 0, 0, .4); border: 2px solid #ddd;
+            position: relative;
         }
-        .card-header { background: var(--primary); color: white; padding: 15px; text-align: center; }
-        .card-header h3 { margin: 0; font-size: 16px; text-transform: uppercase; }
-        .card-header p { margin: 5px 0 0; font-size: 11px; opacity: 0.9; }
-        
-        .card-body { padding: 12px; display: flex; flex-direction: column; align-items: center; }
-        .student-photo { width: 100px; height: 120px; border: 2px solid var(--gold); border-radius: 5px; object-fit: cover; background: #f0f0f0; margin-bottom: 8px; }
-        
-        .card-info { width: 100%; }
-        .info-row { display: flex; margin-bottom: 5px; font-size: 12.5px; border-bottom: 1px solid #f9f9f9; padding-bottom: 1px; }
-        .info-label { width: 85px; font-weight: bold; color: #666; }
-        .info-value { flex: 1; font-weight: bold; color: #000; }
+        .header { background: var(--green); color: #fff; padding: 10px; }
+        .header h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
+        .header p { margin: 4px 0 0; font-size: 11px; }
+        .ribbon { background: var(--orange); color: #fff; font-weight: 900; width: 80%; margin: 10px auto; padding: 6px; border-radius: 20px; position: relative; z-index: 2; display: block; }
+        .photoBox { width: 100px; height: 130px; margin: 5px auto; border-radius: 14px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); }
+        .photoBox img { width: 100%; height: 100%; object-fit: cover; }
+        .details { padding: 15px; text-align: left; font-size: 11px; }
+        .row { display: flex; border-bottom: 1px solid #eee; padding: 3px 0; }
+        .row span:first-child { width: 90px; color: #666; font-weight: bold; }
+        .row span:last-child { font-weight: bold; color: #111; }
+        .footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 15px 10px; }
+        .footer img#qr { width: 60px; height: 60px; }
+        .sign { text-align: center; font-size: 11px; }
+        #signImg { width: 70px; height: auto; display: block; margin: 0 auto -6px; filter: grayscale(1) contrast(1.5); }
+        .sign div { border-top: 2px solid #333; width: 90px; margin: 4px auto 0; }
 
-        .card-footer { display: flex; justify-content: space-between; align-items: flex-end; padding: 10px 15px; width: 100%; box-sizing: border-box; position: absolute; bottom: 0; }
-        .qr-code { width: 65px; height: 65px; }
-        .signature-box { text-align: center; }
-        .signature-line { border-top: 1px solid #000; width: 80px; margin-top: 25px; }
-        .signature-text { font-size: 9px; font-weight: bold; margin-top: 2px; }
-
-        .btn-download { background: #007bff; color: white; }
+        /* Cropper Modal */
+        #cropBox { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 999; align-items: center; justify-content: center; flex-direction: column; }
+        .crop-container { background: #fff; padding: 10px; border-radius: 14px; width: 90%; max-width: 320px; }
+        #cropImg { display: block; max-width: 100%; max-height: 350px; }
+        #photoPreviewWrap { margin-top: 10px; text-align: center; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <img src="logo.png" alt="Logo">
-        <h2 id="mNameDisplay">മദ്റസ ഐഡി പോർട്ടൽ</h2>
-        <p id="mPlaceDisplay">രജിസ്റ്റർ നമ്പർ നൽകുക</p>
-    </div>
-
-    <div id="panel">
-        <div class="tabs">
-            <div id="tabLogin" class="tab active" onclick="switchTab('login')">LOGIN</div>
-            <div id="tabReg" class="tab" onclick="switchTab('reg')">REGISTER</div>
-        </div>
-
-        <div id="loginForm" class="form-section active">
-            <label>രജിസ്റ്റർ നമ്പർ</label>
-            <input type="number" id="loginReg" placeholder="Enter Registration Number">
-            <label>പാസ്‌വേഡ്</label>
-            <input type="password" id="loginPass" placeholder="Enter Password">
-            <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">പ്രവേശിക്കുക</button>
-        </div>
-
-        <div id="regForm" class="form-section">
-            <div class="photo-preview-wrap">
-                <img id="photoPreview" class="photo-preview" src="">
-                <label for="studentPhoto" class="photo-label"><i class="fa fa-camera"></i> ഫോട്ടോ ചേർക്കുക</label>
-                <input type="file" id="studentPhoto" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+    <div class="container" id="panel">
+        <div class="card">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <h3 id="portalMName" style="color:var(--green); margin:0;">മദ്റസ ഐഡി പോർട്ടൽ</h3>
+                <small id="portalMPlace"></small>
             </div>
-            <input type="text" id="name" placeholder="വിദ്യാർത്ഥിയുടെ പേര്">
-            <input type="number" id="regno" placeholder="രജിസ്റ്റർ നമ്പർ">
-            <select id="classN">
-                <option value="">ക്ലാസ് തിരഞ്ഞെടുക്കുക</option>
-                <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
-            </select>
-            <select id="gender">
-                <option value="Male">ആൺകുട്ടി</option>
-                <option value="Female">പെൺകുട്ടി</option>
-            </select>
-            <input type="text" id="father" placeholder="പിതാവിന്റെ പേര്">
-            <input type="text" id="mentor" placeholder="ഉസ്താദിന്റെ പേര് (Mentor)">
-            <input type="tel" id="phone" placeholder="മൊബൈൽ നമ്പർ">
-            <select id="blood">
-                <option value="">ബ്ലഡ് ഗ്രൂപ്പ്</option>
-                <option value="A+">A+</option><option value="A-">A-</option>
-                <option value="B+">B+</option><option value="B-">B-</option>
-                <option value="O+">O+</option><option value="O-">O-</option>
-                <option value="AB+">AB+</option><option value="AB-">AB-</option>
-            </select>
-            <label>ജനന തീയതി</label>
-            <input type="date" id="dob">
-            <input type="password" id="regPass" placeholder="ഒരു പാസ്‌വേഡ് നൽകുക">
-            <input type="password" id="regPassConf" placeholder="പാസ്‌വേഡ് ഒന്നുകൂടി നൽകുക">
-            <button class="btn btn-primary" id="saveBtn" onclick="handleRegistration()">രജിസ്റ്റർ ചെയ്യുക</button>
+            <div class="tabs">
+                <button id="tReg" class="active" onclick="showTab('reg')">REGISTER</button>
+                <button id="tLog" onclick="showTab('log')">LOGIN</button>
+            </div>
+            <div id="regTab">
+                <input id="name" placeholder="Full Name (English)">
+                <input id="regno" placeholder="Register Number">
+                <input id="classN" placeholder="Class">
+                <input id="father" placeholder="Father Name">
+                <input id="mentor" placeholder="വീട്ടിൽ പഠനത്തിന് സഹായിക്കുന്ന ആൾ (Mentor)">
+                <input id="phone" placeholder="Phone Number" type="tel">
+                <select id="gender">
+                    <option value="">Select Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                </select>
+                <select id="blood">
+                    <option value="">Select Blood Group</option>
+                    <option>A+</option><option>B+</option><option>O+</option><option>AB+</option>
+                    <option>A-</option><option>B-</option><option>O-</option><option>AB-</option>
+                </select>
+                <label>Date of Birth</label>
+                <input type="date" id="dob">
+                <label>Student Photo</label>
+                <input type="file" id="photoInp" accept="image/*">
+                <div id="photoPreviewWrap" style="display:none;">
+                    <img id="uploadPreview" style="width:80px; height:100px; border-radius:8px; object-fit:cover; border:2px solid var(--green);">
+                    <p style="font-size:11px; color:red; cursor:pointer; margin-top:5px;" onclick="document.getElementById('photoInp').click()">Change Photo</p>
+                </div>
+                <label>Set Password (Min 4 digits)</label>
+                <input type="password" id="regPass" placeholder="Create Password">
+                <input type="password" id="regPassConf" placeholder="Confirm Password">
+                <button id="saveBtn" class="main-btn" onclick="saveStudent()">SAVE & REGISTER</button>
+            </div>
+            <div id="logTab" style="display:none">
+                <input id="loginReg" placeholder="Enter Register Number">
+                <input type="password" id="loginPass" placeholder="Enter Password">
+                <button id="loginBtn" class="main-btn" onclick="login()">VIEW ID CARD</button>
+            </div>
         </div>
     </div>
 
     <div id="idArea">
         <div id="idCard">
-            <div class="card-header">
-                <h3 id="cardMName">MADRASA NAME</h3>
-                <p id="cardMPlace">LOCATION</p>
+            <div class="header">
+                <h1 id="cardMName">MADRASA NAME</h1>
+                <p id="cardMDetails">PLACE | REG.NO</p>
             </div>
-            <div class="card-body">
-                <img id="pImg" class="student-photo" src="" alt="Photo">
-                <div class="card-info" id="cardInfoRows">
-                </div>
+            <div class="ribbon">STUDENT IDENTITY CARD</div>
+            <div class="photoBox"><img id="pImg"></div>
+            <div class="details">
+                <div class="row"><span>Name</span><span id="pName"></span></div>
+                <div class="row"><span>Father</span><span id="pFather"></span></div>
+                <div class="row"><span>Gender</span><span id="pGender"></span></div>
+                <div class="row"><span>Class</span><span id="pClass"></span></div>
+                <div class="row"><span>Mentor</span><span id="pMentor"></span></div>
+                <div class="row"><span>Blood</span><span id="pBlood"></span></div>
+                <div class="row"><span>Phone</span><span id="pPhone"></span></div>
+                <div class="row"><span>DOB</span><span id="pDob"></span></div>
+                <div class="row"><span>ID No</span><span id="pReg"></span></div>
             </div>
-            <div class="card-footer">
-                <img id="qr" class="qr-code" src="" alt="QR">
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <div id="sadarNameDisplay" class="signature-text">SADAR MUALLIM</div>
+            <div class="footer">
+                <img id="qr" src="">
+                <div class="sign">
+                    <img src="signature.png" id="signImg" onerror="this.style.display='none'">
+                    <span id="sadarNameDisplay" style="font-weight: bold; display: block; margin-bottom: 2px;"></span>
+                    <div></div>
+                    <b style="font-size: 11px;">Sadar Muallim</b>
                 </div>
             </div>
         </div>
-        <button class="btn btn-download" onclick="downloadID()"><i class="fa fa-download"></i> DOWNLOAD CARD</button>
-        <button class="btn" style="background:#888; color:white;" onclick="location.reload()">BACK</button>
+        <div style="max-width:360px; margin:20px auto; display:flex; gap:10px;">
+            <button class="main-btn" onclick="downloadID()">DOWNLOAD</button>
+            <button class="main-btn" style="background:#555" onclick="location.reload()">BACK</button>
+        </div>
     </div>
-</div>
 
-<script>
-const firebaseConfig = {
-    apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
-    authDomain: "mum-new-id.firebaseapp.com",
-    projectId: "mum-new-id",
-    storageBucket: "mum-new-id.firebasestorage.app",
-    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
-};
+    <div id="cropBox">
+        <div class="crop-container">
+            <img id="cropImg">
+            <button class="main-btn" onclick="applyCrop()">CROP & APPLY</button>
+        </div>
+    </div>
 
-const app = firebase.initializeApp(firebaseConfig);
-const fs = firebase.firestore();
-const rtdb = firebase.database();
-const storage = firebase.storage();
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-const urlParams = new URLSearchParams(window.location.search);
-const mId = urlParams.get('mid') || urlParams.get('id');
-let uploadedFile = null;
+    <script>
+        let cropper, photoData = "";
+        const firebaseConfig = {
+            apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
+            authDomain: "mum-new-id.firebaseapp.com",
+            projectId: "mum-new-id",
+            storageBucket: "mum-new-id.firebasestorage.app",
+            messagingSenderId: "794343464244",
+            appId: "1:794343464244:web:f9083036490e3609bf1961",
+            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const rtdb = firebase.database();
+        const storage = firebase.storage();
 
-window.onload = () => { if(mId) loadMadrasaData(); }
+        const urlParams = new URLSearchParams(window.location.search);
+        const mId = urlParams.get('mid') || urlParams.get('id');
 
-async function loadMadrasaData() {
-    try {
-        const snap = await rtdb.ref('madrasa_requests/' + mId).once('value');
-        if(snap.exists()) {
-            const d = snap.val();
-            document.getElementById('mNameDisplay').innerText = d.name;
-            document.getElementById('cardMName').innerText = d.name;
-            document.getElementById('cardMPlace').innerText = d.place + (d.reg ? " (REG: " + d.reg + ")" : "");
+        async function loadMadrasa() {
+            if (!mId) return alert("Madrasa ID Missing!");
+            rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
+                const d = snap.val();
+                if (d) {
+                    document.getElementById('portalMName').innerText = d.name;
+                    document.getElementById('portalMPlace').innerText = d.place;
+                    document.getElementById('cardMName').innerText = d.name;
+                    document.getElementById('cardMDetails').innerText = d.place + " | REG.NO: " + d.reg;
+                    document.getElementById('pageTitle').innerText = d.name + " | ID Portal";
+                }
+            });
         }
-        const settings = await fs.collection("madrasa_settings").doc(mId).get();
-        if(settings.exists) document.getElementById('sadarNameDisplay').innerText = settings.data().sadar_name || "SADAR MUALLIM";
-    } catch(e) {}
-}
+        loadMadrasa();
 
-function switchTab(t) {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.form-section').forEach(x => x.classList.remove('active'));
-    document.getElementById('tab' + (t === 'login' ? 'Login' : 'Reg')).classList.add('active');
-    document.getElementById(t + 'Form').classList.add('active');
-}
+        function showTab(t) {
+            document.getElementById('regTab').style.display = t == "reg" ? "block" : "none";
+            document.getElementById('logTab').style.display = t == "log" ? "block" : "none";
+            document.getElementById('tReg').className = t == "reg" ? "active" : "";
+            document.getElementById('tLog').className = t == "log" ? "active" : "";
+        }
 
-function previewPhoto(input) {
-    if(input.files && input.files[0]) {
-        uploadedFile = input.files[0];
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = document.getElementById('photoPreview');
-            img.src = e.target.result;
-            img.style.display = 'block';
+        document.getElementById('photoInp').onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    document.getElementById('cropImg').src = reader.result;
+                    document.getElementById('cropBox').style.display = "flex";
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(document.getElementById('cropImg'), { aspectRatio: 3 / 4, viewMode: 1 });
+                };
+                reader.readAsDataURL(file);
+            }
         };
-        reader.readAsDataURL(uploadedFile);
-    }
-}
 
-async function hashPass(p) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(p);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+        function applyCrop() {
+            photoData = cropper.getCroppedCanvas({ width: 300, height: 400 }).toDataURL("image/jpeg", 0.7);
+            document.getElementById('uploadPreview').src = photoData;
+            document.getElementById('photoPreviewWrap').style.display = "block";
+            document.getElementById('cropBox').style.display = "none";
+        }
 
-async function handleRegistration() {
-    const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
-    const data = {};
-    for(let f of fields) {
-        data[f] = document.getElementById(f).value.trim();
-        if(!data[f]) return alert("എല്ലാ വിവരങ്ങളും പൂരിപ്പിക്കുക!");
-    }
-    if(data.regPass !== data.regPassConf) return alert("പാസ്‌വേഡുകൾ ചേരുന്നില്ല!");
-    if(!uploadedFile) return alert("ഫോട്ടോ ഉൾപ്പെടുത്തുക!");
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-    const btn = document.getElementById('saveBtn');
-    btn.disabled = true; btn.innerText = "UPLOADING...";
+        async function saveStudent() {
+            const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
+            const data = {};
+            const btn = document.getElementById('saveBtn');
 
-    try {
-        const check = await fs.collection("students").doc(data.regno).get();
-        if(check.exists) { alert("രജിസ്റ്റർ നമ്പർ നിലവിലുണ്ട്!"); btn.disabled = false; return; }
+            for (let f of fields) {
+                const val = document.getElementById(f).value.trim();
+                if (!val) { alert("എല്ലാ വിവരങ്ങളും നൽകുക!"); return; }
+                data[f] = val;
+            }
 
-        const photoRef = storage.ref(`student_photos/${mId}/${data.regno}`);
-        await photoRef.put(uploadedFile);
-        const photoUrl = await photoRef.getDownloadURL();
+            if (data.regPass.length < 4) { alert("പാസ്‌വേഡിന് കുറഞ്ഞത് 4 അക്കങ്ങൾ വേണം!"); return; }
+            if (data.regPass !== data.regPassConf) { alert("പാസ്‌വേഡുകൾ തമ്മിൽ യോജിക്കുന്നില്ല!"); return; }
+            if (!photoData) { alert("ഫോട്ടോ തിരഞ്ഞെടുക്കുക!"); return; }
 
-        const student = {
-            madrasa_id: mId, name: data.name, regno: data.regno, number: data.regno,
-            class: data.classN, father: data.father, mentor: data.mentor, phone: data.phone,
-            gender: data.gender, blood: data.blood, dob: data.dob, 
-            password: await hashPass(data.regPass), photo: photoUrl, status: 'pending', timestamp: Date.now()
-        };
-        await fs.collection("students").doc(data.regno).set(student);
-        alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവലിന് ശേഷം ലോഗിൻ ചെയ്യുക.");
-        location.reload();
-    } catch(e) { alert("Error: " + e.message); btn.disabled = false; }
-}
+            btn.disabled = true;
+            btn.innerText = "UPLOADING...";
 
-async function handleLogin() {
-    const reg = document.getElementById('loginReg').value.trim();
-    const pass = document.getElementById('loginPass').value.trim();
-    if(!reg || !pass) return alert("വിവരങ്ങൾ നൽകുക!");
-    
-    document.getElementById('loginBtn').disabled = true;
-    try {
-        const hp = await hashPass(pass);
-        const doc = await fs.collection("students").doc(reg).get();
-        if(doc.exists) {
-            const s = doc.data();
-            if(s.madrasa_id === mId && s.password === hp) {
-                if(s.status === 'approved') showID(s);
-                else alert("അപ്രൂവലിനായി കാത്തിരിക്കുക!");
-            } else alert("വിവരങ്ങൾ തെറ്റാണ്!");
-        } else alert("കാണാനായില്ല!");
-    } catch(e) { alert(e.message); }
-    document.getElementById('loginBtn').disabled = false;
-}
+            try {
+                const checkDoc = await db.collection("students").doc(data.regno).get();
+                if (checkDoc.exists) {
+                    alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
+                    btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
+                }
 
-function showID(s) {
-    const rows = [
-        ['NAME', s.name], ['REG NO', s.number], ['CLASS', s.class], ['FATHER', s.father],
-        ['BLOOD', s.blood], ['DOB', s.dob.split("-").reverse().join("-")], ['PHONE', s.phone]
-    ];
-    let html = "";
-    rows.forEach(r => html += `<div class="info-row"><span class="info-label">${r[0]}:</span><span class="info-value">${r[1]}</span></div>`);
-    document.getElementById('cardInfoRows').innerHTML = html;
-    document.getElementById('pImg').src = s.photo;
-    document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=REG:${s.number}`;
-    document.getElementById('panel').style.display = 'none';
-    document.getElementById('idArea').style.display = 'block';
-}
+                // Upload photo to storage
+                const blob = await (await fetch(photoData)).blob();
+                const storageRef = storage.ref(`student_photos/${mId}/${data.regno}`);
+                await storageRef.put(blob);
+                const photoUrl = await storageRef.getDownloadURL();
 
-function downloadID() {
-    html2canvas(document.getElementById('idCard'), { scale: 3, useCORS: true }).then(canvas => {
-        const a = document.createElement('a'); a.href = canvas.toDataURL(); a.download = 'ID_CARD.png'; a.click();
-    });
-}
-</script>
+                const studentObj = {
+                    madrasa_id: mId,
+                    name: data.name,
+                    number: data.regno,
+                    regno: data.regno,
+                    class: data.classN,
+                    father: data.father,
+                    mentor: data.mentor,
+                    phone: data.phone,
+                    gender: data.gender,
+                    blood: data.blood,
+                    dob: data.dob,
+                    password: await hashPassword(data.regPass),
+                    photo: photoUrl,
+                    status: "pending",
+                    timestamp: new Date().getTime()
+                };
+
+                await db.collection("students").doc(studentObj.number).set(studentObj);
+                alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
+                location.reload();
+            } catch (e) {
+                console.error(e);
+                alert("Error saving data!");
+                btn.disabled = false;
+                btn.innerText = "SAVE & REGISTER";
+            }
+        }
+
+        async function login() {
+            const rNo = document.getElementById('loginReg').value.trim();
+            const lPass = document.getElementById('loginPass').value.trim();
+            const lBtn = document.getElementById('loginBtn');
+
+            if (!rNo || !lPass) return alert("വിവരങ്ങൾ നൽകുക!");
+            lBtn.disabled = true;
+
+            try {
+                const hPass = await hashPassword(lPass);
+                const doc = await db.collection("students").doc(rNo).get();
+                if (doc.exists) {
+                    const s = doc.data();
+                    if (s.madrasa_id === mId && s.password === hPass) {
+                        if (s.status === "approved") { renderID(s); }
+                        else { alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക!"); }
+                    } else { alert("തെറ്റായ വിവരങ്ങൾ!"); }
+                } else { alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്താനായില്ല!"); }
+            } catch (e) { alert("Error"); }
+            finally { lBtn.disabled = false; }
+        }
+
+        async function renderID(s) {
+            document.getElementById('pName').innerText = s.name;
+            document.getElementById('pFather').innerText = s.father;
+            document.getElementById('pGender').innerText = s.gender;
+            document.getElementById('pClass').innerText = s.class;
+            document.getElementById('pMentor').innerText = s.mentor;
+            document.getElementById('pBlood').innerText = s.blood;
+            document.getElementById('pPhone').innerText = s.phone;
+            document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
+            document.getElementById('pReg').innerText = s.number;
+            document.getElementById('pImg').src = s.photo;
+
+            try {
+                const settingsDoc = await db.collection("madrasa_settings").doc(mId).get();
+                if (settingsDoc.exists) {
+                    const settingsData = settingsDoc.data();
+                    document.getElementById('sadarNameDisplay').innerText = settingsData.sadar_name || "";
+                }
+            } catch (err) {
+                console.error("Sadar info error:", err);
+            }
+
+            document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.number)}`;
+            document.getElementById('panel').style.display = "none";
+            document.getElementById('idArea').style.display = "block";
+        }
+
+        function downloadID() {
+            const card = document.querySelector("#idCard");
+            html2canvas(card, { scale: 3, useCORS: true }).then(canvas => {
+                const link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = `ID_${document.getElementById('pReg').innerText}.png`;
+                link.click();
+            });
+        }
+    </script>
 </body>
 </html>
