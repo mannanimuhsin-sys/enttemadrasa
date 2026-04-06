@@ -623,41 +623,40 @@
                 alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
             }
         }
-        async function loadProfile(d, sid) {
-            // Fetch missing data if sid is provided
-            if (!d && sid) {
-                // Try to load from cache first for instant feel
-                const cached = localStorage.getItem("madrasaData");
-                if (cached) {
-                    try {
-                        const cachedObj = JSON.parse(cached);
-                        renderProfile(cachedObj);
-                    } catch (e) {
-                        console.error("Cache parse error:", e);
-                    }
-                }
+        async function loadProfile(sid) {
+            if (!sid) return;
 
+            // Try to load from cache first for instant feel
+            const cached = localStorage.getItem("madrasaData");
+            if (cached) {
                 try {
-                    // Fetch from all sources (Supabase, Firestore, RTDB)
-                    const promises = [];
-                    if (window.supabaseClient) {
-                        promises.push(window.supabaseClient.from('madrasa_requests').select('*').eq('reg', sid).single().then(r => r.data));
-                    }
-                    promises.push(firestore.collection('madrasa_requests').doc(sid).get().then(doc => doc.data()));
-                    promises.push(db.ref('madrasa_requests/' + sid).once('value').then(snap => snap.val()));
-                    
-                    const results = await Promise.all(promises);
-                    const freshData = results.find(x => x);
-                    if (freshData) {
-                        d = freshData;
-                        localStorage.setItem("madrasaData", JSON.stringify(d));
-                    }
+                    const cachedObj = JSON.parse(cached);
+                    renderProfile(cachedObj);
                 } catch (e) {
-                    console.error("Profile load from remote error:", e);
+                    console.error("Cache parse error:", e);
                 }
             }
-            
-            if (d) renderProfile(d);
+
+            try {
+                // Fetch from all sources (Supabase, Firestore, RTDB)
+                const promises = [];
+                if (window.supabaseClient) {
+                    promises.push(window.supabaseClient.from('madrasa_requests').select('*').eq('reg', sid).single().then(r => r.data));
+                }
+                promises.push(firestore.collection('madrasa_requests').doc(sid).get().then(doc => doc.data()));
+                promises.push(db.ref('madrasa_requests/' + sid).once('value').then(snap => snap.val()));
+                
+                const results = await Promise.all(promises);
+                const freshData = results.find(x => x);
+                if (freshData) {
+                    // Normalize data structure if needed
+                    freshData.reg = freshData.reg || sid;
+                    localStorage.setItem("madrasaData", JSON.stringify(freshData));
+                    renderProfile(freshData);
+                }
+            } catch (e) {
+                console.error("Profile load from remote error:", e);
+            }
         }
 
         function renderProfile(d) {
@@ -675,7 +674,7 @@
             const profileArea = document.getElementById('profileArea');
             if (profileArea) {
                 profileArea.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px;">
+                    <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
                         <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
                         <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
                         <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
@@ -722,36 +721,23 @@
             location.reload(); 
         }
 
-        window.onload = async () => {
+        window.onload = () => {
             const sid = localStorage.getItem("madrasaId");
             const role = localStorage.getItem("userRole");
-            const cachedData = localStorage.getItem("madrasaData");
             
             if (sid) {
                 currentId = sid;
                 currentRole = role || "";
                 
-                // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ പേജ് കാണിക്കുന്നു (Instant feel)
+                // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ കാണിക്കുന്നു
                 showPage('portalPage');
                 hideLoader();
-
-                if (cachedData) {
-                    try {
-                        const d = JSON.parse(cachedData);
-                        renderProfile(d);
-                    } catch (e) {
-                         loadProfile(null, sid);
-                    }
-                } else {
-                     loadProfile(null, sid);
-                }
-
-                // background refresh to keep it fresh
-                loadProfile(null, sid);
+                
+                // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു (Cache -> Remote)
+                loadProfile(sid);
                 return;
             }
             
-            // ലോഗിൻ ചെയ്തിട്ടില്ലെങ്കിൽ ലോഗിൻ പേജ് കാണിക്കുന്നു
             showPage('loginPage');
             hideLoader();
         };
