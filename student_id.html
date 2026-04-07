@@ -20,7 +20,7 @@
         .main-btn { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 10px; background: var(--green); color: #fff; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .main-btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* ID CARD DESIGN (Original Model) */
+        /* ID CARD DESIGN */
         #idArea { display: none; text-align: center; padding: 20px 10px; }
         #idCard {
             width: 280px; background: #fff; margin: auto; border-radius: 12px;
@@ -151,31 +151,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase_config.js"></script>
 
     <script>
         let cropper, photoData = "";
-       const firebaseConfig = {
-    apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-    authDomain: "enttemadrasa.firebaseapp.com",
-    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-    projectId: "enttemadrasa",
-    storageBucket: "enttemadrasa.appspot.com", // ഈ വരി കൃത്യമായി ഉണ്ടെന്ന് ഉറപ്പാക്കുക
-    appId: "1:623531881201:web:b863793340c3901cedaf50"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+            authDomain: "enttemadrasa.firebaseapp.com",
+            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+            projectId: "enttemadrasa",
+            storageBucket: "enttemadrasa.appspot.com",
+            appId: "1:623531881201:web:b863793340c3901cedaf50"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const rtdb = firebase.database();
-        const storage = firebase.storage();
 
         const urlParams = new URLSearchParams(window.location.search);
         const mId = urlParams.get('mid') || urlParams.get('id');
 
         async function loadMadrasa() {
             if (!mId) {
-                alert("മദ്റസ ഐഡി ലഭ്യമല്ല! ദയവായി ലോഗിൻ ചെയ്ത ശേഷം ഈ പേജ് സന്ദർശിക്കുക.");
+                alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
                 window.location.href = 'index.html';
                 return;
             }
@@ -186,9 +182,6 @@
                     document.getElementById('portalMPlace').innerText = d.place;
                     document.getElementById('cardMName').innerText = d.name;
                     document.getElementById('cardMDetails').innerText = d.place + " | REG.NO: " + d.reg;
-                    document.getElementById('pageTitle').innerText = d.name + " | ID Portal";
-                } else {
-                    alert("മദ്റസ വിവരങ്ങൾ കണ്ടെത്താനായില്ല!");
                 }
             });
         }
@@ -229,104 +222,77 @@
             return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function dataURLtoBlob(dataurl) {
-            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-            while(n--){
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            return new Blob([u8arr], {type:mime});
-        }
-
         async function saveStudent() {
-            const fields = ['name', 'regno', 'classN', 'father', 'mentor', 'phone', 'gender', 'blood', 'dob', 'regPass', 'regPassConf'];
-            const data = {};
             const btn = document.getElementById('saveBtn');
-
-            for (let f of fields) {
-                const val = document.getElementById(f).value.trim();
-                if (!val) { alert("എല്ലാ വിവരങ്ങളും നൽകുക!"); return; }
-                data[f] = val;
+            const fields = {
+                name: 'name', regno: 'regno', classN: 'classN', father: 'father', 
+                mentor: 'mentor', phone: 'phone', gender: 'gender', blood: 'blood', 
+                dob: 'dob', pass: 'regPass', conf: 'regPassConf'
+            };
+            
+            const vals = {};
+            for (let key in fields) {
+                vals[key] = document.getElementById(fields[key]).value.trim();
+                if (!vals[key]) { alert("എല്ലാ വിവരങ്ങളും നൽകുക!"); return; }
             }
 
-            if (data.regPass.length < 4) { alert("പാസ്‌വേഡിന് കുറഞ്ഞത് 4 അക്കങ്ങൾ വേണം!"); return; }
-            if (data.regPass !== data.regPassConf) { alert("പാസ്‌വേഡുകൾ തമ്മിൽ യോജിക്കുന്നില്ല!"); return; }
+            if (vals.pass !== vals.conf) { alert("പാസ്‌വേഡുകൾ തമ്മിൽ യോജിക്കുന്നില്ല!"); return; }
             if (!photoData) { alert("ഫോട്ടോ തിരഞ്ഞെടുക്കുക!"); return; }
 
-            if (!mId) { alert("മദ്റസ ഐഡി കാണുന്നില്ല! ദയവായി ലോഗിൻ ചെയ്ത് വീണ്ടും വരിക."); return; }
             btn.disabled = true;
             btn.innerText = "അപ്ലോഡ് ചെയ്യുന്നു...";
 
             try {
-                // 1. പരിശോധന (Supabase-ൽ ഉണ്ടോ എന്ന് നോക്കുന്നു)
-                if (window.supabaseClient) {
-                    const { data: existing } = await window.supabaseClient.from('students').select('regno').eq('regno', data.regno).single();
-                    if (existing) {
-                        alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
-                        btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
-                    }
-                } else {
-                    // Fallback to Firebase for check if Supabase missing
-                    const checkDoc = await db.collection("students").doc(data.regno).get().catch(() => null);
-                    if (checkDoc && checkDoc.exists) {
-                        alert("ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
-                        btn.disabled = false; btn.innerText = "SAVE & REGISTER"; return;
-                    }
+                // 1. ഒരേ മദ്റസയിൽ ഇതേ രജിസ്റ്റർ നമ്പർ ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+                const check = await db.collection("students")
+                    .where("madrasa_id", "==", mId)
+                    .where("regno", "==", vals.regno)
+                    .get();
+
+                if (!check.empty) {
+                    alert("ഈ മദ്റസയിൽ ഈ രജിസ്റ്റർ നമ്പർ നിലവിൽ ഉപയോഗിച്ചിട്ടുണ്ട്!");
+                    btn.disabled = false; btn.innerText = "SAVE & REGISTER";
+                    return;
                 }
 
-                // Upload photo to storage (Keep Firebase Storage for photos as it usually works)
-                const blob = dataURLtoBlob(photoData);
-                const storageRef = storage.ref(`student_photos/${mId}/${data.regno}`);
-                const uploadTask = await storageRef.put(blob);
-                const photoUrl = await uploadTask.ref.getDownloadURL();
+                // 2. ImgBB-യിലേക്ക് ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു
+                const imgbbApiKey = "A0ec42450bb0e87699896f33dbd7c471";
+                const base64Img = photoData.split(',')[1];
+                const formData = new FormData();
+                formData.append("image", base64Img);
 
-                const studentObj = {
+                const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const imgJson = await imgRes.json();
+                if (!imgJson.success) throw new Error("Photo upload failed");
+
+                // 3. വിവരങ്ങൾ Firestore-ലേക്ക് സേവ് ചെയ്യുന്നു
+                const docId = mId + "_" + vals.regno; // മദ്റസ ID + രജിസ്റ്റർ നമ്പർ ചേർത്താണ് ഡോക്യുമെന്റ് ID ഉണ്ടാക്കുന്നത്
+                await db.collection("students").doc(docId).set({
                     madrasa_id: mId,
-                    name: data.name,
-                    number: data.regno,
-                    regno: data.regno,
-                    class: data.classN,
-                    father: data.father,
-                    mentor: data.mentor,
-                    phone: data.phone,
-                    gender: data.gender,
-                    blood: data.blood,
-                    dob: data.dob,
-                    password: await hashPassword(data.regPass),
-                    photo: photoUrl,
+                    name: vals.name,
+                    regno: vals.regno,
+                    class: vals.classN,
+                    father: vals.father,
+                    mentor: vals.mentor,
+                    phone: vals.phone,
+                    gender: vals.gender,
+                    blood: vals.blood,
+                    dob: vals.dob,
+                    password: await hashPassword(vals.pass),
+                    photo: imgJson.data.url,
                     status: "pending",
-                    timestamp: new Date().getTime()
-                };
-
-                // ✅ 2. സേവിംഗ് (Supabase-ലേക്ക് മുൻഗണന നൽകുന്നു)
-                let supabaseSuccess = false;
-                if (window.supabaseClient) {
-                    const { error } = await window.supabaseClient.from('students').upsert({
-                        madrasa_id: mId,
-                        name: studentObj.name,
-                        regno: studentObj.regno,
-                        class: studentObj.class,
-                        photo: studentObj.photo,
-                        status: "pending",
-                        created_at: new Date().toISOString()
-                    });
-                    if (!error) supabaseSuccess = true;
-                    else console.error("Supabase Save Error:", error);
-                }
-
-                // ✅ 3. ഫയർസ്റ്റോറിലേക്ക് ബാക്കപ്പ് (എറർ ഉണ്ടായാലും പ്രശ്നമില്ല)
-                try {
-                    await db.collection("students").doc(studentObj.number).set(studentObj);
-                } catch (fireError) {
-                    console.warn("Firebase Sync Failed (Permissions), but Supabase might be okay:", fireError);
-                    if (!supabaseSuccess) throw fireError; // If both failed, then show error
-                }
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
                 alert("രജിസ്‌ട്രേഷൻ പൂർത്തിയായി! അഡ്മിൻ അപ്രൂവ് ചെയ്ത ശേഷം ലോഗിൻ ചെയ്യുക.");
                 location.reload();
+
             } catch (e) {
-                console.error("Save error:", e);
-                alert("വിവരങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്! (Error: " + (e.message || "Unknown Error") + ")");
+                console.error(e);
+                alert("പിശക് സംഭവിച്ചു: " + e.message);
                 btn.disabled = false;
                 btn.innerText = "SAVE & REGISTER";
             }
@@ -342,16 +308,28 @@
 
             try {
                 const hPass = await hashPassword(lPass);
-                const doc = await db.collection("students").doc(rNo).get();
+                const docId = mId + "_" + rNo;
+                const doc = await db.collection("students").doc(docId).get();
+
                 if (doc.exists) {
                     const s = doc.data();
-                    if (s.madrasa_id === mId && s.password === hPass) {
-                        if (s.status === "approved") { renderID(s); }
-                        else { alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക!"); }
-                    } else { alert("തെറ്റായ വിവരങ്ങൾ!"); }
-                } else { alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്താനായില്ല!"); }
-            } catch (e) { alert("Error"); }
-            finally { lBtn.disabled = false; }
+                    if (s.password === hPass) {
+                        if (s.status === "approved") { 
+                            renderID(s); 
+                        } else { 
+                            alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക!"); 
+                        }
+                    } else { 
+                        alert("തെറ്റായ പാസ്‌വേഡ്!"); 
+                    }
+                } else { 
+                    alert("ഈ മദ്റസയിൽ ഇങ്ങനെയൊരു രജിസ്റ്റർ നമ്പർ കണ്ടില്ല!"); 
+                }
+            } catch (e) { 
+                alert("ലോഗിൻ പിശക്!"); 
+            } finally { 
+                lBtn.disabled = false; 
+            }
         }
 
         async function renderID(s) {
@@ -363,27 +341,23 @@
             document.getElementById('pBlood').innerText = s.blood;
             document.getElementById('pPhone').innerText = s.phone;
             document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
-            document.getElementById('pReg').innerText = s.number;
+            document.getElementById('pReg').innerText = s.regno;
             document.getElementById('pImg').src = s.photo;
 
-            try {
-                const settingsDoc = await db.collection("madrasa_settings").doc(mId).get();
-                if (settingsDoc.exists) {
-                    const settingsData = settingsDoc.data();
-                    document.getElementById('sadarNameDisplay').innerText = settingsData.sadar_name || "";
-                }
-            } catch (err) {
-                console.error("Sadar info error:", err);
+            // സദർ മുഅല്ലിം പേര് ലോഡ് ചെയ്യുന്നു
+            const settings = await db.collection("madrasa_settings").doc(mId).get();
+            if (settings.exists) {
+                document.getElementById('sadarNameDisplay').innerText = settings.data().sadar_name || "";
             }
 
-            document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.number)}`;
+            document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.regno)}`;
             document.getElementById('panel').style.display = "none";
             document.getElementById('idArea').style.display = "block";
         }
 
         function downloadID() {
             const card = document.querySelector("#idCard");
-            html2canvas(card, { scale: 3, useCORS: true }).then(canvas => {
+            html2canvas(card, { scale: 3, useCORS: true, allowTaint: true }).then(canvas => {
                 const link = document.createElement("a");
                 link.href = canvas.toDataURL("image/png");
                 link.download = `ID_${document.getElementById('pReg').innerText}.png`;
