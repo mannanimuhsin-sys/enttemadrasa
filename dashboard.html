@@ -163,8 +163,14 @@
     const storage = firebase.storage();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const mId = urlParams.get('id');
-    const role = urlParams.get('role');
+    let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
+    let role = urlParams.get('role') || localStorage.getItem("userRole");
+
+    // ലോഗിൻ വിവരങ്ങൾ ഇല്ലെങ്കിൽ തിരിച്ചയക്കുന്നു
+    if(!mId) {
+        alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല! ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.");
+        window.location.href = 'index.html';
+    }
 
     // അഡ്മിൻ ആണെങ്കിൽ മാത്രം എൻട്രി ബോക്സ് കാണിക്കുക
     if(role === 'admin') {
@@ -313,6 +319,8 @@
     }
     // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
     async function saveClass() {
+        if(!mId) return alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
+        
         const name = document.getElementById('cName').value.trim();
         const div = document.getElementById('cDiv').value.trim();
         const b = document.getElementById('cBoys').value || 0;
