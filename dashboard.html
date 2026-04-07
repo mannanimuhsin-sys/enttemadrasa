@@ -323,22 +323,36 @@
         if(!name || !u || !p) return alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
 
         try {
-            // ✅ ആദ്യം ഫയർസ്റ്റോറിൽ നോക്കുന്നു
+            // ✅ ഡാറ്റാബേസുകളിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
             const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-            let data = doc.data();
+            let data = doc.exists ? doc.data() : null;
             
-            if (!doc.exists) {
-                // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
+            if (!data) {
                 const snap = await db.ref('madrasa_requests/' + mId).once('value');
                 data = snap.val();
+                if (!data && window.supabaseClient) {
+                    const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
+                    data = sData;
+                }
                 if (!data) return alert("Madrasa data not found!");
             }
 
             let classes = data.classes || [];
             classes.push({ name, div, b, g, u, p });
 
-            // ✅ ഫയർസ്റ്റോറിൽ പുതിയ ഡാറ്റ സേവ് ചെയ്യുന്നു
-            await firestore.collection('madrasa_requests').doc(mId).update({ classes: classes });
+            // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു (set use ചെയ്യുന്നത് ഡോക്യുമെന്റ് ഇല്ലെങ്കിലും വർക്ക് ചെയ്യാൻ വേണ്ടിയാണ്)
+            await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
+            
+            // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
+            if (window.supabaseClient) {
+                await window.supabaseClient.from('madrasa_requests').upsert({
+                    reg: mId,
+                    classes: classes
+                });
+            }
+
+            // ✅ RTDB-ലേക്ക് സിങ്ക് ചെയ്യുന്നു (Fallback)
+            await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
             
             // ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
             document.getElementById('cName').value = "";
@@ -350,6 +364,7 @@
             
             alert("വിവരങ്ങൾ വിജയകരമായി ചേർത്തു!");
         } catch (error) {
+            console.error("Save Class Error:", error);
             alert("പിശക് സംഭവിച്ചു: " + error.message);
         }
     }
@@ -384,17 +399,35 @@
     // ഡിലീറ്റ് ചെയ്യാൻ
     async function deleteClass(index, ask = true) {
         if(!ask || confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
-            let classes = [];
-            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-            if (doc.exists) {
-                classes = doc.data().classes || [];
+            try {
+                // ഡാറ്റ എടുക്കുന്നു
+                const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                let data = doc.exists ? doc.data() : null;
+                
+                if (!data) {
+                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
+                    data = snap.val();
+                }
+                
+                if (!data) return;
+
+                let classes = data.classes || [];
                 classes.splice(index, 1);
-                await firestore.collection('madrasa_requests').doc(mId).update({ classes: classes });
-            } else {
-                const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-                classes = snap.val() || [];
-                classes.splice(index, 1);
+
+                // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
+                await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
+                
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('madrasa_requests').upsert({
+                        reg: mId,
+                        classes: classes
+                    });
+                }
+                
                 await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+            } catch (error) {
+                console.error("Delete Class Error:", error);
+                alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്!");
             }
         }
     }

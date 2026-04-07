@@ -157,14 +157,14 @@
 
     <script>
         let cropper, photoData = "";
-        const firebaseConfig = {
-            apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-            authDomain: "enttemadrasa.firebaseapp.com",
-            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-            projectId: "enttemadrasa",
-            storageBucket: "enttemadrasa.firebasestorage.app",
-            appId: "1:623531881201:web:b863793340c3901cedaf50"
-        };
+       const firebaseConfig = {
+    apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+    authDomain: "enttemadrasa.firebaseapp.com",
+    databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+    projectId: "enttemadrasa",
+    storageBucket: "enttemadrasa.appspot.com", // ഈ വരി കൃത്യമായി ഉണ്ടെന്ന് ഉറപ്പാക്കുക
+    appId: "1:623531881201:web:b863793340c3901cedaf50"
+};
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const rtdb = firebase.database();
