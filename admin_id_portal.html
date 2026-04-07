@@ -19,13 +19,13 @@
         .stat-card h3 { margin: 5px 0; color: var(--primary); }
         
         .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        select, input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        select, input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; color: white; }
         .btn-excel { background: #1d6f42; }
         .btn-pdf { background: #b30000; }
         
         .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         th { background: #f1f1f1; color: var(--primary); }
         .student-img { width: 40px; height: 50px; border-radius: 4px; object-fit: cover; }
@@ -41,7 +41,8 @@
         .btn-delete { background: #dc3545; }
 
         #editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
-        .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:450px; max-height: 90vh; overflow-y: auto; }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 13px; color: var(--primary); }
         .settings-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--accent); }
     </style>
 </head>
@@ -58,8 +59,8 @@
 <div class="settings-box">
     <h3><i class="fa fa-user-tie"></i> സദർ മുഅല്ലിം വിവരങ്ങൾ</h3>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="sadarName" placeholder="സദർ മുഅല്ലിമിന്റെ പേര്">
-        <input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ">
+        <div style="flex:1;"><input type="text" id="sadarName" placeholder="സദർ മുഅല്ലിമിന്റെ പേര്"></div>
+        <div style="flex:1;"><input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ"></div>
         <button class="btn btn-approve" onclick="saveSadarDetails()">UPDATE</button>
     </div>
 </div>
@@ -72,15 +73,19 @@
 </div>
 
 <div class="controls">
-    <select id="filterClass" onchange="loadStudents()">
-        <option value="">All Classes</option>
-        <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
-    </select>
-    <select id="filterGender" onchange="loadStudents()">
-        <option value="">All Genders</option>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-    </select>
+    <div style="width:150px;">
+        <select id="filterClass" onchange="loadStudents()">
+            <option value="">All Classes</option>
+            <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+        </select>
+    </div>
+    <div style="width:150px;">
+        <select id="filterGender" onchange="loadStudents()">
+            <option value="">All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
+    </div>
     <button class="btn btn-excel" onclick="exportExcel()"><i class="fa fa-file-excel"></i> EXCEL</button>
     <button class="btn btn-pdf" onclick="exportPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
 </div>
@@ -93,8 +98,8 @@
                 <th>Reg No</th>
                 <th>Name</th>
                 <th>Class</th>
-                <th>Gender</th>
                 <th>Phone</th>
+                <th>Password</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -105,16 +110,47 @@
 
 <div id="editModal">
     <div class="modal-content">
-        <h3>വിവരങ്ങൾ മാറ്റുക</h3>
+        <h3>വിദ്യാർത്ഥിയുടെ വിവരങ്ങൾ മാറ്റുക</h3>
         <input type="hidden" id="editRegNo">
+        
+        <div style="text-align: center; margin-bottom: 10px;">
+            <img id="editPhotoPreview" style="width: 80px; height: 100px; border-radius: 5px; object-fit: cover; border: 1px solid #ccc;">
+            <input type="file" id="editPhotoInput" style="display:none;" accept="image/*">
+            <button class="btn-small btn-edit" style="display:block; margin: 5px auto;" onclick="document.getElementById('editPhotoInput').click()">Change Photo</button>
+        </div>
+
         <label>Name</label><input type="text" id="editName">
         <label>Class</label><input type="text" id="editClass">
+        <label>Phone</label><input type="tel" id="editPhone">
+        
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;">
+                <label>Gender</label>
+                <select id="editGender">
+                    <option>Male</option>
+                    <option>Female</option>
+                </select>
+            </div>
+            <div style="flex:1;">
+                <label>Blood Group</label>
+                <select id="editBlood">
+                    <option>A+</option><option>B+</option><option>O+</option><option>AB+</option>
+                    <option>A-</option><option>B-</option><option>O-</option><option>AB-</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Password (Hash)</label>
+        <input type="text" id="editPass" placeholder="Enter new password to change">
+        <small style="color: grey; font-size: 10px;">പുതിയ പാസ്‌വേഡ് നൽകിയാൽ മാത്രം മാറ്റം വരും.</small>
+
         <label>Status</label>
         <select id="editStatus">
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
         </select>
-        <button class="btn btn-approve" style="width:100%; margin-top:15px;" onclick="updateStudent()">UPDATE DATA</button>
+
+        <button class="btn btn-approve" style="width:100%; margin-top:15px;" id="updateBtn" onclick="updateStudent()">UPDATE DATA</button>
         <button class="btn" style="width:100%; background:#888; margin-top:5px;" onclick="document.getElementById('editModal').style.display='none'">CANCEL</button>
     </div>
 </div>
@@ -141,6 +177,14 @@ const urlParams = new URLSearchParams(window.location.search);
 const mId = urlParams.get('id');
 
 let allStudents = [];
+let newPhotoData = "";
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 async function loadMadrasaProfile() {
     if(!mId) return;
@@ -152,7 +196,6 @@ async function loadMadrasaProfile() {
 }
 
 async function loadSadarDetails() {
-    if(!mId) return;
     const doc = await db.collection("madrasa_settings").doc(mId).get();
     if(doc.exists) {
         document.getElementById('sadarName').value = doc.data().sadar_name || "";
@@ -163,7 +206,6 @@ async function loadSadarDetails() {
 async function saveSadarDetails() {
     const sName = document.getElementById('sadarName').value;
     const sPhone = document.getElementById('sadarPhone').value;
-    if(!sName) return alert("ദയവായി പേര് നൽകുക!");
     await db.collection("madrasa_settings").doc(mId).set({
         sadar_name: sName, sadar_phone: sPhone, updated_at: new Date()
     }, { merge: true });
@@ -195,8 +237,9 @@ function renderStudents(students) {
         if(s.gender === 'Male') stats.male++;
         if(s.gender === 'Female') stats.female++;
 
-        // രജിസ്റ്റർ നമ്പർ കാണിക്കാൻ s.regno അല്ലെങ്കിൽ s.number ഉപയോഗിക്കുന്നു
-        const displayRegNo = s.regno || s.number || "N/A";
+        const displayRegNo = s.regno || s.number;
+        // പാസ്‌വേഡ് കാണിക്കുന്നു (ചുരുക്കരൂപത്തിൽ)
+        const passDisplay = s.password ? s.password.substring(0, 8) + "..." : "N/A";
 
         html += `
             <tr>
@@ -204,13 +247,13 @@ function renderStudents(students) {
                 <td><b>${displayRegNo}</b></td>
                 <td>${s.name}</td>
                 <td>${s.class}</td>
-                <td>${s.gender}</td>
                 <td>${s.phone}</td>
+                <td><code title="${s.password}">${passDisplay}</code></td>
                 <td><span class="status-badge ${s.status}">${s.status.toUpperCase()}</span></td>
                 <td>
                     <div class="action-btns">
                         ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${displayRegNo}')">Approve</button>` : ''}
-                        <button class="btn-small btn-edit" onclick="openEdit('${displayRegNo}', '${s.name}', '${s.class}', '${s.status}')"><i class="fa fa-edit"></i></button>
+                        <button class="btn-small btn-edit" onclick="openEdit(${JSON.stringify(s).replace(/"/g, '&quot;')})"><i class="fa fa-edit"></i></button>
                         <button class="btn-small btn-delete" onclick="deleteStudent('${displayRegNo}')"><i class="fa fa-trash"></i></button>
                     </div>
                 </td>
@@ -225,55 +268,97 @@ function renderStudents(students) {
     document.getElementById('statGirls').innerText = stats.female;
 }
 
-// പ്രധാനപ്പെട്ട മാറ്റം: അപ്പ്രൂവ് ചെയ്യുമ്പോൾ 'mId_regno' എന്ന ഐഡി ഉപയോഗിക്കുന്നു
 async function quickApprove(regno) {
-    if(!confirm("ഈ വിദ്യാർത്ഥിയെ അപ്പ്രൂവ് ചെയ്യണമോ?")) return;
     const docId = mId + "_" + regno;
-    try {
-        await db.collection("students").doc(docId).update({ status: "approved" });
-        alert("അപ്പ്രൂവ് ചെയ്തു!");
-        loadStudents();
-    } catch (e) {
-        alert("പിശക്: ഡോക്യുമെന്റ് കണ്ടെത്താനായില്ല.");
-    }
+    await db.collection("students").doc(docId).update({ status: "approved" });
+    alert("അപ്പ്രൂവ് ചെയ്തു!");
+    loadStudents();
 }
 
-function openEdit(regno, name, cls, status) {
-    document.getElementById('editRegNo').value = regno;
-    document.getElementById('editName').value = name;
-    document.getElementById('editClass').value = cls;
-    document.getElementById('editStatus').value = status;
+function openEdit(student) {
+    newPhotoData = "";
+    document.getElementById('editRegNo').value = student.regno || student.number;
+    document.getElementById('editName').value = student.name;
+    document.getElementById('editClass').value = student.class;
+    document.getElementById('editPhone').value = student.phone || "";
+    document.getElementById('editGender').value = student.gender || "Male";
+    document.getElementById('editBlood').value = student.blood || "A+";
+    document.getElementById('editPass').value = student.password || "";
+    document.getElementById('editStatus').value = student.status;
+    document.getElementById('editPhotoPreview').src = student.photo;
     document.getElementById('editModal').style.display = 'flex';
 }
 
+// Photo Change logic
+document.getElementById('editPhotoInput').onchange = e => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            newPhotoData = reader.result;
+            document.getElementById('editPhotoPreview').src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 async function updateStudent() {
+    const btn = document.getElementById('updateBtn');
     const regno = document.getElementById('editRegNo').value;
     const docId = mId + "_" + regno;
+    
+    btn.disabled = true;
+    btn.innerText = "Updating...";
+
     const updateObj = {
         name: document.getElementById('editName').value,
         class: document.getElementById('editClass').value,
+        phone: document.getElementById('editPhone').value,
+        gender: document.getElementById('editGender').value,
+        blood: document.getElementById('editBlood').value,
         status: document.getElementById('editStatus').value
     };
-    await db.collection("students").doc(docId).update(updateObj);
-    document.getElementById('editModal').style.display = 'none';
-    loadStudents();
+
+    const passInput = document.getElementById('editPass').value;
+    // പാസ്‌വേഡ് മാറ്റിയിട്ടുണ്ടെങ്കിൽ മാത്രം ഹാഷ് ചെയ്യുക
+    if (passInput && passInput.length < 50) { 
+        updateObj.password = await hashPassword(passInput);
+    }
+
+    try {
+        // ഫോട്ടോ മാറ്റിയിട്ടുണ്ടെങ്കിൽ ImgBB വഴി അപ്‌ലോഡ് ചെയ്യുക
+        if (newPhotoData) {
+            const apiKey = "A0ec42450bb0e87699896f33dbd7c471";
+            const formData = new FormData();
+            formData.append("image", newPhotoData.split(',')[1]);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
+            const json = await res.json();
+            if (json.success) updateObj.photo = json.data.url;
+        }
+
+        await db.collection("students").doc(docId).update(updateObj);
+        alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
+        document.getElementById('editModal').style.display = 'none';
+        loadStudents();
+    } catch (e) {
+        alert("Error updating data!");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "UPDATE DATA";
+    }
 }
 
 async function deleteStudent(regno) {
-    if(!confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) return;
-    const docId = mId + "_" + regno;
-    await db.collection("students").doc(docId).delete();
-    loadStudents();
+    if(confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) {
+        const docId = mId + "_" + regno;
+        await db.collection("students").doc(docId).delete();
+        loadStudents();
+    }
 }
 
 function exportExcel() {
     const data = allStudents.map(s => ({
-        "Reg No": s.regno || s.number,
-        "Name": s.name,
-        "Class": s.class,
-        "Gender": s.gender,
-        "Phone": s.phone,
-        "Status": s.status
+        "Reg No": s.regno || s.number, "Name": s.name, "Class": s.class, "Phone": s.phone, "Status": s.status
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -285,8 +370,8 @@ function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.text("Madrasa Student List", 14, 15);
-    const rows = allStudents.map(s => [s.regno || s.number, s.name, s.class, s.gender, s.phone, s.status]);
-    doc.autoTable({ head: [['Reg', 'Name', 'Class', 'Gender', 'Phone', 'Status']], body: rows, startY: 20 });
+    const rows = allStudents.map(s => [s.regno || s.number, s.name, s.class, s.phone, s.status]);
+    doc.autoTable({ head: [['Reg', 'Name', 'Class', 'Phone', 'Status']], body: rows, startY: 20 });
     doc.save("Student_List.pdf");
 }
 
