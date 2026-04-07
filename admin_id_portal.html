@@ -12,8 +12,8 @@
 
     <style>
         :root { --primary: #004d00; --accent: #f39c12; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); background-image: var(--bg-image); background-size: cover; background-attachment: fixed; margin: 0; padding: 10px; }
-        .header { background: var(--primary); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .header { background: var(--primary); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; position: relative; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .stat-card h3 { margin: 5px 0; color: var(--primary); }
@@ -42,10 +42,7 @@
 
         #editModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
         .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; max-height: 80vh; overflow-y: auto; }
-.settings-box {  background: white; padding: 20px; border-radius: 10px;   margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--accent);}
-.settings-box h3 { margin-top: 0; color: var(--primary); font-size: 16px; }
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; }
-@media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+        .settings-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -57,14 +54,16 @@
     <h2 id="mName">മദ്റസ അഡ്മിൻ പാനൽ</h2>
     <p id="mPlace">ID CARD MANAGEMENT</p>
 </div>
+
 <div class="settings-box">
     <h3><i class="fa fa-user-tie"></i> സദർ മുഅല്ലിം വിവരങ്ങൾ</h3>
-    <div class="settings-grid">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="sadarName" placeholder="സദർ മുഅല്ലിമിന്റെ പേര്">
         <input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ">
         <button class="btn btn-approve" onclick="saveSadarDetails()">UPDATE</button>
     </div>
 </div>
+
 <div class="stats-grid">
     <div class="stat-card">Total<h3 id="statTotal">0</h3></div>
     <div class="stat-card">Pending<h3 id="statPending">0</h3></div>
@@ -85,8 +84,9 @@
     <button class="btn btn-excel" onclick="exportExcel()"><i class="fa fa-file-excel"></i> EXCEL</button>
     <button class="btn btn-pdf" onclick="exportPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
 </div>
+
 <div class="table-container">
-    <table id="studentTable">
+    <table>
         <thead>
             <tr>
                 <th>Photo</th>
@@ -95,23 +95,20 @@
                 <th>Class</th>
                 <th>Gender</th>
                 <th>Phone</th>
-                <th>Password</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody id="studentData">
-            </tbody>
+        <tbody id="studentData"></tbody>
     </table>
 </div>
 
 <div id="editModal">
     <div class="modal-content">
         <h3>വിവരങ്ങൾ മാറ്റുക</h3>
-        <input type="hidden" id="editKey">
+        <input type="hidden" id="editRegNo">
         <label>Name</label><input type="text" id="editName">
         <label>Class</label><input type="text" id="editClass">
-        <label>Password</label><input type="text" id="editPass">
         <label>Status</label>
         <select id="editStatus">
             <option value="pending">Pending</option>
@@ -127,7 +124,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// Firebase Config (നിങ്ങളുടെ അതേ കോൺഫിഗറേഷൻ തന്നെ)
 const firebaseConfig = {
     apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
     authDomain: "enttemadrasa.firebaseapp.com",
@@ -142,40 +138,19 @@ const db = firebase.firestore();
 const rtdb = firebase.database();
 
 const urlParams = new URLSearchParams(window.location.search);
-const mId = urlParams.get('id'); // Madrasa ID
-
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const mId = urlParams.get('id');
 
 let allStudents = [];
 
-// മദ്റസ പേര് ലോഡ് ചെയ്യുന്നു (Supabase Priority)
 async function loadMadrasaProfile() {
-    if (window.supabaseClient) {
-        const { data, error } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
-        if (data && !error) {
-            updateMadrasaUI(data);
-            return;
-        }
-    }
+    if(!mId) return;
     rtdb.ref('madrasa_requests/' + mId).once('value', snap => {
-        updateMadrasaUI(snap.val() || {});
+        const data = snap.val() || {};
+        document.getElementById('mName').innerText = (data.name || "മദ്രസ") + " (" + (data.reg || mId) + ")";
+        document.getElementById('mPlace').innerText = data.place || "";
     });
 }
 
-function updateMadrasaUI(data) {
-    const madrasaName = data.name || data.madrasaName || data.title || "മദ്രസ";
-    const madrasaPlace = data.place || data.location || "";
-    document.getElementById('mName').innerText = madrasaName + " (" + (data.reg || "") + ")";
-    document.getElementById('mPlace').innerText = madrasaPlace;
-    if(data.photo) document.documentElement.style.setProperty('--bg-image', "url(" + data.photo + ")");
-}
-loadMadrasaProfile();
-// സദർ മുഅല്ലിം വിവരങ്ങൾ ലോഡ് ചെയ്യുന്നു
 async function loadSadarDetails() {
     if(!mId) return;
     const doc = await db.collection("madrasa_settings").doc(mId).get();
@@ -188,38 +163,17 @@ async function loadSadarDetails() {
 async function saveSadarDetails() {
     const sName = document.getElementById('sadarName').value;
     const sPhone = document.getElementById('sadarPhone').value;
-    
     if(!sName) return alert("ദയവായി പേര് നൽകുക!");
-
     await db.collection("madrasa_settings").doc(mId).set({
-        sadar_name: sName,
-        sadar_phone: sPhone,
-        updated_at: new Date()
+        sadar_name: sName, sadar_phone: sPhone, updated_at: new Date()
     }, { merge: true });
     alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
 }
 
-// വിൻഡോ ലോഡ് ചെയ്യുമ്പോൾ ഈ ഫങ്ക്ഷനും കൂടി പ്രവർത്തിപ്പിക്കുക
-window.onload = () => {
-    loadStudents();
-    loadSadarDetails();
-};
 async function loadStudents() {
-    if(!mId) return alert("Madrasa ID Missing!");
-    
-    let snap;
-    // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു
-    if (window.supabaseClient) {
-        const { data, error } = await window.supabaseClient.from('students').select('*').eq('madrasa_id', mId);
-        if (data && !error) {
-            renderStudents(data);
-            return;
-        }
-    }
-
-    // ഫയർസ്റ്റോർ Fallback
+    if(!mId) return;
     const query = db.collection("students").where("madrasa_id", "==", mId);
-    snap = await query.get();
+    const snap = await query.get();
     const students = snap.docs.map(doc => doc.data());
     renderStudents(students);
 }
@@ -228,13 +182,10 @@ function renderStudents(students) {
     allStudents = [];
     let html = "";
     let stats = { total: 0, pending: 0, male: 0, female: 0 };
-    
     const filterClass = document.getElementById('filterClass').value;
     const filterGender = document.getElementById('filterGender').value;
 
     students.forEach(s => {
-        
-        // Filters
         if(filterClass && s.class != filterClass) return;
         if(filterGender && s.gender != filterGender) return;
 
@@ -244,21 +195,23 @@ function renderStudents(students) {
         if(s.gender === 'Male') stats.male++;
         if(s.gender === 'Female') stats.female++;
 
+        // രജിസ്റ്റർ നമ്പർ കാണിക്കാൻ s.regno അല്ലെങ്കിൽ s.number ഉപയോഗിക്കുന്നു
+        const displayRegNo = s.regno || s.number || "N/A";
+
         html += `
             <tr>
                 <td><img src="${s.photo}" class="student-img"></td>
-                <td>${s.number}</td>
-                <td><b>${s.name}</b></td>
+                <td><b>${displayRegNo}</b></td>
+                <td>${s.name}</td>
                 <td>${s.class}</td>
                 <td>${s.gender}</td>
                 <td>${s.phone}</td>
-                <td><code>${s.password}</code></td>
                 <td><span class="status-badge ${s.status}">${s.status.toUpperCase()}</span></td>
                 <td>
                     <div class="action-btns">
-                        ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${s.number}')">Approve</button>` : ''}
-                        <button class="btn-small btn-edit" onclick="openEdit('${s.number}', '${s.name}', '${s.class}', '${s.password}', '${s.status}')"><i class="fa fa-edit"></i></button>
-                        <button class="btn-small btn-delete" onclick="deleteStudent('${s.number}')"><i class="fa fa-trash"></i></button>
+                        ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${displayRegNo}')">Approve</button>` : ''}
+                        <button class="btn-small btn-edit" onclick="openEdit('${displayRegNo}', '${s.name}', '${s.class}', '${s.status}')"><i class="fa fa-edit"></i></button>
+                        <button class="btn-small btn-delete" onclick="deleteStudent('${displayRegNo}')"><i class="fa fa-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -272,87 +225,55 @@ function renderStudents(students) {
     document.getElementById('statGirls').innerText = stats.female;
 }
 
-// Quick Approve
-async function quickApprove(id) {
-    if(!id) return;
-    await db.collection("students").doc(id).update({ status: "approved" });
-    
-    // ✅ സുപാബേസിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
-    if (window.supabaseClient) {
-        await window.supabaseClient.from('students').update({ status: 'approved' }).eq('regno', id);
+// പ്രധാനപ്പെട്ട മാറ്റം: അപ്പ്രൂവ് ചെയ്യുമ്പോൾ 'mId_regno' എന്ന ഐഡി ഉപയോഗിക്കുന്നു
+async function quickApprove(regno) {
+    if(!confirm("ഈ വിദ്യാർത്ഥിയെ അപ്പ്രൂവ് ചെയ്യണമോ?")) return;
+    const docId = mId + "_" + regno;
+    try {
+        await db.collection("students").doc(docId).update({ status: "approved" });
+        alert("അപ്പ്രൂവ് ചെയ്തു!");
+        loadStudents();
+    } catch (e) {
+        alert("പിശക്: ഡോക്യുമെന്റ് കണ്ടെത്താനായില്ല.");
     }
-    
-    loadStudents();
 }
 
-// Edit Modal Open
-function openEdit(id, name, cls, pass, status) {
-    document.getElementById('editKey').value = id;
+function openEdit(regno, name, cls, status) {
+    document.getElementById('editRegNo').value = regno;
     document.getElementById('editName').value = name;
     document.getElementById('editClass').value = cls;
-    document.getElementById('editPass').value = pass;
     document.getElementById('editStatus').value = status;
     document.getElementById('editModal').style.display = 'flex';
 }
 
-// Update Database
 async function updateStudent() {
-    const id = document.getElementById('editKey').value;
-    const passwordValue = document.getElementById('editPass').value;
+    const regno = document.getElementById('editRegNo').value;
+    const docId = mId + "_" + regno;
     const updateObj = {
         name: document.getElementById('editName').value,
         class: document.getElementById('editClass').value,
         status: document.getElementById('editStatus').value
     };
-
-    if(passwordValue) {
-        updateObj.password = /^[0-9a-f]{64}$/.test(passwordValue)
-            ? passwordValue
-            : await hashPassword(passwordValue);
-    }
-
-    await db.collection("students").doc(id).update(updateObj);
-    
-    // ✅ സുപാബേസിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
-    if (window.supabaseClient) {
-        const sUpdate = { 
-            name: updateObj.name, 
-            class: updateObj.class, 
-            status: updateObj.status 
-        };
-        await window.supabaseClient.from('students').update(sUpdate).eq('regno', id);
-    }
-    
+    await db.collection("students").doc(docId).update(updateObj);
     document.getElementById('editModal').style.display = 'none';
     loadStudents();
 }
 
-// Delete
-async function deleteStudent(id) {
-    if(confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) {
-        await db.collection("students").doc(id).delete();
-        
-        // ✅ സുപാബേസിലും ഡിലീറ്റ് ചെയ്യുന്നു
-        if (window.supabaseClient) {
-            await window.supabaseClient.from('students').delete().eq('regno', id);
-        }
-        
-        loadStudents();
-    }
+async function deleteStudent(regno) {
+    if(!confirm("ഈ വിദ്യാർത്ഥിയെ നീക്കം ചെയ്യണമോ?")) return;
+    const docId = mId + "_" + regno;
+    await db.collection("students").doc(docId).delete();
+    loadStudents();
 }
 
-// Excel Export
 function exportExcel() {
     const data = allStudents.map(s => ({
-        "Reg No": s.number,
+        "Reg No": s.regno || s.number,
         "Name": s.name,
         "Class": s.class,
         "Gender": s.gender,
-        "Father": s.father,
         "Phone": s.phone,
-        "Password": s.password,
-        "Status": s.status,
-        "Photo Link": s.photo // ഫോട്ടോയുടെ ഡാറ്റ ലിങ്ക് എക്സലിൽ വരും
+        "Status": s.status
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -360,21 +281,20 @@ function exportExcel() {
     XLSX.writeFile(wb, "Student_List.xlsx");
 }
 
-// PDF Export
 function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.text("Madrasa Student List", 14, 15);
-    const rows = allStudents.map(s => [s.number, s.name, s.class, s.gender, s.phone, s.status]);
-    doc.autoTable({
-        head: [['Reg', 'Name', 'Class', 'Gender', 'Phone', 'Status']],
-        body: rows,
-        startY: 20
-    });
+    const rows = allStudents.map(s => [s.regno || s.number, s.name, s.class, s.gender, s.phone, s.status]);
+    doc.autoTable({ head: [['Reg', 'Name', 'Class', 'Gender', 'Phone', 'Status']], body: rows, startY: 20 });
     doc.save("Student_List.pdf");
 }
 
-window.onload = loadStudents;
+window.onload = () => {
+    loadMadrasaProfile();
+    loadStudents();
+    loadSadarDetails();
+};
 </script>
 </body>
 </html>
