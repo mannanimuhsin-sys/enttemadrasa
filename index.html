@@ -467,71 +467,90 @@
             return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        async function register() {
-            const regNo = document.getElementById('rReg').value.trim();
-            const uId = document.getElementById('rUser').value.trim();
-            const uPass = document.getElementById('rUsthad').value.trim();
-            const pPass = document.getElementById('rParent').value.trim();
-            const regBtn = document.getElementById('regBtn');
+       async function register() {
+    const regNo = document.getElementById('rReg').value.trim();
+    const uId = document.getElementById('rUser').value.trim();
+    const uPass = document.getElementById('rUsthad').value.trim();
+    const pPass = document.getElementById('rParent').value.trim();
+    const mName = document.getElementById('rName').value.trim();
+    const mPlace = document.getElementById('rPlace').value.trim();
+    const regBtn = document.getElementById('regBtn');
 
-            if (!regNo || !uId || !uPass) return alert("വിവരങ്ങൾ നൽകുക!");
+    if (!regNo || !uId || !uPass || !mName) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
 
-            regBtn.innerText = "തയ്യാറാക്കുന്നു...";
-            regBtn.disabled = true;
+    regBtn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
+    regBtn.disabled = true;
 
-            try {
-                const uHash = await hashPassword(uPass);
-                const pHash = await hashPassword(pPass);
-                let photoUrl = "";
+    try {
+        const uHash = await hashPassword(uPass);
+        const pHash = await hashPassword(pPass);
+        let photoUrl = "";
 
-                // ✅ ഇമേജ് കണ്ടന്റ് സ്റ്റോറേജിലേക്ക് അപ്‌ലോഡ് ചെയ്യുന്നു (RTDB-ൽ സേവ് ചെയ്യാതെ)
-                const photoInput = document.getElementById('mPhoto');
-                if (photoInput.files && photoInput.files[0]) {
-                    const file = photoInput.files[0];
-                    const storageRef = storage.ref(`madrasa_photos/${regNo}_${Date.now()}`);
-                    await storageRef.put(file);
-                    photoUrl = await storageRef.getDownloadURL();
-                }
+        // ✅ 1. ImgBB-യിലേക്ക് ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു
+        const photoInput = document.getElementById('mPhoto');
+        if (photoInput.files && photoInput.files[0]) {
+            const formData = new FormData();
+            formData.append("image", photoInput.files[0]);
 
-                const data = {
-                    userId: uId,
-                    name: document.getElementById('rName').value,
-                    place: document.getElementById('rPlace').value,
-                    reg: regNo,
-                    photo: photoUrl, // ✅ ഇപ്പോൾ ലിങ്ക് മാത്രം സേവ് ചെയ്യുന്നു
-                    usthadPass: uHash,
-                    parentPass: pHash,
-                    status: "pending",
-                    createdAt: new Date().toISOString()
-                };
+            // നിങ്ങളുടെ ImgBB API Key ഇവിടെ ചേർത്തു
+            const imgbbKey = "A0ec42450bb0e87699896f33dbd7c471"; 
 
-                // ✅ ക്ലൗഡ് ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
-                await firestore.collection('madrasa_requests').doc(regNo).set(data);
+            const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+                method: "POST",
+                body: formData
+            });
 
-                // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
-                if (window.supabaseClient) {
-                    await window.supabaseClient.from('madrasa_requests').upsert({
-                        reg: regNo,
-                        user_id: uId,
-                        name: data.name,
-                        place: data.place,
-                        photo: photoUrl,
-                        usthad_pass: uHash,
-                        parent_pass: pHash,
-                        status: "pending",
-                        created_at: new Date().toISOString()
-                    });
-                }
-
-                alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക.");
-                location.reload();
-            } catch (error) {
-                console.error("Registration Error:", error);
-                alert("രജിസ്‌ട്രേഷൻ പരാജയപ്പെട്ടു: " + error.message);
-                regBtn.innerText = "REGISTER NOW";
-                regBtn.disabled = false;
+            const imgResult = await imgResponse.json();
+            if (imgResult.success) {
+                photoUrl = imgResult.data.url;
+            } else {
+                console.error("ImgBB Error:", imgResult);
             }
         }
+
+        const data = {
+            userId: uId,
+            name: mName,
+            place: mPlace,
+            reg: regNo,
+            photo: photoUrl, 
+            usthadPass: uHash,
+            parentPass: pHash,
+            status: "pending",
+            createdAt: new Date().toISOString()
+        };
+
+        // ✅ 2. ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
+        await firestore.collection('madrasa_requests').doc(regNo).set(data);
+
+        // ✅ 3. റിയൽടൈം ഡാറ്റാബേസിലേക്ക് (RTDB) സേവ് ചെയ്യുന്നു (അഡ്മിൻ പാനലിന് വേണ്ടി)
+        await db.ref('madrasa_requests/' + regNo).set(data);
+
+        // ✅ 4. സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
+        if (window.supabaseClient) {
+            await window.supabaseClient.from('madrasa_requests').upsert({
+                reg: regNo,
+                user_id: uId,
+                name: mName,
+                place: mPlace,
+                photo: photoUrl,
+                usthad_pass: uHash,
+                parent_pass: pHash,
+                status: "pending",
+                created_at: new Date().toISOString()
+            });
+        }
+
+        alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക. ✅");
+        location.reload();
+
+    } catch (error) {
+        console.error("Registration Error:", error);
+        alert("പിശക് സംഭവിച്ചു: " + error.message);
+        regBtn.innerText = "REGISTER NOW";
+        regBtn.disabled = false;
+    }
+}
 
         async function handleLogin() {
             const reg = document.getElementById('logReg').value.trim();
