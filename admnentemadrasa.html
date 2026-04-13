@@ -6,6 +6,9 @@
     <title>Super Admin | എന്‍റെ മദ്റസ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -86,6 +89,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const firestore = firebase.firestore();
 
     let editingId = "";
 
@@ -141,16 +145,34 @@
     }
 
     // സ്റ്റാറ്റസ് മാറ്റാൻ (Approve/Block)
-    function updateStatus(id, newStatus) {
+    async function updateStatus(id, newStatus) {
         if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
-            db.ref('madrasa_requests/' + id).update({ status: newStatus });
+            try {
+                await db.ref('madrasa_requests/' + id).update({ status: newStatus });
+                await firestore.collection('madrasa_requests').doc(id).update({ status: newStatus }).catch(e=>console.log(e));
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('madrasa_requests').update({ status: newStatus }).eq('reg', id);
+                }
+            } catch (e) {
+                console.error("Error updating status:", e);
+                alert("അപ്ഡേറ്റ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
+            }
         }
     }
 
     // മദ്റസ ഡിലീറ്റ് ചെയ്യാൻ
-    function deleteMadrasa(id) {
+    async function deleteMadrasa(id) {
         if(confirm("മുന്നറിയിപ്പ്: ഈ മദ്റസയുടെ ഡാറ്റാബേസ് പൂർണ്ണമായും നീക്കം ചെയ്യപ്പെടും. തുടരണോ?")) {
-            db.ref('madrasa_requests/' + id).remove();
+            try {
+                await db.ref('madrasa_requests/' + id).remove();
+                await firestore.collection('madrasa_requests').doc(id).delete().catch(e=>console.log(e));
+                if (window.supabaseClient) {
+                    await window.supabaseClient.from('madrasa_requests').delete().eq('reg', id);
+                }
+            } catch (e) {
+                console.error("Error deleting:", e);
+                alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
+            }
         }
     }
 
@@ -191,25 +213,37 @@
         const photoSrc = document.getElementById('editImagePrev').src;
 
         const updates = {};
+        const supaUpdates = {};
 
         if (uPass) {
             updates.usthadPass = await hashPassword(uPass);
+            supaUpdates.usthad_pass = updates.usthadPass;
         }
         if (pPass) {
             updates.parentPass = await hashPassword(pPass);
+            supaUpdates.parent_pass = updates.parentPass;
         }
         if (photoSrc && photoSrc.startsWith('data')) {
             updates.photo = photoSrc;
+            supaUpdates.photo = photoSrc;
         }
 
         if (Object.keys(updates).length === 0) {
             return alert("ഒരു മാറ്റവും നൽകിയിട്ടില്ല!");
         }
 
-        db.ref('madrasa_requests/' + editingId).update(updates).then(() => {
+        try {
+            await db.ref('madrasa_requests/' + editingId).update(updates);
+            await firestore.collection('madrasa_requests').doc(editingId).update(updates).catch(e => console.log(e));
+            if (window.supabaseClient && Object.keys(supaUpdates).length > 0) {
+                await window.supabaseClient.from('madrasa_requests').update(supaUpdates).eq('reg', editingId);
+            }
             alert("വിജയകരമായി മാറ്റി!");
             closeModal();
-        });
+        } catch (e) {
+            console.error("Save Error:", e);
+            alert("മാറ്റങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്!");
+        }
     }
 
     // സെർച്ച് ഫംഗ്ഷൻ (രജിസ്റ്റർ നമ്പർ വെച്ച്)
