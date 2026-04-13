@@ -230,23 +230,7 @@
         let classes = data.classes || [];
 
         // --- സോർട്ടിങ് ലോജിക് ---
-        classes.sort((a, b) => {
-            const getVal = (name) => {
-                const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
-                return roman[name ? name.toUpperCase() : ""] || parseInt(name) || 0;
-            };
-
-            let valA = getVal(a.name);
-            let valB = getVal(b.name);
-
-            if (valA !== valB) {
-                return valA - valB;
-            } else {
-                let divA = (a.div || "").toUpperCase();
-                let divB = (b.div || "").toUpperCase();
-                return divA.localeCompare(divB);
-            }
-        });
+        sortClassesArray(classes);
 
         let html = "";
         let totalBoys = 0, totalGirls = 0, totalAll = 0;
@@ -347,6 +331,9 @@
 
             let classes = data.classes || [];
             classes.push({ name, div, b, g, u, p });
+            
+            // Sort to ensure the database version matches UI version
+            sortClassesArray(classes);
 
             // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു (set use ചെയ്യുന്നത് ഡോക്യുമെന്റ് ഇല്ലെങ്കിലും വർക്ക് ചെയ്യാൻ വേണ്ടിയാണ്)
             await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
@@ -371,6 +358,10 @@
             document.getElementById('cPhone').value = "";
             
             alert("വിവരങ്ങൾ വിജയകരമായി ചേർത്തു!");
+            
+            // UI Update explicitly to avoid waiting for slow/failed listeners
+            data.classes = classes;
+            renderContent(data);
         } catch (error) {
             console.error("Save Class Error:", error);
             alert("പിശക് സംഭവിച്ചു: " + error.message);
@@ -388,6 +379,8 @@
             classes = snap.val() || [];
         }
         
+        // Sort before accessing index because renderContent sorted it
+        sortClassesArray(classes);
         const data = classes[index];
         
         if(data) {
@@ -420,6 +413,8 @@
                 if (!data) return;
 
                 let classes = data.classes || [];
+                // Sort array first so index matches what the user clicked in the UI
+                sortClassesArray(classes);
                 classes.splice(index, 1);
 
                 // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
@@ -433,11 +428,35 @@
                 }
                 
                 await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+                
+                // Explicit UI Update
+                data.classes = classes;
+                renderContent(data);
             } catch (error) {
                 console.error("Delete Class Error:", error);
                 alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്!");
             }
         }
+    }
+
+    function sortClassesArray(classes) {
+        classes.sort((a, b) => {
+            const getVal = (name) => {
+                const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
+                return roman[name ? name.toUpperCase() : ""] || parseInt(name) || 0;
+            };
+
+            let valA = getVal(a.name);
+            let valB = getVal(b.name);
+
+            if (valA !== valB) {
+                return valA - valB;
+            } else {
+                let divA = (a.div || "").toUpperCase();
+                let divB = (b.div || "").toUpperCase();
+                return divA.localeCompare(divB);
+            }
+        });
     }
 
     loadData();
