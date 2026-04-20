@@ -161,25 +161,39 @@
     }
 
     // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
-    async function updateStatus(id, newStatus) {
-        if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
-            const btn = event.target;
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
-            btn.disabled = true;
+  async function updateStatus(id, newStatus) {
+    if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
+        const btn = event.target;
+        const oldHTML = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
+        btn.disabled = true;
 
-            try {
-                // 1. Realtime Database Update
-                await db.ref('madrasa_requests/' + id).update({ status: newStatus });
+        try {
+            // 1. Realtime Database Update
+            await db.ref('madrasa_requests/' + id).update({ status: newStatus });
+            
+            // 2. Firestore Sync
+            await firestore.collection('madrasa_requests').doc(id).set({ status: newStatus }, { merge: true });
+
+            // 3. ✅ Supabase Sync (ഇതാണ് വിട്ടുപോയത്)
+            // നിങ്ങളുടെ അഡ്മിൻ പാനലിൽ സുപാബേസ് കോൺഫിഗറേഷൻ ഉണ്ടെന്ന് ഉറപ്പുവരുത്തുക
+            if (window.supabaseClient) {
+                const { error } = await window.supabaseClient
+                    .from('madrasa_requests')
+                    .update({ status: newStatus })
+                    .eq('reg', id);
                 
-                // 2. Firestore Sync (ഇതാണ് യൂസർ സൈഡിൽ ഡാറ്റ കാണിക്കുന്നത് എങ്കിൽ ഇത് നിർബന്ധമാണ്)
-                await firestore.collection('madrasa_requests').doc(id).set({ status: newStatus }, { merge: true });
-
-                console.log("Status Updated Successfully");
-            } catch (e) {
-                alert("Error: " + e.message);
+                if(error) console.error("Supabase Sync Error:", error);
             }
+
+            alert(`വിജയകരമായി ${newStatus} ചെയ്തു! ✅`);
+        } catch (e) {
+            alert("Error: " + e.message);
+            btn.innerHTML = oldHTML;
+            btn.disabled = false;
         }
     }
+}
 
     async function deleteMadrasa(id) {
         if(confirm("ഈ മദ്റസ നീക്കം ചെയ്യട്ടെ? ഈ നടപടി മാറ്റാൻ കഴിയില്ല.")) {
