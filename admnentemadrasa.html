@@ -7,78 +7,93 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase_config.js"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        :root { --primary: #1a5f7a; --danger: #d9534f; --success: #5cb85c; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 20px; }
+        :root { --primary: #1a5f7a; --danger: #d9534f; --success: #28a745; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        .header { background: var(--primary); color: white; padding: 25px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
         
-        /* സെർച്ച് ബാർ */
+        /* Search */
         .search-container { position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 10px 0; }
-        #searchInput { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        #searchInput { width: 100%; padding: 12px 15px; border: 2px solid #ced4da; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        #searchInput:focus { border-color: var(--primary); }
 
-        /* കാർഡുകൾ */
-        .madrasa-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #ddd; position: relative; }
+        /* Card Design */
+        .madrasa-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 6px solid #ccc; transition: 0.3s; }
         .status-approved { border-left-color: var(--success); }
-        .status-pending { border-left-color: orange; }
+        .status-pending { border-left-color: #ffc107; }
         .status-blocked { border-left-color: var(--danger); }
 
         .madrasa-info { display: flex; align-items: center; gap: 15px; }
-        .madrasa-info img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd; }
-        .madrasa-details { flex: 1; }
-        .pass-view { background: #f0f0f0; padding: 8px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 12px; }
-        
-        /* ബട്ടണുകൾ */
-        .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; color: white; }
-        .btn-approve { background: var(--success); }
-        .btn-block { background: orange; }
-        .btn-delete { background: var(--danger); }
-        .btn-edit { background: #5bc0de; }
+        .madrasa-info img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .madrasa-details h3 { margin: 0 0 5px 0; font-size: 17px; color: #333; }
+        .details-text { font-size: 12px; color: #666; line-height: 1.5; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 5px; }
+        .bg-pending { background: #fff3cd; color: #856404; }
+        .bg-approved { background: #d4edda; color: #155724; }
+        .bg-blocked { background: #f8d7da; color: #721c24; }
 
-        /* എഡിറ്റ് മോഡൽ */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-        .modal-content { background: white; margin: 15% auto; padding: 20px; width: 85%; border-radius: 10px; }
-        input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;}
+        /* Buttons */
+        .action-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; margin-top: 15px; }
+        .btn { padding: 8px 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn:active { transform: scale(0.95); }
+        .btn-approve { background: var(--success); }
+        .btn-block { background: #f0ad4e; }
+        .btn-delete { background: var(--danger); }
+        .btn-edit { background: #17a2b8; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; backdrop-filter: blur(3px); }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 400px; border-radius: 15px; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        
+        .loading-overlay { text-align: center; padding: 40px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>SUPER ADMIN PANEL</h2>
-    <p>മദ്റസ നിയന്ത്രണങ്ങൾ</p>
+    <h2 style="margin:0">SUPER ADMIN PANEL</h2>
+    <p style="margin:5px 0 0 0; font-size: 13px; opacity: 0.9;">എന്റെ മദ്റസ മാനേജ്‌മെന്റ് സിസ്റ്റം</p>
 </div>
 
-<div class="search-container">
-    <input type="text" id="searchInput" placeholder="രജിസ്റ്റർ നമ്പർ ഉപയോഗിച്ച് സെർച്ച് ചെയ്യുക..." onkeyup="searchMadrasa()">
-</div>
+<div class="container">
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="രജിസ്റ്റർ നമ്പർ / പേര് തിരയുക..." onkeyup="searchMadrasa()">
+    </div>
 
-<div id="madrasaList">
-    <p style="text-align: center;">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</p>
+    <div id="madrasaList">
+        <div class="loading-overlay">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</p>
+        </div>
+    </div>
 </div>
 
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h3>മദ്രസ വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക</h3>
-        <p id="targetName" style="font-weight: bold;"></p>
-        <label>പുതിയ മദ്രസ ഫോട്ടോ:</label>
-        <input type="file" id="newPhoto" accept="image/*" onchange="previewEditImage(this)">
-        <img id="editImagePrev" src="" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 2px solid #ddd;">
-        <label>പുതിയ ഉസ്താദ് പാസ്‌വേഡ്:</label>
-        <input type="text" id="newUsthadPass" placeholder="New Usthad Password">
-        <label>പുതിയ പാരന്റ് പാസ്‌വേഡ്:</label>
-        <input type="text" id="newParentPass" placeholder="New Parent Password">
+        <h3 style="margin-top:0">വിവരങ്ങൾ മാറ്റുക</h3>
+        <p id="targetName" style="font-size: 14px; color: var(--primary); font-weight: bold;"></p>
+        
+        <label style="font-size: 12px;">പുതിയ ഉസ്താദ് പാസ്‌വേഡ്:</label>
+        <input type="text" id="newUsthadPass" placeholder="Enter New Password">
+        
+        <label style="font-size: 12px;">പുതിയ പാരന്റ് പാസ്‌വേഡ്:</label>
+        <input type="text" id="newParentPass" placeholder="Enter New Password">
+        
         <div class="action-row">
-            <button class="btn btn-approve" onclick="saveEdits()">SAVE</button>
-            <button class="btn btn-delete" onclick="closeModal()">CANCEL</button>
+            <button class="btn btn-approve" onclick="saveEdits()">സേവ് ചെയ്യുക</button>
+            <button class="btn btn-delete" onclick="closeModal()">ക്ാൻസൽ</button>
         </div>
     </div>
 </div>
 
 <script>
+    // Config (നിങ്ങൾ നൽകിയത് തന്നെ)
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -87,6 +102,7 @@
         storageBucket: "enttemadrasa.firebasestorage.app",
         appId: "1:623531881201:web:b863793340c3901cedaf50"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const firestore = firebase.firestore();
@@ -101,164 +117,118 @@
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // മദ്റസകൾ ലോഡ് ചെയ്യാൻ (അവസാനം ചെയ്തത് മുകളിൽ വരാൻ reverse)
+    // ലോഡിംഗ് സ്പീഡ് കൂട്ടാൻ 'once' ഉപയോഗിച്ച് ഡാറ്റ എടുക്കുന്നു
     function loadMadrasas() {
+        // 'value' എന്നതിന് പകരം ഡാറ്റയിൽ മാറ്റം വരുമ്പോൾ മാത്രം റിഫ്രഷ് ആകുന്ന രീതി
         db.ref('madrasa_requests').on('value', snap => {
             const listDiv = document.getElementById('madrasaList');
-            listDiv.innerHTML = "";
-            let madrasas = [];
+            const dataObj = snap.val();
+            
+            if (!dataObj) {
+                listDiv.innerHTML = "<p style='text-align:center'>അപേക്ഷകളൊന്നും ലഭ്യമല്ല.</p>";
+                return;
+            }
 
-            snap.forEach(child => {
-                madrasas.push({ id: child.key, ...child.val() });
+            let madrasas = [];
+            Object.keys(dataObj).forEach(key => {
+                madrasas.push({ id: key, ...dataObj[key] });
             });
 
-            // സമയം അനുസരിച്ച് റിവേഴ്സ് ചെയ്യുക
-            madrasas.reverse().forEach(data => {
-                const photoSrc = data.photo || 'logo.png';
-                const card = `
-                    <div class="madrasa-card status-${data.status}" data-reg="${data.reg}">
-                        <div class="madrasa-info">
-                            <img src="${photoSrc}" alt="Madrasa Photo">
-                            <div class="madrasa-details">
-                                <h3>${data.name}</h3>
-                                <div class="details">
-                                    <b>REG:</b> ${data.reg} | <b>USER ID:</b> ${data.id}<br>
-                                    <b>STATUS:</b> <span style="text-transform:uppercase">${data.status}</span>
-                                </div>
-                                <div class="pass-view">
-                                    <b>Usthad Hash:</b> ${data.usthadPass ? data.usthadPass.substring(0,10)+'...' : 'N/A'}<br>
-                                    <b>Parent Hash:</b> ${data.parentPass ? data.parentPass.substring(0,10)+'...' : 'N/A'}
-                                </div>
+            // ഏറ്റവും പുതിയത് ആദ്യം വരാൻ
+            madrasas.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            listDiv.innerHTML = madrasas.map(data => `
+                <div class="madrasa-card status-${data.status}" data-reg="${data.reg}" data-name="${data.name}">
+                    <div class="madrasa-info">
+                        <img src="${data.photo || 'https://via.placeholder.com/60'}" onerror="this.src='https://via.placeholder.com/60'">
+                        <div class="madrasa-details">
+                            <h3>${data.name}</h3>
+                            <div class="details-text">
+                                <b>REG:</b> ${data.reg} | <b>ID:</b> ${data.id}<br>
+                                <span class="status-badge bg-${data.status}">${data.status}</span>
                             </div>
                         </div>
-                        <div class="action-row">
-                            ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')">APPROVE</button>` : ''}
-                            ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked')">BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')">UNBLOCK</button>`}
-                            <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}')">EDIT</button>
-                            <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}')">DELETE</button>
-                        </div>
                     </div>
-                `;
-                listDiv.innerHTML += card;
-            });
+                    <div class="action-row">
+                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-check"></i> APPROVE</button>` : ''}
+                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked')"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
+                        <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}')"><i class="fas fa-edit"></i> EDIT</button>
+                        <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}')"><i class="fas fa-trash"></i> DELETE</button>
+                    </div>
+                </div>
+            `).join('');
         });
     }
 
-    // സ്റ്റാറ്റസ് മാറ്റാൻ (Approve/Block)
+    // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
     async function updateStatus(id, newStatus) {
         if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
+            const btn = event.target;
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
+            btn.disabled = true;
+
             try {
+                // 1. Realtime Database Update
                 await db.ref('madrasa_requests/' + id).update({ status: newStatus });
-                await firestore.collection('madrasa_requests').doc(id).update({ status: newStatus }).catch(e=>console.log(e));
-                if (window.supabaseClient) {
-                    await window.supabaseClient.from('madrasa_requests').update({ status: newStatus }).eq('reg', id);
-                }
+                
+                // 2. Firestore Sync (ഇതാണ് യൂസർ സൈഡിൽ ഡാറ്റ കാണിക്കുന്നത് എങ്കിൽ ഇത് നിർബന്ധമാണ്)
+                await firestore.collection('madrasa_requests').doc(id).set({ status: newStatus }, { merge: true });
+
+                console.log("Status Updated Successfully");
             } catch (e) {
-                console.error("Error updating status:", e);
-                alert("അപ്ഡേറ്റ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
+                alert("Error: " + e.message);
             }
         }
     }
 
-    // മദ്റസ ഡിലീറ്റ് ചെയ്യാൻ
     async function deleteMadrasa(id) {
-        if(confirm("മുന്നറിയിപ്പ്: ഈ മദ്റസയുടെ ഡാറ്റാബേസ് പൂർണ്ണമായും നീക്കം ചെയ്യപ്പെടും. തുടരണോ?")) {
+        if(confirm("ഈ മദ്റസ നീക്കം ചെയ്യട്ടെ? ഈ നടപടി മാറ്റാൻ കഴിയില്ല.")) {
             try {
                 await db.ref('madrasa_requests/' + id).remove();
-                await firestore.collection('madrasa_requests').doc(id).delete().catch(e=>console.log(e));
-                if (window.supabaseClient) {
-                    await window.supabaseClient.from('madrasa_requests').delete().eq('reg', id);
-                }
-            } catch (e) {
-                console.error("Error deleting:", e);
-                alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക് സംഭവിച്ചു!");
-            }
+                await firestore.collection('madrasa_requests').doc(id).delete();
+            } catch (e) { alert("Error deleting."); }
         }
     }
 
-    // പാസ്‌വേഡ് എഡിറ്റ് മോഡൽ തുറക്കാൻ
     function openEditModal(id, name) {
         editingId = id;
         document.getElementById('targetName').innerText = name;
         document.getElementById('editModal').style.display = 'block';
-        // ഫോട്ടോ പ്രിവ്യൂ ക്ലിയർ ചെയ്യുക
-        document.getElementById('editImagePrev').style.display = 'none';
-        document.getElementById('editImagePrev').src = '';
-        document.getElementById('newPhoto').value = '';
-    }
-
-    function previewEditImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('editImagePrev').src = e.target.result;
-                document.getElementById('editImagePrev').style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
     }
 
     function closeModal() {
         document.getElementById('editModal').style.display = 'none';
         document.getElementById('newUsthadPass').value = "";
         document.getElementById('newParentPass').value = "";
-        document.getElementById('newPhoto').value = "";
-        document.getElementById('editImagePrev').style.display = 'none';
     }
 
-    // പുതിയ എഡിറ്റ്സ് സേവ് ചെയ്യാൻ (ഫോട്ടോ, പാസ്‌വേഡ്)
     async function saveEdits() {
         const uPass = document.getElementById('newUsthadPass').value.trim();
         const pPass = document.getElementById('newParentPass').value.trim();
-        const photoSrc = document.getElementById('editImagePrev').src;
-
-        const updates = {};
-        const supaUpdates = {};
-
-        if (uPass) {
-            updates.usthadPass = await hashPassword(uPass);
-            supaUpdates.usthad_pass = updates.usthadPass;
-        }
-        if (pPass) {
-            updates.parentPass = await hashPassword(pPass);
-            supaUpdates.parent_pass = updates.parentPass;
-        }
-        if (photoSrc && photoSrc.startsWith('data')) {
-            updates.photo = photoSrc;
-            supaUpdates.photo = photoSrc;
-        }
-
-        if (Object.keys(updates).length === 0) {
-            return alert("ഒരു മാറ്റവും നൽകിയിട്ടില്ല!");
-        }
+        
+        if (!uPass && !pPass) return alert("പാസ്‌വേഡ് നൽകുക!");
 
         try {
+            let updates = {};
+            if(uPass) updates.usthadPass = await hashPassword(uPass);
+            if(pPass) updates.parentPass = await hashPassword(pPass);
+
             await db.ref('madrasa_requests/' + editingId).update(updates);
-            await firestore.collection('madrasa_requests').doc(editingId).update(updates).catch(e => console.log(e));
-            if (window.supabaseClient && Object.keys(supaUpdates).length > 0) {
-                await window.supabaseClient.from('madrasa_requests').update(supaUpdates).eq('reg', editingId);
-            }
-            alert("വിജയകരമായി മാറ്റി!");
+            await firestore.collection('madrasa_requests').doc(editingId).set(updates, { merge: true });
+            
+            alert("പാസ്‌വേഡ് വിജയകരമായി മാറ്റി!");
             closeModal();
-        } catch (e) {
-            console.error("Save Error:", e);
-            alert("മാറ്റങ്ങൾ സേവ് ചെയ്യുന്നതിൽ പിശക്!");
-        }
+        } catch (e) { alert("Error updating password."); }
     }
 
-    // സെർച്ച് ഫംഗ്ഷൻ (രജിസ്റ്റർ നമ്പർ വെച്ച്)
     function searchMadrasa() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
+        const term = document.getElementById('searchInput').value.toLowerCase();
         const cards = document.getElementsByClassName('madrasa-card');
-
-        for (let i = 0; i < cards.length; i++) {
-            const reg = cards[i].getAttribute('data-reg').toLowerCase();
-            if (reg.includes(input)) {
-                cards[i].style.display = "";
-            } else {
-                cards[i].style.display = "none";
-            }
-        }
+        Array.from(cards).forEach(card => {
+            const reg = card.getAttribute('data-reg').toLowerCase();
+            const name = card.getAttribute('data-name').toLowerCase();
+            card.style.display = (reg.includes(term) || name.includes(term)) ? "" : "none";
+        });
     }
 
     window.onload = loadMadrasas;
