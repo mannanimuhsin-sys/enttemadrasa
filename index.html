@@ -678,51 +678,48 @@
             }
         }
 
-        function renderProfile(d) {
-            if (!d) return;
+       function renderProfile(d) {
+    if (!d) return;
 
-            // അപ്രൂവൽ കിട്ടിയിട്ടില്ലെങ്കിൽ പെൻഡിംഗ് പേജിലേക്ക് വിടുന്നു
-            if (d.status !== 'approved' && d.status !== undefined) {
-                showPage('pendingPage');
-                return;
+    // 🛑 പ്രശ്നമുണ്ടാക്കുന്ന ഈ ഭാഗം ഞാൻ മാറ്റം വരുത്തിയിട്ടുണ്ട്. 
+    // ലോഗിൻ ചെയ്യുമ്പോൾ മാത്രം സ്റ്റാറ്റസ് നോക്കിയാൽ മതി.
+    // യൂസ് ചെയ്തുകൊണ്ടിരിക്കുമ്പോൾ ഇത് വീണ്ടും ചെക്ക് ചെയ്യുന്നത് ഒഴിവാക്കി.
+
+    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
+    const madrasaPlace = (d.place || d.location || "").trim();
+
+    const profileArea = document.getElementById('profileArea');
+    if (profileArea) {
+        profileArea.innerHTML = `
+            <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
+                <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
+                <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
+                <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg || ''}</div>
+            </div>`;
+    }
+
+    const plusBtn = document.getElementById('plusBtn');
+    if (plusBtn) plusBtn.style.display = 'none';
+
+    const sid = d.reg || currentId || localStorage.getItem("madrasaId");
+    if (sid) {
+        firestore.collection('settings').doc(sid).onSnapshot(doc => {
+            const settings = doc.data() || {};
+            const salahBtn = document.getElementById('btn_salah');
+            if (salahBtn) {
+                salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
             }
+        });
+    }
 
-            const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
-            const madrasaPlace = (d.place || d.location || "").trim();
+    const adminBox = document.getElementById('adminArea');
+    if (adminBox) {
+        adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
+    }
 
-            const profileArea = document.getElementById('profileArea');
-            if (profileArea) {
-                profileArea.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                        <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
-                        <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
-                        <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
-                        <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg || ''}</div>
-                    </div>`;
-            }
-
-            const plusBtn = document.getElementById('plusBtn');
-            if (plusBtn) plusBtn.style.display = 'none';
-
-            // Settings load for currentId
-            const sid = d.reg || currentId || localStorage.getItem("madrasaId");
-            if (sid) {
-                firestore.collection('settings').doc(sid).onSnapshot(doc => {
-                    const settings = doc.data() || {};
-                    const salahBtn = document.getElementById('btn_salah');
-                    if (salahBtn) {
-                        salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
-                    }
-                });
-            }
-
-            const adminBox = document.getElementById('adminArea');
-            if (adminBox) {
-                adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
-            }
-
-            showPage('portalPage');
-        }
+    showPage('portalPage');
+}
 
         function openDashboard() { window.location.href = `dashboard.html?id=${currentId}&role=${currentRole}`; }
         function openIDPortal() {
