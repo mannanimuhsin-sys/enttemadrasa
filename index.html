@@ -599,22 +599,30 @@
 
                 const results = await Promise.all(promises);
 
+                // ഡാറ്റ മെർജ് ചെയ്യുന്നു - ഏതെങ്കിലും ഡാറ്റാബേസിൽ approved ആണെങ്കിൽ അത് പരിഗണിക്കുന്നു
+                let mergedData = null;
                 for (const res of results) {
                     const d = res.data;
                     if (!d) continue;
 
-                    // പാസ്‌വേഡ് ചെക്കിംഗ് (സുപാബേസിൽ usthad_pass ഉം ബാക്കിയുള്ളവയിൽ usthadPass ഉം ആണ് കീ)
-                    const uPass = d.usthad_pass || d.usthadPass;
-                    const pPass = d.parent_pass || d.parentPass;
+                    if (!mergedData) {
+                        mergedData = { ...d };
+                    } else {
+                        if (d.status === 'approved') mergedData.status = 'approved';
+                        if (d.photo) mergedData.photo = d.photo;
+                    }
+                }
+
+                if (mergedData) {
+                    const uPass = mergedData.usthad_pass || mergedData.usthadPass;
+                    const pPass = mergedData.parent_pass || mergedData.parentPass;
 
                     if (uPass === passHash) {
-                        found = d;
+                        found = mergedData;
                         currentRole = "admin";
-                        break;
                     } else if (pPass === passHash) {
-                        found = d;
+                        found = mergedData;
                         currentRole = "parent";
-                        break;
                     }
                 }
 
@@ -666,10 +674,29 @@
                 promises.push(db.ref('madrasa_requests/' + sid).once('value').then(snap => snap.val()));
                 
                 const results = await Promise.all(promises);
-                const freshData = results.find(x => x);
+                
+                // ഡാറ്റ മെർജ് ചെയ്യുന്നു
+                let freshData = null;
+                for (const data of results) {
+                    if (!data) continue;
+                    if (!freshData) {
+                        freshData = { ...data };
+                    } else {
+                        if (data.status === 'approved') freshData.status = 'approved';
+                        if (data.photo) freshData.photo = data.photo;
+                    }
+                }
+
                 if (freshData) {
                     // Normalize data structure if needed
                     freshData.reg = freshData.reg || sid;
+                    
+                    // സ്റ്റാറ്റസ് പെൻഡിങ് ആണെങ്കിൽ മാത്രം പേജ് മാറ്റുക
+                    if (freshData.status !== 'approved' && !cached) {
+                        showPage('pendingPage');
+                        return;
+                    }
+
                     localStorage.setItem("madrasaData", JSON.stringify(freshData));
                     renderProfile(freshData);
                 }
@@ -692,7 +719,7 @@
     if (profileArea) {
         profileArea.innerHTML = `
             <div style="background: linear-gradient(135deg, #004d00, #002b00); color: white; padding: 40px 20px; text-align: center; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-                <img src="${d.photo || 'logo.png'}" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
+                <img src="${d.photo || 'logo.png'}" onerror="this.src='logo.png'" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid white; object-fit: cover; background: white; margin-bottom: 15px;">
                 <h1 style="margin:0; font-size:22px;">${madrasaName}</h1>
                 <h2 style="margin:0; font-size:18px; opacity: 0.9;">${madrasaPlace}</h2>
                 <div style="display: inline-block; background: rgba(255,255,255,0.2); color: white; padding: 4px 15px; border-radius: 50px; font-weight: bold; font-size: 13px; margin-top: 10px;">REG NO: ${d.reg || ''}</div>

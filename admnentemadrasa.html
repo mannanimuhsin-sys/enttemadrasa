@@ -7,6 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase_config.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -229,6 +231,17 @@
 
             await db.ref('madrasa_requests/' + editingId).update(updates);
             await firestore.collection('madrasa_requests').doc(editingId).set(updates, { merge: true });
+            
+            if (window.supabaseClient) {
+                let sbUpdates = {};
+                if(uPass) sbUpdates.usthad_pass = await hashPassword(uPass);
+                if(pPass) sbUpdates.parent_pass = await hashPassword(pPass);
+                
+                await window.supabaseClient
+                    .from('madrasa_requests')
+                    .update(sbUpdates)
+                    .eq('reg', editingId);
+            }
             
             alert("പാസ്‌വേഡ് വിജയകരമായി മാറ്റി!");
             closeModal();
