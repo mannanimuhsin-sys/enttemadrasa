@@ -231,6 +231,7 @@
 
         // --- സോർട്ടിങ് ലോജിക് ---
         sortClassesArray(classes);
+        currentClasses = classes;
 
         let html = "";
         let totalBoys = 0, totalGirls = 0, totalAll = 0;
@@ -301,6 +302,9 @@
                 <td colspan="2">TOTAL STRENGTH</td>
             </tr>`;
     }
+    let currentClasses = [];
+    let editingIndex = -1;
+
     // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
     async function saveClass() {
         if(!mId) return alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
@@ -315,27 +319,40 @@
         if(!name || !u || !p) return alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
 
         try {
-            // ✅ ഡാറ്റാബേസുകളിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
-            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-            let data = doc.exists ? doc.data() : null;
-            
+            // Get latest data to ensure we don't overwrite other fields
+            let data = null;
+            if (window.supabaseClient) {
+                const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
+                data = sData;
+            }
+            if (!data) {
+                const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                data = doc.exists ? doc.data() : null;
+            }
             if (!data) {
                 const snap = await db.ref('madrasa_requests/' + mId).once('value');
                 data = snap.val();
-                if (!data && window.supabaseClient) {
-                    const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
-                    data = sData;
-                }
-                if (!data) return alert("Madrasa data not found!");
             }
+            if (!data) return alert("Madrasa data not found!");
 
             let classes = data.classes || [];
-            classes.push({ name, div, b, g, u, p });
-            
-            // Sort to ensure the database version matches UI version
             sortClassesArray(classes);
 
-            // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു (set use ചെയ്യുന്നത് ഡോക്യുമെന്റ് ഇല്ലെങ്കിലും വർക്ക് ചെയ്യാൻ വേണ്ടിയാണ്)
+            if (editingIndex !== -1) {
+                classes[editingIndex] = { name, div, b, g, u, p };
+                editingIndex = -1;
+                
+                // Reset button text
+                const btn = document.querySelector('.btn-add');
+                btn.innerHTML = "SAVE DATA";
+                btn.style.backgroundColor = "#004d00";
+            } else {
+                classes.push({ name, div, b, g, u, p });
+            }
+            
+            sortClassesArray(classes);
+
+            // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു
             await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
             
             // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
@@ -357,9 +374,9 @@
             document.getElementById('cUsthad').value = "";
             document.getElementById('cPhone').value = "";
             
-            alert("വിവരങ്ങൾ വിജയകരമായി ചേർത്തു!");
+            alert("വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു!");
             
-            // UI Update explicitly to avoid waiting for slow/failed listeners
+            // UI Update explicitly
             data.classes = classes;
             renderContent(data);
         } catch (error) {
@@ -369,42 +386,42 @@
     }
 
     // എഡിറ്റ് ചെയ്യാൻ
-    async function editClass(index) {
-        let classes = [];
-        const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-        if (doc.exists) {
-            classes = doc.data().classes || [];
-        } else {
-            const snap = await db.ref('madrasa_requests/' + mId + '/classes').once('value');
-            classes = snap.val() || [];
-        }
-        
-        // Sort before accessing index because renderContent sorted it
-        sortClassesArray(classes);
-        const data = classes[index];
-        
+    function editClass(index) {
+        const data = currentClasses[index];
         if(data) {
-            document.getElementById('cName').value = data.name;
+            document.getElementById('cName').value = data.name || "";
             document.getElementById('cDiv').value = data.div || "";
-            document.getElementById('cBoys').value = data.b;
-            document.getElementById('cGirls').value = data.g;
-            document.getElementById('cUsthad').value = data.u;
-            document.getElementById('cPhone').value = data.p;
+            document.getElementById('cBoys').value = data.b || "";
+            document.getElementById('cGirls').value = data.g || "";
+            document.getElementById('cUsthad').value = data.u || "";
+            document.getElementById('cPhone').value = data.p || "";
 
-            // എഡിറ്റ് ചെയ്യുമ്പോൾ ലിസ്റ്റിൽ നിന്ന് താൽക്കാലികമായി മാറ്റുന്നു
-            await deleteClass(index, false);
+            editingIndex = index;
+            
+            // Change button text to indicate update mode
+            const btn = document.querySelector('.btn-add');
+            btn.innerHTML = "UPDATE DATA";
+            btn.style.backgroundColor = "#0056b3";
+
+            // Scroll to the admin area so user can see the form
+            document.getElementById('adminArea').scrollIntoView({behavior: 'smooth', block: 'center'});
             document.getElementById('cName').focus();
         }
     }
 
     // ഡിലീറ്റ് ചെയ്യാൻ
-    async function deleteClass(index, ask = true) {
-        if(!ask || confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
+    async function deleteClass(index) {
+        if(confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
             try {
-                // ഡാറ്റ എടുക്കുന്നു
-                const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                let data = doc.exists ? doc.data() : null;
-                
+                let data = null;
+                if (window.supabaseClient) {
+                    const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
+                    data = sData;
+                }
+                if (!data) {
+                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                    data = doc.exists ? doc.data() : null;
+                }
                 if (!data) {
                     const snap = await db.ref('madrasa_requests/' + mId).once('value');
                     data = snap.val();
@@ -413,7 +430,6 @@
                 if (!data) return;
 
                 let classes = data.classes || [];
-                // Sort array first so index matches what the user clicked in the UI
                 sortClassesArray(classes);
                 classes.splice(index, 1);
 
@@ -432,6 +448,22 @@
                 // Explicit UI Update
                 data.classes = classes;
                 renderContent(data);
+                
+                // If the deleted item was being edited, reset the form
+                if (editingIndex === index) {
+                    editingIndex = -1;
+                    document.getElementById('cName').value = "";
+                    document.getElementById('cDiv').value = "";
+                    document.getElementById('cBoys').value = "";
+                    document.getElementById('cGirls').value = "";
+                    document.getElementById('cUsthad').value = "";
+                    document.getElementById('cPhone').value = "";
+                    const btn = document.querySelector('.btn-add');
+                    btn.innerHTML = "SAVE DATA";
+                    btn.style.backgroundColor = "#004d00";
+                } else if (editingIndex > index) {
+                    editingIndex--; // Adjust index if a previous item was deleted
+                }
             } catch (error) {
                 console.error("Delete Class Error:", error);
                 alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്!");
