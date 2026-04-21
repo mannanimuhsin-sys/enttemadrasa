@@ -111,7 +111,7 @@
 <div id="editModal">
     <div class="modal-content">
         <h3>വിദ്യാർത്ഥിയുടെ വിവരങ്ങൾ മാറ്റുക</h3>
-        <input type="hidden" id="editRegNo">
+        <input type="hidden" id="oldRegNo">
         
         <div style="text-align: center; margin-bottom: 10px;">
             <img id="editPhotoPreview" style="width: 80px; height: 100px; border-radius: 5px; object-fit: cover; border: 1px solid #ccc;">
@@ -119,6 +119,7 @@
             <button class="btn-small btn-edit" style="display:block; margin: 5px auto;" onclick="document.getElementById('editPhotoInput').click()">Change Photo</button>
         </div>
 
+        <label>Register Number</label><input type="text" id="editRegNo">
         <label>Name</label><input type="text" id="editName">
         <label>Class</label><input type="text" id="editClass">
         <label>Phone</label><input type="tel" id="editPhone">
@@ -277,6 +278,7 @@ async function quickApprove(regno) {
 
 function openEdit(student) {
     newPhotoData = "";
+    document.getElementById('oldRegNo').value = student.regno || student.number;
     document.getElementById('editRegNo').value = student.regno || student.number;
     document.getElementById('editName').value = student.name;
     document.getElementById('editClass').value = student.class;
@@ -304,13 +306,17 @@ document.getElementById('editPhotoInput').onchange = e => {
 
 async function updateStudent() {
     const btn = document.getElementById('updateBtn');
-    const regno = document.getElementById('editRegNo').value;
-    const docId = mId + "_" + regno;
+    const oldRegno = document.getElementById('oldRegNo').value;
+    const newRegno = document.getElementById('editRegNo').value.trim();
+    const oldDocId = mId + "_" + oldRegno;
+    const newDocId = mId + "_" + newRegno;
     
     btn.disabled = true;
     btn.innerText = "Updating...";
 
     const updateObj = {
+        regno: newRegno,
+        number: newRegno,
         name: document.getElementById('editName').value,
         class: document.getElementById('editClass').value,
         phone: document.getElementById('editPhone').value,
@@ -336,7 +342,17 @@ async function updateStudent() {
             if (json.success) updateObj.photo = json.data.url;
         }
 
-        await db.collection("students").doc(docId).update(updateObj);
+        if (oldRegno !== newRegno) {
+            const docSnap = await db.collection("students").doc(oldDocId).get();
+            if (docSnap.exists) {
+                const mergedData = { ...docSnap.data(), ...updateObj };
+                await db.collection("students").doc(newDocId).set(mergedData);
+                await db.collection("students").doc(oldDocId).delete();
+            }
+        } else {
+            await db.collection("students").doc(oldDocId).update(updateObj);
+        }
+
         alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
         document.getElementById('editModal').style.display = 'none';
         loadStudents();
