@@ -84,6 +84,9 @@
         <label style="font-size: 12px;">മദ്റസയുടെ പേര്:</label>
         <input type="text" id="newMadrasaName" placeholder="Enter Madrasa Name">
 
+        <label style="font-size: 12px;">മദ്റസയുടെ സ്ഥലം:</label>
+        <input type="text" id="newMadrasaPlace" placeholder="Enter Location">
+
         <label style="font-size: 12px;">പുതിയ ഉസ്താദ് പാസ്‌വേഡ്:</label>
         <input type="text" id="newUsthadPass" placeholder="Enter New Password">
         
@@ -156,6 +159,7 @@
                             <h3>${data.name}</h3>
                             <div class="details-text">
                                 <b>REG:</b> ${data.reg} | <b>ID:</b> ${data.id}<br>
+                                <b>PLACE:</b> ${data.place || 'Not set'}<br>
                                 <span class="status-badge bg-${data.status}">${data.status}</span>
                             </div>
                         </div>
@@ -163,7 +167,7 @@
                     <div class="action-row">
                         ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-check"></i> APPROVE</button>` : ''}
                         ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked')"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
-                        <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}')"><i class="fas fa-edit"></i> EDIT</button>
+                        <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}', '${data.place || ''}')"><i class="fas fa-edit"></i> EDIT</button>
                         <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}')"><i class="fas fa-trash"></i> DELETE</button>
                     </div>
                 </div>
@@ -215,16 +219,18 @@
         }
     }
 
-    function openEditModal(id, name) {
+    function openEditModal(id, name, place) {
         editingId = id;
         document.getElementById('targetName').innerText = name;
         document.getElementById('newMadrasaName').value = name;
+        document.getElementById('newMadrasaPlace').value = place || "";
         document.getElementById('editModal').style.display = 'block';
     }
 
     function closeModal() {
         document.getElementById('editModal').style.display = 'none';
         document.getElementById('newMadrasaName').value = "";
+        document.getElementById('newMadrasaPlace').value = "";
         document.getElementById('newUsthadPass').value = "";
         document.getElementById('newParentPass').value = "";
         document.getElementById('newPhotoFile').value = "";
@@ -245,12 +251,13 @@
 
     async function saveEdits() {
         const newName = document.getElementById('newMadrasaName').value.trim();
+        const newPlace = document.getElementById('newMadrasaPlace').value.trim();
         const uPass = document.getElementById('newUsthadPass').value.trim();
         const pPass = document.getElementById('newParentPass').value.trim();
         const photoInput = document.getElementById('newPhotoFile');
         const saveBtn = document.getElementById('saveEditBtn');
         
-        if (!newName && !uPass && !pPass && (!photoInput.files || !photoInput.files[0])) return alert("മാറ്റം വരുത്താൻ വിവരങ്ങൾ നൽകുക!");
+        if (!newName && !newPlace && !uPass && !pPass && (!photoInput.files || !photoInput.files[0])) return alert("മാറ്റം വരുത്താൻ വിവരങ്ങൾ നൽകുക!");
 
         saveBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> സേവ് ചെയ്യുന്നു...";
         saveBtn.disabled = true;
@@ -262,6 +269,10 @@
             if (newName) {
                 updates.name = newName;
                 sbUpdates.name = newName;
+            }
+            if (newPlace) {
+                updates.place = newPlace;
+                sbUpdates.place = newPlace;
             }
             if(uPass) {
                 updates.usthadPass = await hashPassword(uPass);
