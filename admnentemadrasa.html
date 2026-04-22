@@ -81,6 +81,9 @@
         <h3 style="margin-top:0">വിവരങ്ങൾ മാറ്റുക</h3>
         <p id="targetName" style="font-size: 14px; color: var(--primary); font-weight: bold;"></p>
         
+        <label style="font-size: 12px;">മദ്റസയുടെ പേര്:</label>
+        <input type="text" id="newMadrasaName" placeholder="Enter Madrasa Name">
+
         <label style="font-size: 12px;">പുതിയ ഉസ്താദ് പാസ്‌വേഡ്:</label>
         <input type="text" id="newUsthadPass" placeholder="Enter New Password">
         
@@ -215,11 +218,13 @@
     function openEditModal(id, name) {
         editingId = id;
         document.getElementById('targetName').innerText = name;
+        document.getElementById('newMadrasaName').value = name;
         document.getElementById('editModal').style.display = 'block';
     }
 
     function closeModal() {
         document.getElementById('editModal').style.display = 'none';
+        document.getElementById('newMadrasaName').value = "";
         document.getElementById('newUsthadPass').value = "";
         document.getElementById('newParentPass').value = "";
         document.getElementById('newPhotoFile').value = "";
@@ -239,12 +244,13 @@
     }
 
     async function saveEdits() {
+        const newName = document.getElementById('newMadrasaName').value.trim();
         const uPass = document.getElementById('newUsthadPass').value.trim();
         const pPass = document.getElementById('newParentPass').value.trim();
         const photoInput = document.getElementById('newPhotoFile');
         const saveBtn = document.getElementById('saveEditBtn');
         
-        if (!uPass && !pPass && (!photoInput.files || !photoInput.files[0])) return alert("മാറ്റം വരുത്താൻ വിവരങ്ങൾ നൽകുക!");
+        if (!newName && !uPass && !pPass && (!photoInput.files || !photoInput.files[0])) return alert("മാറ്റം വരുത്താൻ വിവരങ്ങൾ നൽകുക!");
 
         saveBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> സേവ് ചെയ്യുന്നു...";
         saveBtn.disabled = true;
@@ -253,6 +259,10 @@
             let updates = {};
             let sbUpdates = {};
             
+            if (newName) {
+                updates.name = newName;
+                sbUpdates.name = newName;
+            }
             if(uPass) {
                 updates.usthadPass = await hashPassword(uPass);
                 sbUpdates.usthad_pass = updates.usthadPass;
