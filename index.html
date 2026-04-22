@@ -24,26 +24,51 @@
 
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: var(--bg);
+            background: linear-gradient(135deg, #004d00 0%, #002b00 100%);
+            background-attachment: fixed;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
 
         .container {
             width: 100%;
             max-width: 500px;
-            background: white;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
             min-height: 100vh;
             margin: auto;
             position: relative;
             padding: 15px;
             box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #loginPage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .login-box {
+            width: 100%;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
         }
 
         .page {
             display: none;
-            animation: fadeIn 0.15s ease-out;
+            width: 100%;
+            animation: fadeIn 0.3s ease-out;
         }
 
         .active {
@@ -126,26 +151,51 @@
 
         input {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1.5px solid #eee;
-            border-radius: 10px;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
             box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fdfdfd;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 77, 0, 0.1);
+            outline: none;
         }
 
         .btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), #006400);
             color: white;
+            box-shadow: 0 5px 15px rgba(0, 77, 0, 0.3);
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 8px 20px rgba(0, 77, 0, 0.4);
         }
 
         /* ✅ ഗ്രിഡ് ലേഔട്ട് */
@@ -322,34 +372,78 @@
 
     <div class="container">
         <div id="loginPage" class="page">
-            <div style="text-align: center; margin-top: 40px;">
-                <img src="logo.png" style="width: 90px;">
-                <h1 style="color: var(--primary); margin: 10px 0;">എന്‍റെ മദ്റസ</h1>
+            <div class="login-box">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <img src="logo.png" style="width: 100px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));">
+                    <h1 style="color: var(--primary); margin: 15px 0 5px 0; font-size: 28px; font-weight: 900;">എന്‍റെ മദ്റസ</h1>
+                    <p style="color: #666; font-size: 14px; margin: 0;">Smart Madrasa Management System</p>
+                </div>
+                
+                <div style="text-align: left;">
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസ രജിസ്റ്റർ നമ്പർ</label>
+                    <input type="text" id="logReg" placeholder="Enter Register Number">
+                    
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px; margin-top: 10px; display: block;">പാസ്‌വേഡ്</label>
+                    <input type="password" id="logPass" placeholder="Enter Password">
+                </div>
+                
+                <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">
+                    <i class="fas fa-sign-in-alt"></i> LOGIN
+                </button>
+                
+                <p style="margin-top: 25px; font-size: 13px; color: #888;">
+                    പുതിയ മദ്റസയാണോ? <a href="#" onclick="showPage('regPage')" style="color: var(--primary); font-weight: bold; text-decoration: none;">ഇവിടെ രജിസ്റ്റർ ചെയ്യുക</a>
+                </p>
             </div>
-            <input type="text" id="logReg" placeholder="മദ്റസ രജിസ്റ്റർ നമ്പർ">
-            <input type="password" id="logPass" placeholder="പാസ്‌വേഡ്">
-            <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">LOGIN</button>
-
         </div>
 
         <div id="regPage" class="page">
-            <h2 style="text-align: center; color: var(--primary);">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
-            <div style="text-align: center;">
-                <img id="imagePrev" src="">
-                <label for="mPhoto"
-                    style="cursor: pointer; color: var(--primary); font-weight: bold; display: block; margin: 10px 0;">
-                    <i class="fa fa-camera"></i> മദ്റസ ഫോട്ടോ ചേർക്കുക
-                </label>
-                <input type="file" id="mPhoto" accept="image/*" style="display: none;" onchange="previewImage(this)">
+            <div class="login-box" style="margin-top: 20px;">
+                <h2 style="text-align: center; color: var(--primary); font-weight: 900; margin-bottom: 25px;">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="position: relative; display: inline-block;">
+                        <img id="imagePrev" src="logo.png" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); padding: 5px; background: white; display: block; margin: 0 auto;">
+                        <label for="mPhoto" style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                            <i class="fa fa-camera"></i>
+                        </label>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">മദ്റസ ഫോട്ടോ ചേർക്കുക</p>
+                    <input type="file" id="mPhoto" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                </div>
+
+                <div style="text-align: left;">
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസയുടെ പേര്</label>
+                    <input type="text" id="rName" placeholder="Enter Madrasa Name">
+                    
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">സ്ഥലം</label>
+                    <input type="text" id="rPlace" placeholder="Enter Location">
+                    
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസ രജിസ്റ്റർ നമ്പർ</label>
+                    <input type="text" id="rReg" placeholder="Enter Reg Number">
+                    
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">User ID</label>
+                    <input type="text" id="rUser" placeholder="Create User ID">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">ഉസ്താദ് പാസ്‌വേഡ്</label>
+                            <input type="password" id="rUsthad" placeholder="Password">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">പാരന്റ് പാസ്‌വേഡ്</label>
+                            <input type="password" id="rParent" placeholder="Password">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="regBtn" onclick="register()">
+                    <i class="fas fa-user-plus"></i> REGISTER NOW
+                </button>
+                <button class="btn" style="background: #f0f0f0; color: #555; margin-top: 10px;" onclick="showPage('loginPage')">
+                    <i class="fas fa-arrow-left"></i> BACK TO LOGIN
+                </button>
             </div>
-            <input type="text" id="rName" placeholder="മദ്റസയുടെ പേര്">
-            <input type="text" id="rPlace" placeholder="സ്ഥലം">
-            <input type="text" id="rReg" placeholder="മദ്റസ രജിസ്റ്റർ നമ്പർ">
-            <input type="text" id="rUser" placeholder="User ID">
-            <input type="password" id="rUsthad" placeholder="ഉസ്താദ് പാസ്‌വേഡ്">
-            <input type="password" id="rParent" placeholder="പാരന്റ് പാസ്‌വേഡ്">
-            <button class="btn btn-primary" id="regBtn" onclick="register()">REGISTER NOW</button>
-            <button class="btn" style="background: #ccc;" onclick="showPage('loginPage')">BACK</button>
         </div>
 
         <div id="portalPage" class="page">
