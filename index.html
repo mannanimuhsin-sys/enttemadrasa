@@ -62,9 +62,8 @@
             }
         }
 
-        #loginPage, #regPage {
+        #loginPage, #regPage, #pendingPage {
             flex: 1;
-            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -74,6 +73,7 @@
 
         #loginPage .login-box, #regPage .login-box {
             max-width: 420px;
+            width: 100%;
             margin: auto;
         }
 
@@ -87,13 +87,18 @@
         }
 
         .page {
-            display: none;
+            display: none !important;
             width: 100%;
             animation: fadeIn 0.3s ease-out;
+            box-sizing: border-box;
         }
 
-        .active {
+        .page.active {
             display: block !important;
+        }
+
+        #loginPage.active, #regPage.active, #pendingPage.active {
+            display: flex !important;
         }
 
         /* ✅ ലോഡിംഗ് സ്ക്രീൻ */
