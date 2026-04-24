@@ -59,11 +59,15 @@
             </select>
             <input type="text" id="payTitle" placeholder="വിഷയം (ഉദാ: April Fee 2026)">
             <input type="number" id="payAmt" placeholder="തുക (₹)">
-            <select id="classSel" onchange="loadStudents()">
+            <select id="classSel">
                 <option value="All">എല്ലാ ക്ലാസ്സും</option>
                 <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`)</script>
             </select>
         </div>
+        
+        <button class="btn" style="background: #27ae60; color: white; width: 100%; margin-bottom: 15px;" onclick="loadStudents()">
+            <i class="fa fa-download"></i> വിദ്യാർത്ഥികളെ ലോഡ് ചെയ്യുക
+        </button>
         
         <p style="font-size: 12px; color: #666; margin: 0 0 10px 5px;">താഴെ കാണുന്ന ലിസ്റ്റിൽ നിന്നും കുട്ടികളെ തിരഞ്ഞെടുക്കുക:</p>
         <div class="scroll-area">

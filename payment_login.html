@@ -8,74 +8,237 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; --gold: #d4af37; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .container { max-width: 450px; margin: auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); min-height: 90vh; }
+        :root { 
+            --primary: #054a29; 
+            --primary-light: #0a7342; 
+            --gold: #d4af37; 
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: linear-gradient(135deg, #dcfce7 0%, #a7f3d0 100%); 
+            margin: 0; 
+            padding: 15px; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container { 
+            width: 100%;
+            max-width: 480px; 
+            margin: auto; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+            transition: all 0.3s ease;
+        }
         
         /* Header Section */
-        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; }
-        .m-name { margin: 0; font-size: 22px; font-weight: 800; }
-        .m-place { margin: 5px 0 0; font-size: 13px; opacity: 0.9; }
+        .header { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); 
+            color: white; 
+            padding: 35px 20px; 
+            text-align: center; 
+            position: relative;
+            overflow: hidden;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            transform: rotate(30deg);
+        }
+        .m-name { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; position: relative; z-index: 1;}
+        .m-place { margin: 8px 0 0; font-size: 14px; opacity: 0.9; font-weight: 300; position: relative; z-index: 1;}
 
         /* Login Box */
-        .login-section { padding: 30px 20px; text-align: center; }
-        .login-section h3 { color: var(--primary); margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1.5px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
-        .btn-login { width: 100%; padding: 13px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .login-section { padding: 40px 25px; text-align: center; }
+        .login-section h3 { color: var(--text-dark); margin: 0 0 10px; font-size: 22px; font-weight: 700; }
+        .login-section p { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5; }
         
-        /* Profile & Payment Area (Hidden Initially) */
-        #portalArea { display: none; padding: 15px; animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px;}
+        input { 
+            width: 100%; 
+            padding: 15px 15px 15px 45px; 
+            border: 2px solid transparent; 
+            background: rgba(255,255,255,0.9);
+            border-radius: 14px; 
+            box-sizing: border-box; 
+            font-size: 15px; 
+            font-family: inherit;
+            color: var(--text-dark);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+        input:focus { outline: none; border-color: var(--primary-light); background: white; box-shadow: 0 4px 15px rgba(10, 115, 66, 0.1); }
+        
+        .btn-login { 
+            width: 100%; 
+            padding: 16px; 
+            margin-top: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 14px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-size: 16px; 
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 20px rgba(5, 74, 41, 0.25);
+            transition: all 0.3s ease; 
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(5, 74, 41, 0.35); }
+        
+        /* Profile & Payment Area */
+        #portalArea { display: none; padding: 25px; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .student-info { background: #e8f5e9; padding: 15px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid var(--gold); }
-        .student-info h4 { margin: 0; color: var(--primary); font-size: 18px; }
+        .student-info { 
+            background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%); 
+            padding: 20px; 
+            border-radius: 18px; 
+            margin-bottom: 25px; 
+            border-left: 6px solid var(--primary); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .student-avatar {
+            width: 50px; height: 50px;
+            background: var(--primary-light);
+            color: white;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .student-details h4 { margin: 0; color: var(--text-dark); font-size: 19px; font-weight: 700; }
+        .student-details p { margin: 5px 0 0; font-size: 13px; color: var(--text-muted); font-weight: 500;}
         
-        .pay-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .pay-meta b { color: var(--primary); display: block; margin-bottom: 3px; }
-        .pay-meta small { color: #777; font-size: 12px; }
+        .section-title { margin: 0 0 15px; color: var(--text-dark); font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        .section-title i { color: var(--primary); }
+
+        .pay-card { 
+            background: white; 
+            border: 1px solid rgba(0,0,0,0.04); 
+            padding: 18px; 
+            border-radius: 16px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .pay-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
         
-        .amount-area { text-align: right; }
-        .amount-area span { font-size: 18px; font-weight: 800; display: block; }
-        .btn-receipt { background: var(--gold); color: black; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .pay-meta b { color: var(--text-dark); display: block; margin-bottom: 6px; font-size: 16px; font-weight: 700;}
+        .pay-meta small { color: var(--text-muted); font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 5px; margin-bottom: 8px;}
         
-        .status-paid { background: #c8e6c9; color: #1b5e20; font-size: 10px; padding: 3px 8px; border-radius: 50px; font-weight: bold; }
-        .status-pending { background: #fff3cd; color: #856404; font-size: 10px; padding: 3px 8px; border-radius: 50px; font-weight: bold; }
-        .btn-logout { background: #f8d7da; color: #721c24; border: none; width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; margin-top: 20px; font-weight: bold; }
+        .amount-area { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;}
+        .amount-area span { font-size: 20px; font-weight: 800; color: var(--primary); }
+        
+        .btn-receipt { 
+            background: rgba(212, 175, 55, 0.15); 
+            color: #b8860b; 
+            border: 1px solid rgba(212, 175, 55, 0.3); 
+            padding: 6px 14px; 
+            border-radius: 8px; 
+            font-size: 12px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .btn-receipt:hover { background: var(--gold); color: white; border-color: var(--gold);}
+        
+        .status-badge { font-size: 11px; padding: 5px 10px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.5px;}
+        .status-paid { background: #dcfce7; color: #15803d; }
+        .status-pending { background: #fef3c7; color: #b45309; }
+        
+        .btn-logout { 
+            background: rgba(239, 68, 68, 0.1); 
+            color: #ef4444; 
+            border: 1px solid rgba(239, 68, 68, 0.2); 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            margin-top: 25px; 
+            font-weight: 700; 
+            font-size: 15px;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-logout:hover { background: #ef4444; color: white; }
+
+        /* Loader */
+        .loader-spinner { display: none; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1 id="mNameDisplay" class="m-name">മദ്റസ പോർട്ടൽ</h1>
-        <p id="mPlaceDisplay" class="m-place">ലോഡ് ചെയ്യുന്നു...</p>
+        <h1 id="mNameDisplay" class="m-name">മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ</h1>
+        <p id="mPlaceDisplay" class="m-place">ലോഗിൻ ചെയ്യുക</p>
     </div>
 
     <div id="loginSection" class="login-section">
-        <h3>വിദ്യാർത്ഥി ലോഗിൻ</h3>
-        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">പെയ്‌മെന്റ് വിവരങ്ങൾക്കായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക</p>
-        <input type="number" id="regNo" placeholder="രജിസ്റ്റർ നമ്പർ">
-        <input type="password" id="pass" placeholder="പാസ്‌വേഡ്">
-        <button class="btn-login" onclick="handleLogin()">LOGIN & VIEW INFO</button>
+        <h3>രക്ഷിതാക്കളുടെ ലോഗിൻ</h3>
+        <p>വിദ്യാർത്ഥിയുടെ പെയ്‌മെന്റ് വിവരങ്ങൾ അറിയാൻ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക</p>
+        
+        <div class="input-group">
+            <i class="fa fa-id-card"></i>
+            <input type="number" id="regNo" placeholder="രജിസ്റ്റർ നമ്പർ (Reg No)">
+        </div>
+        <div class="input-group">
+            <i class="fa fa-lock"></i>
+            <input type="password" id="pass" placeholder="പാസ്‌വേഡ് (Password)">
+        </div>
+        
+        <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+            <span id="loginText">ലോഗിൻ ചെയ്യുക</span>
+            <div id="loginLoader" class="loader-spinner"></div>
+        </button>
     </div>
 
     <div id="portalArea">
         <div class="student-info">
-            <h4 id="dispSName">Student Name</h4>
-            <p id="dispSReg" style="margin:5px 0 0; font-size:13px; color:#555;">Reg: 000 | Class: --</p>
+            <div class="student-avatar"><i class="fa fa-user-graduate"></i></div>
+            <div class="student-details">
+                <h4 id="dispSName">Student Name</h4>
+                <p id="dispSReg">Reg: 000 &bull; Class: --</p>
+            </div>
         </div>
 
-        <h4 style="margin: 0 0 15px 5px; color: #333; font-size: 15px;"><i class="fa fa-history"></i> പെയ്‌മെന്റ് ചരിത്രം</h4>
+        <h4 class="section-title"><i class="fa fa-file-invoice-dollar"></i> ഫീസ് വിവരങ്ങൾ</h4>
         <div id="paymentHistory">
-            </div>
+            <!-- Payments will load here -->
+        </div>
 
-        <button class="btn-logout" onclick="logout()">LOGOUT</button>
+        <button class="btn-logout" onclick="logout()">
+            <i class="fa fa-sign-out-alt"></i> ലോഗൗട്ട്
+        </button>
     </div>
 </div>
 
 <script>
-    // Firebase Config (നിങ്ങളുടെ അതേ ഐഡി ഉപയോഗിക്കുന്നു)
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyCe98Gw-si7idO0m8y5xbLLG8Z2HC3RCKE",
         authDomain: "mum-new-id.firebaseapp.com",
@@ -89,7 +252,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const mID = urlParams.get('id') || urlParams.get('mid');
 
-    // മദ്രസ വിവരങ്ങൾ മുകളിൽ കാണിക്കാൻ
     if(mID) {
         rtdb.ref('madrasa_requests/' + mID).once('value', snap => {
             const d = snap.val();
@@ -103,11 +265,15 @@
     async function handleLogin() {
         const reg = document.getElementById('regNo').value;
         const pass = document.getElementById('pass').value;
+        const btnText = document.getElementById('loginText');
+        const loader = document.getElementById('loginLoader');
 
-        if(!reg || !pass) return alert("വിവരങ്ങൾ നൽകുക");
+        if(!reg || !pass) return alert("ദയവായി വിവരങ്ങൾ നൽകുക");
+
+        btnText.style.display = 'none';
+        loader.style.display = 'block';
 
         try {
-            // ഐഡി കാർഡ് വിവരങ്ങളിൽ തിരയുന്നു
             const doc = await fs.collection("students").doc(reg).get();
             if(doc.exists) {
                 const s = doc.data();
@@ -119,7 +285,12 @@
             } else {
                 alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!");
             }
-        } catch (e) { alert("Error loading student info"); }
+        } catch (e) { 
+            alert("Error loading student info"); 
+        } finally {
+            btnText.style.display = 'block';
+            loader.style.display = 'none';
+        }
     }
 
     function showPortal(student) {
@@ -127,29 +298,44 @@
         document.getElementById('portalArea').style.display = 'block';
 
         document.getElementById('dispSName').innerText = student.name;
-        document.getElementById('dispSReg').innerText = `Reg: ${student.number} | Class: ${student.class} | ${student.gender}`;
+        document.getElementById('dispSReg').innerText = `Reg: ${student.number} • Class: ${student.class}`;
 
-        // പെയ്‌മെന്റ് ചരിത്രം ലോഡ് ചെയ്യുന്നു
         rtdb.ref('payments/' + mID + '/' + student.number).on('value', snap => {
             const list = document.getElementById('paymentHistory');
             list.innerHTML = "";
 
             if(!snap.exists()) {
-                list.innerHTML = "<p style='text-align:center; padding:30px; color:#999;'>പെയ്‌മെന്റ് വിവരങ്ങൾ ലഭ്യമല്ല</p>";
+                list.innerHTML = `
+                    <div style="text-align:center; padding:40px 20px; background:white; border-radius:16px; border:1px dashed #ccc;">
+                        <i class="fa fa-check-circle" style="font-size:40px; color:#10b981; margin-bottom:15px; opacity:0.5;"></i>
+                        <p style='color:#6b7280; margin:0; font-weight:500;'>നിലവിൽ അടക്കാനുള്ള ഫീസുകൾ ഒന്നുമില്ല</p>
+                    </div>`;
                 return;
             }
 
+            // Convert to array to sort by newest first (optional but good for UX)
+            const payments = [];
             snap.forEach(child => {
-                const p = child.val();
-                const statusClass = p.status === "Paid" ? "status-paid" : "status-pending";
-                const statusText = p.status === "Paid" ? "PAID ✅" : "PENDING ⏳";
-                const receiptButton = p.status === "Paid" ? `<button class="btn-receipt" onclick='printReceipt(${JSON.stringify(p)})'>RECEIPT</button>` : "";
+                payments.push({ id: child.key, ...child.val() });
+            });
+            payments.reverse();
+
+            payments.forEach(p => {
+                const isPaid = p.status === "Paid" || p.status === "PAID";
+                const statusClass = isPaid ? "status-paid" : "status-pending";
+                const statusIcon = isPaid ? "fa-check-circle" : "fa-clock";
+                const statusText = isPaid ? "അടച്ചു (PAID)" : "അടക്കാനുണ്ട് (PENDING)";
+                
+                const receiptButton = isPaid 
+                    ? `<button class="btn-receipt" onclick='printReceipt(${JSON.stringify(p)})'><i class="fa fa-download"></i> രസീത്</button>` 
+                    : ``;
+
                 list.innerHTML += `
                     <div class="pay-card">
                         <div class="pay-meta">
                             <b>${p.category || p.title}</b>
-                            <small>${p.date}</small>
-                            <span class="${statusClass}">${statusText}</span>
+                            <small><i class="fa fa-calendar-alt"></i> ${p.date}</small>
+                            <span class="status-badge ${statusClass}"><i class="fa ${statusIcon}"></i> ${statusText}</span>
                         </div>
                         <div class="amount-area">
                             <span>₹${p.amount}</span>
@@ -161,7 +347,6 @@
     }
 
     function printReceipt(p) {
-        //പ്പെടുത്തിയ പെയ്‌മെന്റ് വിവരങ്ങൾ റസീറ്റ് കാണിക്കാൻ സേവ് ചെയ്യുന്നു
         localStorage.setItem("currentReceipt", JSON.stringify(p));
         window.location.href = `payment_view.html?id=${mID}`;
     }
