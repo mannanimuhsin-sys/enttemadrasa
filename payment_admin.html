@@ -62,9 +62,14 @@
         <div class="header-section"><i class="fa fa-plus-circle"></i> പുതിയ പെയ്‌മെന്റ് നൽകുക</div>
         
         <div class="form-group">
-            <label>വിഷയം (Title)</label>
-            <input type="text" id="payTitle" placeholder="ഉദാ: പരീക്ഷ ഫീസ്">
-        </div>
+    <label>വിഷയം (Title)</label>
+    <input type="text" id="payTitle" list="titleHistory" placeholder="ഉദാ: പരീക്ഷ ഫീസ്">
+    <datalist id="titleHistory"></datalist>
+    
+    <p id="clearHistoryLink" style="font-size: 11px; color: #e74c3c; cursor: pointer; margin-top: 5px; display: none;" onclick="clearTitleHistory()">
+        <i class="fa fa-trash"></i> ഹിസ്റ്ററി ക്ലിയർ ചെയ്യുക
+    </p>
+</div>
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div class="form-group">
@@ -188,22 +193,44 @@ function toggleSelectAll(master) {
 
 // Save Payment Request
 async function requestPayment() {
-    const title = document.getElementById('payTitle').value.trim();
+    const titleInput = document.getElementById('payTitle');
+    const title = titleInput.value.trim();
     const amt = document.getElementById('payAmt').value;
     const checks = document.querySelectorAll('.sc:checked');
+    const btn = document.getElementById('requestBtn');
+
     if(!title || !amt || checks.length === 0) return alert("വിവരങ്ങൾ നൽകുക!");
 
-    for(let c of checks) {
-        await rtdb.ref(`payments/${mID}/${c.value}`).push({
-            title: title, amount: amt, status: "Pending",
-            date: new Date().toLocaleDateString('en-GB'),
-            sName: c.getAttribute('data-name'), sClass: c.getAttribute('data-cls')
-        });
-    }
-    alert("വിജയകരമായി സേവ് ചെയ്തു!");
-    updateProgramList();
-}
+    btn.disabled = true;
+    btn.innerText = "സേവ് ചെയ്യുന്നു...";
 
+    try {
+        // ടൈറ്റിൽ ഹിസ്റ്ററിയിലേക്ക് സേവ് ചെയ്യാൻ (പുതിയ ഫംഗ്‌ഷൻ)
+        saveToHistory(title);
+
+        for(let c of checks) {
+            await rtdb.ref(`payments/${mID}/${c.value}`).push({
+                title: title, 
+                amount: amt, 
+                status: "Pending",
+                date: new Date().toLocaleDateString('en-GB'),
+                sName: c.getAttribute('data-name'), 
+                sClass: c.getAttribute('data-cls')
+            });
+        }
+        
+        alert("വിജയകരമായി സേവ് ചെയ്തു!");
+        titleInput.value = ""; // ടൈറ്റിൽ ക്ലിയർ ചെയ്യാൻ
+        document.getElementById('payAmt').value = ""; // തുക ക്ലിയർ ചെയ്യാൻ
+        updateProgramList();
+        
+    } catch (e) {
+        alert("Error: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "പെയ്‌മെന്റ് ലിസ്റ്റ് സേവ് ചെയ്യുക";
+    }
+}
 // Update Program List for tracking
 function updateProgramList() {
     rtdb.ref(`payments/${mID}`).once('value', snap => {
@@ -290,6 +317,48 @@ async function deletePayment(reg, payId) {
         }
     }
 }
+// പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ പഴയ ടൈറ്റിലുകൾ ലോഡ് ചെയ്യുക
+window.onload = () => {
+    loadStudents();
+    updateProgramList();
+    loadTitleHistory(); // ഹിസ്റ്ററി ലോഡ് ചെയ്യാൻ
+};
+
+// ടൈറ്റിലുകൾ സേവ് ചെയ്യാനും കാണിക്കാനുമുള്ള ഫംഗ്‌ഷൻ
+function loadTitleHistory() {
+    const history = JSON.parse(localStorage.getItem('payTitleHistory') || "[]");
+    const dataList = document.getElementById('titleHistory');
+    const clearLink = document.getElementById('clearHistoryLink');
+    
+    dataList.innerHTML = "";
+    if(history.length > 0) {
+        history.forEach(title => {
+            dataList.innerHTML += `<option value="${title}">`;
+        });
+        clearLink.style.display = "block";
+    } else {
+        clearLink.style.display = "none";
+    }
+}
+
+// പെയ്‌മെന്റ് സേവ് ചെയ്യുന്ന സമയത്ത് ഈ ഫംഗ്‌ഷൻ കൂടി കോൾ ചെയ്യണം
+function saveToHistory(newTitle) {
+    let history = JSON.parse(localStorage.getItem('payTitleHistory') || "[]");
+    if(!history.includes(newTitle)) {
+        history.push(newTitle);
+        localStorage.setItem('payTitleHistory', JSON.stringify(history));
+        loadTitleHistory();
+    }
+}
+
+// ഹിസ്റ്ററി ഡിലീറ്റ് ചെയ്യാൻ
+function clearTitleHistory() {
+    if(confirm("സേവ് ചെയ്തു വെച്ചിട്ടുള്ള ടൈറ്റിലുകൾ ഡിലീറ്റ് ചെയ്യണോ?")) {
+        localStorage.removeItem('payTitleHistory');
+        loadTitleHistory();
+    }
+}
+
 window.onload = () => { loadStudents(); updateProgramList(); };
 </script>
 </body>
