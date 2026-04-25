@@ -240,12 +240,25 @@ function calculateStats() {
                     const isPaid = p.status === "Paid";
                     if(isPaid) totalGot += parseInt(p.amount);
 
-                    list.innerHTML += `<tr>
-                        <td>${p.sName}</td>
-                        <td>${p.sClass}</td>
-                        <td><span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span></td>
-                        <td><button class="btn-change" onclick="changeStatus('${reg}', '${paySnap.key}', '${p.status}')">Change</button></td>
-                    </tr>`;
+                   list.innerHTML += `
+    <tr>
+        <td>${p.sName}</td>
+        <td>${p.sClass}</td>
+        <td><span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span></td>
+        <td>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn-change" title="Change Status" onclick="changeStatus('${reg}', '${paySnap.key}', '${p.status}')">
+                    <i class="fa fa-sync"></i>
+                </button>
+                <button class="btn-change" title="View Details" style="color: blue;" onclick="viewPayment('${p.sName}', '${p.title}', '${p.amount}', '${p.date}', '${p.status}')">
+                    <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn-change" title="Delete" style="color: red;" onclick="deletePayment('${reg}', '${paySnap.key}')">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    </tr>`;
                 }
             });
         });
@@ -260,7 +273,23 @@ async function changeStatus(reg, payId, current) {
     await rtdb.ref(`payments/${mID}/${reg}/${payId}`).update({ status: newStatus });
     calculateStats();
 }
+// 1. പെയ്‌മെന്റ് വിവരങ്ങൾ കാണാൻ
+function viewPayment(name, title, amount, date, status) {
+    alert(`വിദ്യാർത്ഥി: ${name}\nവിഷയം: ${title}\nതുക: ₹${amount}\nതിയ്യതി: ${date}\nസ്റ്റാറ്റസ്: ${status}`);
+}
 
+// 2. പെയ്‌മെന്റ് ഡിലീറ്റ് ചെയ്യാൻ
+async function deletePayment(reg, payId) {
+    if (confirm("ഈ പെയ്‌മെന്റ് ലിസ്റ്റ് ഡിലീറ്റ് ചെയ്യണമെന്നുറപ്പാണോ?")) {
+        try {
+            await rtdb.ref(`payments/${mID}/${reg}/${payId}`).remove();
+            alert("ഡിലീറ്റ് ചെയ്തു!");
+            calculateStats(); // ലിസ്റ്റ് പുതുക്കാൻ
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    }
+}
 window.onload = () => { loadStudents(); updateProgramList(); };
 </script>
 </body>
