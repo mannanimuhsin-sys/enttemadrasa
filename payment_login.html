@@ -14,28 +14,18 @@
     <style>
         :root { --primary: #004d00; --bg: #f4f7f6; --success: #27ae60; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        
-        /* Login Area */
         .login-container { height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
         h2 { color: var(--primary); margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        
-        /* Dashboard Area */
         #dashboard { display: none; padding: 15px; max-width: 500px; margin: auto; }
         .profile-card { background: var(--primary); color: white; padding: 20px; border-radius: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
         .stu-photo { width: 60px; height: 75px; border-radius: 8px; border: 2px solid white; object-fit: cover; }
-        
         .pay-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
         .paid-border { border-left-color: var(--success); }
-        
-        .pay-info h4 { margin: 0; font-size: 16px; color: #333; }
-        .pay-info p { margin: 5px 0 0; color: #666; font-weight: bold; }
-        
         .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 15px; }
         .btn-login { background: var(--primary); color: white; width: 100%; }
         .btn-receipt { background: #f39c12; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-        
         .status-badge { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; }
         .bg-paid { background: #e8f5e9; color: #2e7d32; }
         .bg-pending { background: #ffebee; color: #c62828; }
@@ -60,12 +50,11 @@
             <h3 id="displayName" style="margin:0;">വിദ്യാർത്ഥി</h3>
             <span id="displayClass" style="font-size: 13px;">Class: 0</span> | 
             <span id="displayReg" style="font-size: 13px;">Reg: 00</span>
+            <input type="hidden" id="madrasaName">
         </div>
     </div>
-
     <h3 style="color: var(--primary);"><i class="fa fa-receipt"></i> പെയ്‌മെന്റ് സ്റ്റാറ്റസ്</h3>
     <div id="paymentList"></div>
-
     <button class="btn" style="background:#888; color:white; width:100%; margin-top:20px;" onclick="location.reload()">LOGOUT</button>
 </div>
 
@@ -112,6 +101,9 @@ function loadDashboard(s) {
     document.getElementById('displayClass').innerText = "Class: " + s.class;
     document.getElementById('displayReg').innerText = "Reg: " + (s.regno || s.number);
     document.getElementById('displayPhoto').src = s.photo || "";
+    
+    // ഫയർസ്റ്റോറിൽ നിന്ന് മദ്റസയുടെ പേര് എടുക്കുന്നു
+    document.getElementById('madrasaName').value = s.madrasa_name || "മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ";
 
     const regNum = s.regno || s.number;
     
@@ -145,7 +137,7 @@ function loadDashboard(s) {
 function printReceipt(title, amount, date) {
     const name = document.getElementById('displayName').innerText;
     const reg = document.getElementById('displayReg').innerText;
-    const madrasaName = "മദ്റസത്തുൽ മിസ്ബാഹുൽ ഹുദ"; // മദ്റസയുടെ പേര് ഇവിടെ മാറ്റാം
+    const madrasaName = document.getElementById('madrasaName').value; // ഡാറ്റാബേസിൽ നിന്നുള്ള പേര്
 
     const win = window.open('', '_blank', 'width=800,height=900');
     win.document.write(`
@@ -180,39 +172,34 @@ function printReceipt(title, amount, date) {
                         <h1>${madrasaName}</h1>
                         <p>ഔദ്യോഗിക ഡിജിറ്റൽ റെസീപ്റ്റ്</p>
                     </div>
-                    
                     <div class="details">
                         <p><b>വിദ്യാർത്ഥി:</b> ${name}</p>
                         <p><b>രജിസ്റ്റർ നമ്പർ:</b> ${reg.replace('Reg: ', '')}</p>
                         <p><b>തിയ്യതി:</b> ${date}</p>
                         <p><b>ഇനം:</b> ${title}</p>
                     </div>
-
                     <div class="amount-box">
                         <p style="margin:0; font-size:13px; color:#666;">ലഭിച്ച തുക</p>
                         <h2>₹${amount}</h2>
                     </div>
-
                     <div class="footer">
                         <p>ഇതൊരു കമ്പ്യൂട്ടർ ജനറേറ്റഡ് റെസീപ്റ്റ് ആണ്. ഇതിൽ ഒപ്പ് ആവശ്യമില്ല.</p>
                     </div>
                 </div>
-
                 <div class="actions">
                     <button class="btn btn-print" onclick="window.print()"><i class="fa fa-print"></i> Print</button>
                     <button class="btn btn-pdf" onclick="downloadPDF()"><i class="fa fa-file-pdf"></i> Download PDF</button>
                 </div>
             </div>
-
             <script>
                 function downloadPDF() {
                     const element = document.getElementById('receiptContent');
                     const opt = {
-                        margin:       10,
-                        filename:     'Receipt_${name}.pdf',
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2 },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        margin: 10,
+                        filename: 'Receipt_${name}.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                     };
                     html2pdf().set(opt).from(element).save();
                 }
