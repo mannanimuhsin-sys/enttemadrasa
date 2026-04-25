@@ -1,52 +1,74 @@
-<!DOCTYPE html>
+V<!DOCTYPE html>
 <html lang="ml">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ</title>
+    
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        :root { --primary: #004d00; --bg: #f0f2f5; --white: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .login-box { background: var(--white); padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        .logo { font-size: 50px; color: var(--primary); margin-bottom: 10px; }
-        h2 { color: var(--primary); margin-bottom: 20px; font-size: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn:hover { background: #003300; }
+        :root { --primary: #004d00; --bg: #f4f7f6; --success: #27ae60; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
         
-        #paymentArea { display: none; width: 100%; max-width: 500px; margin: 20px auto; }
-        .payment-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid #f39c12; }
-        .payment-card h4 { margin: 0; color: #333; }
-        .status { font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; float: right; }
-        .paid { background: #e8f5e9; color: #2e7d32; }
-        .pending { background: #ffebee; color: #c62828; }
+        /* Login Area */
+        .login-container { height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: var(--primary); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        
+        /* Dashboard Area */
+        #dashboard { display: none; padding: 15px; max-width: 500px; margin: auto; }
+        .profile-card { background: var(--primary); color: white; padding: 20px; border-radius: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .stu-photo { width: 60px; height: 75px; border-radius: 8px; border: 2px solid white; object-fit: cover; }
+        
+        .pay-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .paid-border { border-left-color: var(--success); }
+        
+        .pay-info h4 { margin: 0; font-size: 16px; color: #333; }
+        .pay-info p { margin: 5px 0 0; color: #666; font-weight: bold; }
+        
+        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 15px; }
+        .btn-login { background: var(--primary); color: white; width: 100%; }
+        .btn-receipt { background: #f39c12; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; border: none; cursor: pointer; }
+        
+        .status-badge { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .bg-paid { background: #e8f5e9; color: #2e7d32; }
+        .bg-pending { background: #ffebee; color: #c62828; }
     </style>
 </head>
 <body>
 
-<div id="loginSection" class="login-box">
-    <div class="logo"><i class="fa fa-university"></i></div>
-    <h2>രക്ഷിതാക്കളുടെ ലോഗിൻ</h2>
-    <input type="text" id="regNo" placeholder="രജിസ്റ്റർ നമ്പർ (Reg No)">
-    <input type="password" id="pass" placeholder="പാസ്‌വേഡ്">
-    <button class="btn" onclick="login()">ലോഗിൻ ചെയ്യുക</button>
+<div id="loginArea" class="login-container">
+    <div class="login-box">
+        <i class="fa fa-shield-halved" style="font-size: 40px; color: var(--primary);"></i>
+        <h2>രക്ഷാകർത്താക്കളുടെ ലോഗിൻ</h2>
+        <input type="text" id="regNo" placeholder="രജിസ്റ്റർ നമ്പർ (Reg No)">
+        <input type="password" id="pass" placeholder="പാസ്‌വേഡ്">
+        <button class="btn btn-login" onclick="login()">ലോഗിൻ ചെയ്യുക</button>
+    </div>
 </div>
 
-<div id="paymentArea">
-    <div style="background: var(--primary); color: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-        <h3 id="studentHeader" style="margin:0; font-size: 18px;">വിദ്യാർത്ഥിയുടെ പേര്</h3>
-        <small id="regSub">Reg No: 000</small>
+<div id="dashboard">
+    <div class="profile-card">
+        <img id="displayPhoto" src="" class="stu-photo">
+        <div>
+            <h3 id="displayName" style="margin:0;">വിദ്യാർത്ഥി</h3>
+            <span id="displayClass" style="font-size: 13px;">Class: 0</span> | 
+            <span id="displayReg" style="font-size: 13px;">Reg: 00</span>
+        </div>
     </div>
-    <div id="listContainer"></div>
-    <button class="btn" style="background:#888; margin-top:10px;" onclick="location.reload()">LOGOUT</button>
+
+    <h3 style="color: var(--primary);"><i class="fa fa-receipt"></i> പെയ്‌മെന്റ് സ്റ്റാറ്റസ്</h3>
+    <div id="paymentList"></div>
+
+    <button class="btn" style="background:#888; color:white; width:100%; margin-top:20px;" onclick="location.reload()">LOGOUT</button>
 </div>
 
 <script>
-// നിങ്ങളുടെ ഐഡി കാർഡ് പാനലിലെ അതേ Firebase Config ഇവിടെയും ഉപയോഗിക്കുക
 const firebaseConfig = {
     apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
     databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
@@ -56,11 +78,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const rtdb = firebase.database();
-
-// Madrasa ID URL-ൽ നിന്ന് എടുക്കുന്നു (ഉദാ: login.html?id=101)
 const mID = new URLSearchParams(window.location.search).get('id');
 
-// പാസ്‌വേഡ് ഹാഷ് ചെയ്യാനുള്ള ഫംഗ്‌ഷൻ
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -71,69 +90,84 @@ async function hashPassword(password) {
 async function login() {
     const reg = document.getElementById('regNo').value.trim();
     const pass = document.getElementById('pass').value.trim();
+    if(!reg || !pass || !mID) return alert("ദയവായി വിവരങ്ങൾ നൽകുക!");
 
-    if(!reg || !pass || !mID) return alert("വിവരങ്ങൾ പൂർണ്ണമല്ല!");
+    const docId = mID + "_" + reg;
+    const doc = await db.collection("students").doc(docId).get();
 
-    try {
-        // 1. ഫയർസ്റ്റോറിൽ നിന്ന് വിദ്യാർത്ഥിയെ കണ്ടെത്തുന്നു
-        const docId = mID + "_" + reg;
-        const doc = await db.collection("students").doc(docId).get();
-
-        if(!doc.exists) {
-            return alert("വിദ്യാർത്ഥിയെ കണ്ടെത്തിയില്ല! രജിസ്റ്റർ നമ്പർ പരിശോധിക്കുക.");
-        }
-
+    if(doc.exists) {
         const student = doc.data();
         const inputHash = await hashPassword(pass);
-
-        // 2. പാസ്‌വേഡ് ഒത്തുനോക്കുന്നു
         if(inputHash === student.password) {
-            showDashboard(student);
-        } else {
-            alert("തെറ്റായ പാസ്‌വേഡ്!");
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
+            loadDashboard(student);
+        } else { alert("പാസ്‌വേഡ് തെറ്റാണ്!"); }
+    } else { alert("വിദ്യാർത്ഥിയെ കണ്ടെത്തിയില്ല!"); }
 }
 
-function showDashboard(student) {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('paymentArea').style.display = 'block';
-    document.getElementById('studentHeader').innerText = student.name;
-    document.getElementById('regSub').innerText = "Reg No: " + (student.regno || student.number);
+function loadDashboard(s) {
+    document.getElementById('loginArea').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('displayName').innerText = s.name;
+    document.getElementById('displayClass').innerText = "Class: " + s.class;
+    document.getElementById('displayReg').innerText = "Reg: " + (s.regno || s.number);
+    document.getElementById('displayPhoto').src = s.photo || "";
 
-    loadPayments(student.regno || student.number);
-}
-
-function loadPayments(reg) {
-    const container = document.getElementById('listContainer');
-    container.innerHTML = "<p style='text-align:center;'>പെയ്‌മെന്റ് വിവരങ്ങൾ തിരയുന്നു...</p>";
-
-    // Realtime Database-ൽ നിന്ന് പെയ്‌മെന്റ് ലിസ്റ്റ് എടുക്കുന്നു
-    rtdb.ref(`payments/${mID}/${reg}`).on('value', snap => {
+    const regNum = s.regno || s.number;
+    
+    rtdb.ref(`payments/${mID}/${regNum}`).on('value', snap => {
+        const list = document.getElementById('paymentList');
         let html = "";
         if(!snap.exists()) {
-            container.innerHTML = "<div class='payment-card'>നിലവിൽ പെയ്‌മെന്റ് റിക്വസ്റ്റുകൾ ഒന്നുമില്ല.</div>";
+            list.innerHTML = "<p style='text-align:center;'>പെയ്‌മെന്റ് അറിയിപ്പുകൾ ഒന്നുമില്ല.</p>";
             return;
         }
 
         snap.forEach(child => {
             const p = child.val();
-            const statusClass = p.status === 'Paid' ? 'paid' : 'pending';
+            const isPaid = p.status === 'Paid';
             html += `
-                <div class="payment-card">
-                    <span class="status ${statusClass}">${p.status.toUpperCase()}</span>
-                    <h4>${p.title}</h4>
-                    <p style="margin: 5px 0 0; color: #666;">തുക: <b>₹${p.amount}</b></p>
-                    <small style="color:#999;">Date: ${p.date || ''}</small>
-                </div>
-            `;
+                <div class="pay-card ${isPaid ? 'paid-border' : ''}">
+                    <div class="pay-info">
+                        <h4>${p.title}</h4>
+                        <p>₹${p.amount}</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span><br>
+                        ${isPaid ? `<button class="btn-receipt" onclick="printReceipt('${p.title}', '${p.amount}', '${p.date}')"><i class="fa fa-download"></i> Receipt</button>` : ''}
+                    </div>
+                </div>`;
         });
-        container.innerHTML = html;
+        list.innerHTML = html;
     });
 }
-</script>
 
+function printReceipt(title, amount, date) {
+    const name = document.getElementById('displayName').innerText;
+    const reg = document.getElementById('displayReg').innerText;
+    
+    const win = window.open('', '_blank', 'width=500,height=600');
+    win.document.write(`
+        <html>
+        <head><title>Receipt - ${name}</title></head>
+        <body style="font-family: 'Segoe UI', sans-serif; padding: 40px; text-align: center; border: 10px solid #004d00;">
+            <h1 style="color: #004d00; margin-bottom: 5px;">മദ്റസ പെയ്‌മെന്റ് റെസീപ്റ്റ്</h1>
+            <p style="margin-top:0; color: #555;">Official Digital Receipt</p>
+            <hr>
+            <div style="text-align: left; margin: 20px 0; line-height: 2;">
+                <p><b>വിദ്യാർത്ഥി:</b> ${name}</p>
+                <p><b>${reg}</b></p>
+                <p><b>പെയ്‌മെന്റ് ഇനം:</b> ${title}</p>
+                <p><b>തുക:</b> ₹${amount}</p>
+                <p><b>തിയ്യതി:</b> ${date}</p>
+            </div>
+            <hr>
+            <p style="color: green; font-weight: bold; font-size: 20px;">STAMP: PAID ✅</p>
+            <p style="font-size: 11px; color: gray; margin-top: 50px;">This is a computer-generated receipt and does not require a physical signature.</p>
+            <button style="margin-top: 20px; padding: 10px 20px; background: #004d00; color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="window.print()">Print Receipt</button>
+        </body>
+        </html>
+    `);
+}
+</script>
 </body>
 </html>
