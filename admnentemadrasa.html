@@ -178,32 +178,36 @@
     // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
   async function updateStatus(id, newStatus) {
     if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
-        const btn = event.target;
+        // ക്ലിക്ക് ചെയ്ത ബട്ടൺ കണ്ടെത്താൻ
+        const btn = event.currentTarget; 
         const oldHTML = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
         btn.disabled = true;
 
         try {
-            // 1. Realtime Database Update
+            // 1. Realtime Database Update (ഇതാണ് ആദ്യം വേണ്ടത്)
             await db.ref('madrasa_requests/' + id).update({ status: newStatus });
-            
+            console.log("Realtime DB Updated");
+
             // 2. Firestore Sync
             await firestore.collection('madrasa_requests').doc(id).set({ status: newStatus }, { merge: true });
+            console.log("Firestore Updated");
 
-            // 3. ✅ Supabase Sync (ഇതാണ് വിട്ടുപോയത്)
-            // നിങ്ങളുടെ അഡ്മിൻ പാനലിൽ സുപാബേസ് കോൺഫിഗറേഷൻ ഉണ്ടെന്ന് ഉറപ്പുവരുത്തുക
-            if (window.supabaseClient) {
+            // 3. Supabase Sync (ഉണ്ടെങ്കിൽ മാത്രം)
+            if (typeof supabase !== 'undefined' && window.supabaseClient) {
                 const { error } = await window.supabaseClient
                     .from('madrasa_requests')
                     .update({ status: newStatus })
-                    .eq('reg', id);
+                    .eq('reg', id); // നിങ്ങളുടെ ടേബിളിലെ ഐഡി 'reg' ആണോ എന്ന് ഉറപ്പുവരുത്തുക
                 
                 if(error) console.error("Supabase Sync Error:", error);
             }
 
             alert(`വിജയകരമായി ${newStatus} ചെയ്തു! ✅`);
         } catch (e) {
+            console.error("Overall Update Error:", e);
             alert("Error: " + e.message);
+            // പിശക് വന്നാൽ ബട്ടൺ പഴയ രൂപത്തിലാക്കാൻ
             btn.innerHTML = oldHTML;
             btn.disabled = false;
         }
