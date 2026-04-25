@@ -1,4 +1,4 @@
-V<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ml">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@ V<!DOCTYPE html>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
@@ -33,7 +34,7 @@ V<!DOCTYPE html>
         
         .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 15px; }
         .btn-login { background: var(--primary); color: white; width: 100%; }
-        .btn-receipt { background: #f39c12; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; border: none; cursor: pointer; }
+        .btn-receipt { background: #f39c12; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
         
         .status-badge { font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; display: inline-block; }
         .bg-paid { background: #e8f5e9; color: #2e7d32; }
@@ -144,70 +145,68 @@ function loadDashboard(s) {
 function printReceipt(title, amount, date) {
     const name = document.getElementById('displayName').innerText;
     const reg = document.getElementById('displayReg').innerText;
-    const madrasaName = "മദ്റസത്തുൽ മിസ്ബാഹുൽ ഹുദ"; // നിങ്ങളുടെ മദ്റസയുടെ പേര് ഇവിടെ നൽകുക
+    const madrasaName = "മദ്റസത്തുൽ മിസ്ബാഹുൽ ഹുദ"; // മദ്റസയുടെ പേര് ഇവിടെ മാറ്റാം
 
     const win = window.open('', '_blank', 'width=800,height=900');
     win.document.write(`
         <html>
         <head>
             <title>Receipt - ${name}</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
             <style>
-                body { background-color: #f0f0f0; display: flex; justify-content: center; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-                .receipt-container { background: white; width: 100%; max-width: 600px; padding: 40px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); border-top: 15px solid #004d00; position: relative; }
-                .header { text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 20px; margin-bottom: 20px; }
-                .header h1 { color: #004d00; margin: 0; font-size: 24px; }
-                .header p { color: #666; margin: 5px 0; font-size: 14px; }
-                .details { line-height: 2; color: #333; }
-                .details b { color: #555; width: 150px; display: inline-block; }
+                body { background-color: #f0f0f0; display: flex; justify-content: center; padding: 20px; font-family: 'Segoe UI', sans-serif; margin:0; }
+                .receipt-container { background: white; width: 100%; max-width: 550px; padding: 40px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); border-top: 12px solid #004d00; position: relative; margin: auto; }
+                .header { text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 15px; margin-bottom: 20px; }
+                .header h1 { color: #004d00; margin: 0; font-size: 22px; }
+                .header p { color: #666; margin: 5px 0; font-size: 13px; }
+                .details { line-height: 2.2; color: #333; font-size: 15px; }
+                .details b { color: #555; width: 140px; display: inline-block; }
                 .amount-box { background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center; margin: 25px 0; border: 1px solid #c8e6c9; }
-                .amount-box h2 { margin: 0; color: #2e7d32; font-size: 28px; }
-                .footer { text-align: center; font-size: 12px; color: #999; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; }
-                .paid-stamp { position: absolute; top: 120px; right: 40px; border: 3px solid #27ae60; color: #27ae60; padding: 5px 15px; transform: rotate(-15deg); font-weight: bold; border-radius: 5px; opacity: 0.8; font-size: 20px; }
+                .amount-box h2 { margin: 0; color: #2e7d32; font-size: 30px; }
+                .footer { text-align: center; font-size: 11px; color: #999; margin-top: 25px; border-top: 1px solid #eee; padding-top: 10px; }
+                .paid-stamp { position: absolute; top: 110px; right: 30px; border: 3px solid #27ae60; color: #27ae60; padding: 5px 12px; transform: rotate(-15deg); font-weight: bold; border-radius: 5px; opacity: 0.7; font-size: 18px; }
                 .actions { text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
-                .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; gap: 8px; }
+                .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; gap: 8px; font-size: 14px; }
                 .btn-print { background: #004d00; }
                 .btn-pdf { background: #e74c3c; }
-                
-                @media print { .actions { display: none; } body { background: white; padding: 0; } .receipt-container { box-shadow: none; border: 1px solid #eee; } }
+                @media print { .actions { display: none; } body { background: white; padding: 0; } .receipt-container { box-shadow: none; border: 1px solid #eee; margin: 0; } }
             </style>
         </head>
         <body>
-            <div id="receiptContent" class="receipt-container">
-                <div class="paid-stamp">PAID ✅</div>
-                <div class="header">
-                    <h1>${madrasaName}</h1>
-                    <p>ഔദ്യോഗിക ഡിജിറ്റൽ റെസീപ്റ്റ്</p>
-                </div>
-                
-                <div class="details">
-                    <p><b>വിദ്യാർത്ഥിയുടെ പേര്:</b> ${name}</p>
-                    <p><b>രജിസ്റ്റർ നമ്പർ:</b> ${reg.replace('Reg: ', '')}</p>
-                    <p><b>തിയ്യതി:</b> ${date}</p>
-                    <p><b>വിവരണം:</b> ${title}</p>
-                </div>
+            <div style="width:100%">
+                <div id="receiptContent" class="receipt-container">
+                    <div class="paid-stamp">PAID ✅</div>
+                    <div class="header">
+                        <h1>${madrasaName}</h1>
+                        <p>ഔദ്യോഗിക ഡിജിറ്റൽ റെസീപ്റ്റ്</p>
+                    </div>
+                    
+                    <div class="details">
+                        <p><b>വിദ്യാർത്ഥി:</b> ${name}</p>
+                        <p><b>രജിസ്റ്റർ നമ്പർ:</b> ${reg.replace('Reg: ', '')}</p>
+                        <p><b>തിയ്യതി:</b> ${date}</p>
+                        <p><b>ഇനം:</b> ${title}</p>
+                    </div>
 
-                <div class="amount-box">
-                    <p style="margin:0; font-size:14px; color:#666;">ആകെ ലഭിച്ച തുക</p>
-                    <h2>₹${amount}</h2>
-                </div>
+                    <div class="amount-box">
+                        <p style="margin:0; font-size:13px; color:#666;">ലഭിച്ച തുക</p>
+                        <h2>₹${amount}</h2>
+                    </div>
 
-                <div class="footer">
-                    <p>ഇതൊരു കമ്പ്യൂട്ടർ ജനറേറ്റഡ് റെസീപ്റ്റ് ആണ്. ഒപ്പ് ആവശ്യമില്ല.</p>
+                    <div class="footer">
+                        <p>ഇതൊരു കമ്പ്യൂട്ടർ ജനറേറ്റഡ് റെസീപ്റ്റ് ആണ്. ഇതിൽ ഒപ്പ് ആവശ്യമില്ല.</p>
+                    </div>
                 </div>
 
                 <div class="actions">
-                    <button class="btn btn-print" onclick="window.print()">Print</button>
-                    <button class="btn btn-pdf" onclick="downloadPDF()">Download PDF</button>
+                    <button class="btn btn-print" onclick="window.print()"><i class="fa fa-print"></i> Print</button>
+                    <button class="btn btn-pdf" onclick="downloadPDF()"><i class="fa fa-file-pdf"></i> Download PDF</button>
                 </div>
             </div>
 
             <script>
                 function downloadPDF() {
                     const element = document.getElementById('receiptContent');
-                    const actions = document.querySelector('.actions');
-                    actions.style.display = 'none'; // PDF-ൽ ബട്ടൺ വരാതിരിക്കാൻ
-
                     const opt = {
                         margin:       10,
                         filename:     'Receipt_${name}.pdf',
@@ -215,10 +214,7 @@ function printReceipt(title, amount, date) {
                         html2canvas:  { scale: 2 },
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                     };
-
-                    html2pdf().set(opt).from(element).save().then(() => {
-                        actions.style.display = 'flex';
-                    });
+                    html2pdf().set(opt).from(element).save();
                 }
             <\/script>
         </body>
