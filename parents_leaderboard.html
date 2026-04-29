@@ -70,9 +70,6 @@
 <div class="poster-header">
     <h1><i class="fa fa-star"></i> SALAH WINNER</h1>
     <div id="mName" class="m-name">മദ്റസ വിവരങ്ങൾ ശേഖരിക്കുന്നു...</div>
-    <div class="total-box">
-        TOTAL JAMA'AT: <span id="totalJ">0</span>
-    </div>
 </div>
 
 <div class="container">
@@ -142,12 +139,7 @@
                 });
             });
 
-            // ആകെ ജമാഅത്തുകൾ ഏകദേശ കണക്ക് (ഇതൊരു ഇമ്പ്രൂവ്മെന്റ് ആവശ്യമാണ്)
-            // നിലവിൽ 30 ദിവസം * 5 ജമാഅത്ത് = 150 എന്ന് കണക്കാക്കുന്നു, അല്ലെങ്കിൽ ഡാറ്റയിൽ നിന്ന് എടുക്കാം
-            const totalPossible = 150; 
-            document.getElementById('totalJ').innerText = totalPossible;
-
-            renderUI(winners, totalPossible);
+            renderUI(winners);
 
         } catch (e) {
             console.error(e);
@@ -155,7 +147,7 @@
         }
     }
 
-    function renderUI(list, total) {
+    function renderUI(list) {
         const listDiv = document.getElementById('leaderboardList');
         listDiv.innerHTML = "";
 
@@ -163,9 +155,9 @@
             document.getElementById('topSection').style.display = 'flex';
             
             // Winners Cards
-            setWinner('rank1', list[0], 1, '#ffd700', total);
-            if(list[1]) setWinner('rank2', list[1], 2, '#c0c0c0', total);
-            if(list[2]) setWinner('rank3', list[2], 3, '#cd7f32', total);
+            setWinner('rank1', list[0], 1, '#ffd700');
+            if(list[1]) setWinner('rank2', list[1], 2, '#c0c0c0');
+            if(list[2]) setWinner('rank3', list[2], 3, '#cd7f32');
         }
 
         // മുഴുവൻ ആൺകുട്ടികളുടെ ലിസ്റ്റ്
@@ -179,13 +171,12 @@
                     </div>
                     <div class="points-info">
                         <span class="points-now">${s.score}</span>
-                        <span class="points-total">/${total}</span>
                     </div>
                 </div>`;
         });
     }
 
-    function setWinner(id, s, r, color, total) {
+    function setWinner(id, s, r, color) {
         const el = document.getElementById(id);
         if(!el) return;
         const crownHtml = r === 1 ? '<i class="fa fa-crown crown"></i>' : '';
@@ -194,7 +185,6 @@
             <div class="medal" style="background:${color}">${r}</div>
             <div class="winner-name">${s.name}</div>
             <div class="winner-score">${s.score}</div>
-            <div class="points-total">/${total}</div>
         `;
     }
 

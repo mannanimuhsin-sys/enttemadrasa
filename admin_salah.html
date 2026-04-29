@@ -84,6 +84,7 @@
 
     document.getElementById('salahDate').valueAsDate = new Date();
     let currentSalahs = {};
+    let studentsData = {};
 
     async function loadStudents() {
         const cls = document.getElementById('classSelect').value;
@@ -104,24 +105,36 @@
             listDiv.innerHTML = "";
             let found = false;
 
-            // ✅ ഓരോ കുട്ടിയുടെയും ഇന്നത്തെ സലാഹ് റെക്കോർഡ് ഫയർസ്റ്റോറിൽ നിന്ന് നോക്കുന്നു
-            for (const doc of snap.docs) {
+            // To speed up load, we can also fetch today's records in parallel
+            const studentPromises = snap.docs.map(async (doc) => {
                 const s = doc.data();
                 if(s.gender === "Male" || !s.gender) {
-                    found = true;
                     const sid = doc.id;
+                    studentsData[sid] = s;
                     
                     // സബ്-കളക്ഷനിൽ നിന്ന് ഇന്നത്തെ ഡാറ്റ
                     const sDoc = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).get();
                     const dayData = sDoc.exists ? sDoc.data() : {f:0, d:0, a:0, m:0, i:0};
                     
+                    return { sid, s, dayData };
+                }
+                return null;
+            });
+
+            const loadedStudents = await Promise.all(studentPromises);
+            
+            for (const item of loadedStudents) {
+                if(item) {
+                    found = true;
+                    const { sid, s, dayData } = item;
                     currentSalahs[sid] = dayData;
+                    const displayRegNo = s.regno || s.number || '-';
 
                     listDiv.innerHTML += `
                         <div class="student-item card">
                             <div class="student-info">
                                 <b>${s.name}</b>
-                                <small>Reg: ${s.number || '-'}</small>
+                                <small>Reg: ${displayRegNo}</small>
                             </div>
                             <div class="salah-grid">
                                 <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
@@ -158,15 +171,19 @@
         btn.innerText = "SAVING...";
 
         try {
+            const promises = [];
             for(let sid in currentSalahs) {
                 const data = currentSalahs[sid];
                 // ✅ ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
-                await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).set(data);
-                
-                // ടോട്ടൽ സ്കോർ അപഡേറ്റ് ചെയ്യുന്നു
-                const total = (data.f||0) + (data.d||0) + (data.a||0) + (data.m||0) + (data.i||0);
-                await updatePoints(sid, total, date);
+                const p = db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).set(data)
+                .then(() => {
+                    // ടോട്ടൽ സ്കോർ അപഡേറ്റ് ചെയ്യുന്നു
+                    const total = (data.f||0) + (data.d||0) + (data.a||0) + (data.m||0) + (data.i||0);
+                    return updatePoints(sid, total, date);
+                });
+                promises.push(p);
             }
+            await Promise.all(promises);
             alert("വിജയകരമായി സേവ് ചെയ്തു!");
         } catch (e) {
             alert("Error saving: " + e.message);
@@ -179,14 +196,15 @@
     async function updatePoints(sid, dayScore, date) {
         // ടോട്ടൽ റെക്കോർഡ് അപ്ഡേറ്റ് ചെയ്യാൻ
         const totalRef = db.collection("salah_totals").doc(mId).collection("students").doc(sid);
-        const doc = await totalRef.get();
+        
+        const [doc, daysSnap] = await Promise.all([
+            totalRef.get(),
+            db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").get()
+        ]);
         
         let grandTotal = dayScore;
         if (doc.exists) {
-            // ഇതിനകം ഉള്ള സ്കോർ ഉണ്ടെങ്കിൽ അത് അപ്ഡേറ്റ് ചെയ്യണം (പക്ഷേ ഒരേ ദിവസം വീണ്ടും സേവ് ചെയ്താൽ ഡ്യൂപ്ലിക്കേറ്റ് ആവാതിരിക്കാൻ ശ്രദ്ധിക്കണം)
-            // ലളിതമായി: എല്ലാ റെക്കോർഡുകളും വീണ്ടും കൂട്ടി നോക്കാം അല്ലെങ്കിൽ ട്രാൻസാക്ഷൻ ഉപയോഗിക്കാം.
-            // തത്കാലം ലളിതമായ വഴി:
-            const daysSnap = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").get();
+            // ഇതിനകം ഉള്ള സ്കോർ ഉണ്ടെങ്കിൽ അത് അപ്ഡേറ്റ് ചെയ്യണം
             grandTotal = 0;
             daysSnap.forEach(d => {
                 const val = d.data();
@@ -194,8 +212,7 @@
             });
         }
 
-        const studentSnap = await db.collection("students").doc(sid).get();
-        const sData = studentSnap.data();
+        const sData = studentsData[sid]; // Use cached student data instead of fetching
 
         await totalRef.set({
             name: sData.name,
