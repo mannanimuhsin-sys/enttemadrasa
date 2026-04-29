@@ -41,14 +41,15 @@
             background: white; border-radius: 20px; padding: 20px 10px; text-align: center; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.15); flex: 1; position: relative; border-bottom: 6px solid #ddd;
         }
-        .rank-1 { height: 190px; border-color: var(--gold); z-index: 3; scale: 1.1; }
-        .rank-2 { height: 160px; border-color: var(--silver); }
-        .rank-3 { height: 150px; border-color: var(--bronze); }
+        .rank-1 { height: 240px; border-color: var(--gold); z-index: 3; scale: 1.1; }
+        .rank-2 { height: 210px; border-color: var(--silver); }
+        .rank-3 { height: 200px; border-color: var(--bronze); }
         
         .crown { font-size: 24px; color: var(--gold); margin-bottom: 5px; display: block; }
         .winner-score { font-size: 26px; font-weight: 900; color: var(--primary); display: block; }
-        .winner-name { font-size: 11px; font-weight: bold; color: #333; margin: 8px 0; height: 32px; overflow: hidden; }
+        .winner-name { font-size: 10px; font-weight: bold; color: #333; margin: 8px 0; display: flex; align-items: center; justify-content: center; min-height: 32px; word-wrap: break-word; line-height: 1.2; }
         .medal { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: white; font-weight: bold; }
+        .winner-photo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin: 0 auto 8px auto; border: 2px solid; display: block; background: #eee; }
 
         /* List Style */
         .list-container { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
@@ -139,6 +140,16 @@
                 });
             });
 
+            // ആദ്യത്തെ 3 പേരുടെ ഫോട്ടോ എടുക്കുന്നു
+            for(let i = 0; i < Math.min(3, winners.length); i++) {
+                try {
+                    const stDoc = await db.collection("students").doc(winners[i].reg).get();
+                    if(stDoc.exists) {
+                        winners[i].photo = stDoc.data().photo || "";
+                    }
+                } catch(e) { console.error("Error fetching photo", e); }
+            }
+
             renderUI(winners);
 
         } catch (e) {
@@ -180,8 +191,10 @@
         const el = document.getElementById(id);
         if(!el) return;
         const crownHtml = r === 1 ? '<i class="fa fa-crown crown"></i>' : '';
+        const photoHtml = s.photo ? `<img src="${s.photo}" class="winner-photo" style="border-color:${color}" alt="Photo">` : '';
         el.innerHTML = `
             ${crownHtml}
+            ${photoHtml}
             <div class="medal" style="background:${color}">${r}</div>
             <div class="winner-name">${s.name}</div>
             <div class="winner-score">${s.score}</div>
