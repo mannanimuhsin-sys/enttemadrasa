@@ -113,6 +113,7 @@
             align-items: center;
             justify-content: center;
             z-index: 99999;
+            transition: opacity 0.5s ease-out;
         }
 
         @keyframes fadeIn {
@@ -584,18 +585,27 @@
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
-            authDomain: "enttemadrasa.firebaseapp.com",
-            databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
-            projectId: "enttemadrasa",
-            storageBucket: "enttemadrasa.firebasestorage.app",
-            appId: "1:623531881201:web:b863793340c3901cedaf50"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const firestore = firebase.firestore();
-        const storage = firebase.storage();
+        let db, firestore, storage;
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
+                authDomain: "enttemadrasa.firebaseapp.com",
+                databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
+                projectId: "enttemadrasa",
+                storageBucket: "enttemadrasa.firebasestorage.app",
+                appId: "1:623531881201:web:b863793340c3901cedaf50"
+            };
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                firestore = firebase.firestore();
+                storage = firebase.storage();
+            } else {
+                console.error("Firebase not loaded!");
+            }
+        } catch (e) {
+            console.error("Firebase Initialization Error:", e);
+        }
 
         let currentId = "", currentRole = "";
 
@@ -921,34 +931,44 @@
             location.reload(); 
         }
 
-        window.onload = () => {
-            const sid = localStorage.getItem("madrasaId");
-            const role = localStorage.getItem("userRole");
-            
-            if (sid) {
-                currentId = sid;
-                currentRole = role || "";
-                
-                // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ കാണിക്കുന്നു
-                showPage('portalPage');
-                hideLoader();
-                
-                // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു (Cache -> Remote)
-                loadProfile(sid);
-                return;
-            }
-            
-            showPage('loginPage');
-            hideLoader();
-        };
-
         function hideLoader() {
             const loader = document.getElementById('loadingOverlay');
-            if (loader) {
+            if (loader && loader.style.display !== 'none') {
                 loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 300);
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
             }
         }
+
+        // സേഫ്റ്റി ഓപ്ഷൻ: 5 സെക്കൻഡിന് ശേഷം ലോഡർ തനിയെ മാറാൻ
+        setTimeout(hideLoader, 5000);
+
+        window.onload = () => {
+            try {
+                const sid = localStorage.getItem("madrasaId");
+                const role = localStorage.getItem("userRole");
+                
+                if (sid) {
+                    currentId = sid;
+                    currentRole = role || "";
+                    
+                    // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ കാണിക്കുന്നു
+                    showPage('portalPage');
+                    hideLoader();
+                    
+                    // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു (Cache -> Remote)
+                    loadProfile(sid);
+                    return;
+                }
+                
+                showPage('loginPage');
+                hideLoader();
+            } catch (e) {
+                console.error("Onload error:", e);
+                hideLoader();
+            }
+        };
         let deferredPrompt;
         const overlay = document.getElementById('appInstallOverlay');
         const androidView = document.getElementById('androidView');
