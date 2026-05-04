@@ -65,26 +65,12 @@
 
         .loading { text-align: center; padding: 40px; color: #94a3b8; }
         
-        /* Auth Gate */
-        .auth-gate { max-width: 400px; margin: 100px auto; text-align: center; }
-        .auth-gate input { width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-bottom: 15px; font-size: 18px; text-align: center; box-sizing: border-box; }
-
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="authGate" class="container auth-gate">
-    <div class="card">
-        <h3 style="margin-top:0;">അഡ്മിൻ ആക്‌സസ്</h3>
-        <p style="font-size: 14px; color: #64748b;">ഈ പേജ് തുറക്കുമ്പോൾ നൽകിയ പാസ്‌വേഡ് ഇവിടെ നൽകുക.</p>
-        <input type="password" id="adminPasswordInput" placeholder="Password">
-        <button class="btn-save" style="width:100%;" onclick="validatePassword()">LOGIN</button>
-        <div id="passwordError" style="color:var(--danger); margin-top: 12px; font-size:13px;"></div>
-    </div>
-</div>
-
-<div id="adminContent" class="hidden">
+<div id="adminContent">
     <div class="header">
         <button onclick="history.back()" class="back-btn">
             <i class="fa fa-arrow-left"></i>
@@ -152,19 +138,9 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const mId = urlParams.get('id');
-    const expectedPassword = urlParams.get('pwd') || 'enttemadrasaadmin';
 
-    function validatePassword() {
-        const input = document.getElementById('adminPasswordInput').value;
-        const errorDiv = document.getElementById('passwordError');
-        if (input === expectedPassword) {
-            document.getElementById('authGate').classList.add('hidden');
-            document.getElementById('adminContent').classList.remove('hidden');
-            document.getElementById('salahDate').valueAsDate = new Date();
-        } else {
-            errorDiv.innerText = 'തെറ്റായ പാസ്‌വേഡ്. വീണ്ടും ശ്രമിക്കുക.';
-        }
-    }
+    // Page Initialization
+    document.getElementById('salahDate').valueAsDate = new Date();
 
     let currentSalahs = {};
     let students = [];
@@ -334,9 +310,6 @@
 
             // 2. Clear from RTDB
             await rtdb.ref(`salah_total/${mId}`).remove();
-
-            // Note: Individual daily records are kept in Firestore, 
-            // but since totals are cleared, the leaderboard will reset.
             
             alert("എല്ലാ മാർക്കുകളും വിജയകരമായി ക്ലിയർ ചെയ്തു!");
             location.reload();
