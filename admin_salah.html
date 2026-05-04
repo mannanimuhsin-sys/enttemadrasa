@@ -10,80 +10,133 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        :root { --primary: #004d00; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 15px; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; color: #444; }
-        select, input[type="date"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; }
-
-        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; background: white; margin-bottom: 5px; border-radius: 10px; }
-        .student-info b { font-size: 16px; color: #333; display: block; }
+        :root { --primary: #004d00; --accent: #2e7d32; --bg: #f8fafc; --white: #ffffff; --danger: #d32f2f; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #334155; }
         
-        .salah-grid { display: flex; gap: 5px; }
-        .salah-box { 
-            width: 38px; height: 38px; border: 1.5px solid #ccc; border-radius: 8px; 
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.3s;
-        }
-        .salah-box.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 25px 20px; text-align: center; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; position: relative; }
+        .back-btn { position: absolute; left: 15px; top: 25px; background: rgba(255,255,255,0.2); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
 
-        .save-bar { position: sticky; bottom: 20px; width: 100%; text-align: center; margin-top: 20px; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 15px 50px; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
-        .loading { text-align: center; padding: 20px; color: #666; }
-        .auth-gate { max-width: 520px; margin: 40px auto; text-align: center; }
-        .auth-gate p { color: #555; margin: 15px 0 20px; }
-        .auth-gate input { width: 100%; max-width: 320px; padding: 12px 14px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; margin-bottom: 12px; }
-        .auth-gate .btn-action { width: auto; padding: 12px 30px; }
-        .hidden-content { display: none; }
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px 100px; }
+        .card { background: var(--white); padding: 20px; border-radius: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        
+        label { font-weight: 600; display: block; margin-bottom: 8px; color: #64748b; font-size: 14px; }
+        select, input[type="date"] { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        select:focus, input[type="date"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,77,0,0.1); }
+
+        /* Prayer Sections */
+        .prayer-section { margin-top: 25px; }
+        .prayer-header { background: #f1f5f9; padding: 12px 20px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        .prayer-header i { font-size: 18px; }
+
+        .student-list { display: grid; gap: 8px; }
+        .student-item { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 12px 18px; background: white; border-radius: 12px; 
+            border: 1px solid #f1f5f9; transition: 0.2s; cursor: pointer;
+        }
+        .student-item:active { scale: 0.98; }
+        .student-info b { font-size: 15px; color: #1e293b; display: block; }
+        .student-info small { color: #94a3b8; font-size: 12px; }
+
+        .check-box { 
+            width: 32px; height: 32px; border: 2px solid #cbd5e1; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; transition: 0.3s; color: transparent;
+        }
+        .check-box.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* Save Bar */
+        .save-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); display: flex; justify-content: center; z-index: 100; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 14px 60px; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,77,0,0.3); cursor: pointer; transition: 0.3s; }
+        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Restart Section */
+        .restart-container { margin-top: 40px; padding: 25px; border: 2px dashed #e2e8f0; border-radius: 20px; text-align: center; background: #fff; }
+        .restart-title { font-weight: 800; color: #475569; margin-bottom: 12px; font-size: 18px; }
+        .btn-restart { background: #f1f5f9; color: #64748b; border: none; padding: 14px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 15px; }
+        .btn-restart:hover { background: #fee2e2; color: var(--danger); }
+        
+        .confirm-box { display: none; margin-top: 20px; animation: slideUp 0.3s ease; background: #fff1f2; padding: 15px; border-radius: 15px; border: 1px solid #fecdd3; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .btn-confirm { background: var(--danger); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; margin: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(211,47,47,0.2); }
+        .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; margin: 8px; cursor: pointer; }
+
+        .loading { text-align: center; padding: 40px; color: #94a3b8; }
+        
+        /* Auth Gate */
+        .auth-gate { max-width: 400px; margin: 100px auto; text-align: center; }
+        .auth-gate input { width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; margin-bottom: 15px; font-size: 18px; text-align: center; box-sizing: border-box; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="authGate" class="card auth-gate">
-    <h3>അഡ്മിൻ ആക്‌സസ്</h3>
-    <p>ഈ പേജ് തുറക്കുമ്പോൾ നല്‍കിയ പാസ്‌വേഡ് ഇവിടെ തന്നെ നല്‍കുക. തെറ്റായ പാസ്‌വേഡ് നല്‍കിയാൽ ഉള്ളടക്കം കാണാൻ കഴിയില്ല.</p>
-    <button class="btn-save btn-action" onclick="openPasswordBox()">പാസ്‌വേഡ് നൽകാൻ ക്ലിക്ക് ചെയ്യുക</button>
-    <div id="passwordBox" style="display:none; margin-top: 20px;">
-        <input type="password" id="adminPasswordInput" placeholder="പാസ്‌വേഡ്">
-        <button class="btn-save btn-action" onclick="validatePassword()">പുഷ്‌ടിപ്പിക്കുക</button>
-        <div id="passwordError" style="color:#c00; margin-top: 10px;"></div>
+<div id="authGate" class="container auth-gate">
+    <div class="card">
+        <h3 style="margin-top:0;">അഡ്മിൻ ആക്‌സസ്</h3>
+        <p style="font-size: 14px; color: #64748b;">ഈ പേജ് തുറക്കുമ്പോൾ നൽകിയ പാസ്‌വേഡ് ഇവിടെ നൽകുക.</p>
+        <input type="password" id="adminPasswordInput" placeholder="Password">
+        <button class="btn-save" style="width:100%;" onclick="validatePassword()">LOGIN</button>
+        <div id="passwordError" style="color:var(--danger); margin-top: 12px; font-size:13px;"></div>
     </div>
 </div>
 
-<div id="adminContent" class="hidden-content">
+<div id="adminContent" class="hidden">
     <div class="header">
-        <button onclick="history.back()" style="position: absolute; left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <button onclick="history.back()" class="back-btn">
             <i class="fa fa-arrow-left"></i>
         </button>
         <h2 style="margin:0;"><i class="fa fa-mosque"></i> SALAH TRACKER</h2>
-        <p style="margin:5px 0 0; font-size:13px;">വിദ്യാർത്ഥികളുടെ നിസ്‌കാര കണക്കുകൾ</p>
+        <p style="margin:5px 0 0; font-size:13px; opacity:0.8;">വിദ്യാർത്ഥികളുടെ നിസ്‌കാര കണക്കുകൾ</p>
     </div>
 
-    <div class="card">
-        <label>തിയ്യതി തിരഞ്ഞെടുക്കുക:</label>
-        <input type="date" id="salahDate" onchange="loadStudents()">
-        
-        <label>ക്ലാസ് തിരഞ്ഞെടുക്കുക:</label>
-        <select id="classSelect" onchange="loadStudents()">
-            <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
-            <script>
-                for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
-                document.write(`<option value="11">Plus One (+1)</option>`);
-                document.write(`<option value="12">Plus Two (+2)</option>`);
-            </script>
-        </select>
-    </div>
+    <div class="container">
+        <div class="card">
+            <label><i class="fa fa-calendar-alt"></i> തിയ്യതി തിരഞ്ഞെടുക്കുക:</label>
+            <input type="date" id="salahDate" onchange="loadStudents()">
+            
+            <label><i class="fa fa-graduation-cap"></i> ക്ലാസ് തിരഞ്ഞെടുക്കുക:</label>
+            <select id="classSelect" onchange="loadStudents()">
+                <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
+                <script>
+                    for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
+                    document.write(`<option value="11">Plus One (+1)</option>`);
+                    document.write(`<option value="12">Plus Two (+2)</option>`);
+                </script>
+            </select>
+        </div>
 
-    <div id="studentList" style="display:none; margin-bottom: 80px;"></div>
+        <div id="prayerSections" class="hidden">
+            <!-- Prayer sections will be injected here -->
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <i class="fa fa-spinner fa-spin"></i> ഡാറ്റ ലോഡ് ചെയ്യുന്നു...
+        </div>
+
+        <!-- Restart Box -->
+        <div class="restart-container">
+            <div class="restart-title">RESTART SYSTEM</div>
+            <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">വിദ്യാർത്ഥികളുടെ നിലവിലുള്ള എല്ലാ മാർക്കുകളും ക്ലിയർ ചെയ്ത് പുതിയതായി തുടങ്ങാൻ താഴെ ക്ലിക്ക് ചെയ്യുക.</p>
+            <button class="btn-restart" id="restartBtn" onclick="showConfirm()">RESTART</button>
+            
+            <div id="confirmBox" class="confirm-box">
+                <p style="font-size:14px; color:var(--danger); font-weight:bold; margin-bottom: 10px;">ശ്രദ്ധിക്കുക: എല്ലാ മാർക്കുകളും പൂർണ്ണമായും മായ്ച്ചു കളയപ്പെടും. ഈ പ്രവർത്തനം പിന്നീട് മാറ്റാൻ കഴിയില്ല. തുടരണോ?</p>
+                <button class="btn-confirm" onclick="executeRestart()">അതെ, ക്ലിയർ ചെയ്യുക</button>
+                <button class="btn-cancel" onclick="hideConfirm()">ക്യാൻസൽ</button>
+            </div>
+        </div>
+    </div>
     
     <div class="save-bar" id="saveSection" style="display:none;">
-        <button class="btn-save" onclick="saveAllSalah()">SAVE DATA</button>
+        <button class="btn-save" id="saveBtn" onclick="saveAllSalah()">SAVE DATA</button>
     </div>
 </div>
 
 <script>
-    // നിങ്ങളുടെ ഐഡി കാർഡ് സിസ്റ്റത്തിലെ അതേ കോൺഫിഗറേഷൻ
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -94,124 +147,122 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(); // കുട്ടികളെ തിരയാൻ
-    const rtdb = firebase.database(); // സലാഹ് റെക്കോർഡുകൾ സേവ് ചെയ്യാൻ
+    const db = firebase.firestore();
+    const rtdb = firebase.database();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const mId = urlParams.get('id'); // Madrasa ID
+    const mId = urlParams.get('id');
     const expectedPassword = urlParams.get('pwd') || 'enttemadrasaadmin';
-
-    function openPasswordBox() {
-        document.getElementById('passwordBox').style.display = 'block';
-        document.getElementById('passwordError').innerText = '';
-    }
 
     function validatePassword() {
         const input = document.getElementById('adminPasswordInput').value;
         const errorDiv = document.getElementById('passwordError');
-        if (!input) {
-            errorDiv.innerText = 'ദയവായി പാസ്‌വേഡ് നല്‍കുക.';
-            return;
-        }
         if (input === expectedPassword) {
-            document.getElementById('authGate').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
+            document.getElementById('authGate').classList.add('hidden');
+            document.getElementById('adminContent').classList.remove('hidden');
             document.getElementById('salahDate').valueAsDate = new Date();
         } else {
             errorDiv.innerText = 'തെറ്റായ പാസ്‌വേഡ്. വീണ്ടും ശ്രമിക്കുക.';
         }
     }
 
-    document.getElementById('salahDate').valueAsDate = new Date();
     let currentSalahs = {};
-    let studentsData = {};
+    let students = [];
+    const prayers = [
+        { id: 'f', name: 'Subuh (ഫജർ)', icon: 'fa-sun' },
+        { id: 'd', name: 'Luhar (ളുഹർ)', icon: 'fa-sun' },
+        { id: 'a', name: 'Asr (അസർ)', icon: 'fa-cloud-sun' },
+        { id: 'm', name: 'Maghrib (മഗ്‌രിബ്)', icon: 'fa-moon' },
+        { id: 'i', name: 'Isha (ഇഷാ)', icon: 'fa-star-and-crescent' }
+    ];
 
     async function loadStudents() {
         const cls = document.getElementById('classSelect').value;
         const date = document.getElementById('salahDate').value;
         if(!cls || !date || !mId) return;
 
-        // മുൻപത്തെ ഡാറ്റ ക്ലിയർ ചെയ്യുന്നു (മാറിപ്പോകാതിരിക്കാൻ)
-        currentSalahs = {};
-        studentsData = {};
-
-        const listDiv = document.getElementById('studentList');
-        listDiv.innerHTML = "<div class='loading'>ലോഡ് ചെയ്യുന്നു...</div>";
-        listDiv.style.display = 'block';
+        const sectionsDiv = document.getElementById('prayerSections');
+        const loadingDiv = document.getElementById('loading');
+        
+        sectionsDiv.classList.add('hidden');
+        loadingDiv.classList.remove('hidden');
+        document.getElementById('saveSection').style.display = 'none';
 
         try {
-            // ✅ Firestore-ൽ നിന്ന് കുട്ടികളെ തിരയുന്നു
             const snap = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
                                  .where("class", "==", cls)
                                  .where("status", "==", "approved")
                                  .get();
 
-            listDiv.innerHTML = "";
-            let found = false;
-
-            // To speed up load, we can also fetch today's records in parallel
-            const studentPromises = snap.docs.map(async (doc) => {
+            students = [];
+            currentSalahs = {};
+            
+            const promises = snap.docs.map(async doc => {
                 const s = doc.data();
                 if(s.gender === "Male" || !s.gender) {
                     const sid = doc.id;
-                    studentsData[sid] = s;
-                    
-                    // സബ്-കളക്ഷനിൽ നിന്ന് ഇന്നത്തെ ഡാറ്റ
                     const sDoc = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).get();
                     const dayData = sDoc.exists ? sDoc.data() : {f:0, d:0, a:0, m:0, i:0};
                     
-                    return { sid, s, dayData };
+                    students.push({ id: sid, name: s.name, reg: s.regno || s.number || '-' });
+                    currentSalahs[sid] = dayData;
                 }
-                return null;
             });
 
-            const loadedStudents = await Promise.all(studentPromises);
+            await Promise.all(promises);
+            renderSections();
             
-            for (const item of loadedStudents) {
-                if(item) {
-                    found = true;
-                    const { sid, s, dayData } = item;
-                    currentSalahs[sid] = dayData;
-                    const displayRegNo = s.regno || s.number || '-';
+            loadingDiv.classList.add('hidden');
+            sectionsDiv.classList.remove('hidden');
+            if(students.length > 0) document.getElementById('saveSection').style.display = 'flex';
+            else sectionsDiv.innerHTML = "<div class='card' style='text-align:center;'>കുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
 
-                    listDiv.innerHTML += `
-                        <div class="student-item card">
-                            <div class="student-info">
-                                <b>${s.name}</b>
-                                <small>Reg: ${displayRegNo}</small>
-                            </div>
-                            <div class="salah-grid">
-                                <div class="salah-box ${dayData.f?'active':''}" id="f_${sid}" onclick="toggle('${sid}','f')">F</div>
-                                <div class="salah-box ${dayData.d?'active':''}" id="d_${sid}" onclick="toggle('${sid}','d')">D</div>
-                                <div class="salah-box ${dayData.a?'active':''}" id="a_${sid}" onclick="toggle('${sid}','a')">A</div>
-                                <div class="salah-box ${dayData.m?'active':''}" id="m_${sid}" onclick="toggle('${sid}','m')">M</div>
-                                <div class="salah-box ${dayData.i?'active':''}" id="i_${sid}" onclick="toggle('${sid}','i')">I</div>
-                            </div>
-                        </div>`;
-                }
-            }
-
-            if(!found) {
-                listDiv.innerHTML = "<div class='card' style='text-align:center;'>കുട്ടികളെ കണ്ടെത്തിയില്ല.</div>";
-                document.getElementById('saveSection').style.display = 'none';
-            } else {
-                document.getElementById('saveSection').style.display = 'block';
-            }
         } catch (e) {
-            listDiv.innerHTML = "Error: " + e.message;
+            loadingDiv.innerHTML = "Error: " + e.message;
         }
     }
 
+    function renderSections() {
+        const container = document.getElementById('prayerSections');
+        container.innerHTML = "";
+
+        prayers.forEach(prayer => {
+            let sectionHtml = `
+                <div class="prayer-section">
+                    <div class="prayer-header">
+                        <i class="fa ${prayer.icon}"></i> ${prayer.name}
+                    </div>
+                    <div class="student-list">`;
+            
+            students.forEach(s => {
+                const isActive = currentSalahs[s.id][prayer.id] ? 'active' : '';
+                sectionHtml += `
+                    <div class="student-item" onclick="toggle('${s.id}', '${prayer.id}')">
+                        <div class="student-info">
+                            <b>${s.name}</b>
+                            <small>Reg: ${s.reg}</small>
+                        </div>
+                        <div class="check-box ${isActive}" id="chk_${prayer.id}_${s.id}">
+                            <i class="fa fa-check"></i>
+                        </div>
+                    </div>`;
+            });
+
+            sectionHtml += `</div></div>`;
+            container.innerHTML += sectionHtml;
+        });
+    }
+
     function toggle(sid, type) {
-        const box = document.getElementById(`${type}_${sid}`);
-        currentSalahs[sid][type] = currentSalahs[sid][type] === 1 ? 0 : 1;
+        currentSalahs[sid][type] = currentSalahs[sid][type] ? 0 : 1;
+        const box = document.getElementById(`chk_${type}_${sid}`);
         box.classList.toggle('active');
     }
 
     async function saveAllSalah() {
         const date = document.getElementById('salahDate').value;
-        const btn = document.querySelector('.btn-save');
+        const btn = document.getElementById('saveBtn');
         btn.disabled = true;
         btn.innerText = "SAVING...";
 
@@ -219,55 +270,81 @@
             const promises = [];
             for(let sid in currentSalahs) {
                 const data = currentSalahs[sid];
-                // ✅ ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
                 const p = db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).set(data)
                 .then(() => {
-                    // ടോട്ടൽ സ്കോർ അപഡേറ്റ് ചെയ്യുന്നു
-                    const total = (data.f||0) + (data.d||0) + (data.a||0) + (data.m||0) + (data.i||0);
-                    return updatePoints(sid, total, date);
+                    return updatePoints(sid);
                 });
                 promises.push(p);
             }
             await Promise.all(promises);
             alert("വിജയകരമായി സേവ് ചെയ്തു!");
         } catch (e) {
-            alert("Error saving: " + e.message);
+            alert("Error: " + e.message);
         } finally {
             btn.disabled = false;
             btn.innerText = "SAVE DATA";
         }
     }
 
-    async function updatePoints(sid, dayScore, date) {
-        // ടോട്ടൽ റെക്കോർഡ് അപ്ഡേറ്റ് ചെയ്യാൻ
+    async function updatePoints(sid) {
         const totalRef = db.collection("salah_totals").doc(mId).collection("students").doc(sid);
+        const daysSnap = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").get();
         
-        const [doc, daysSnap] = await Promise.all([
-            totalRef.get(),
-            db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").get()
-        ]);
-        
-        let grandTotal = dayScore;
-        if (doc.exists) {
-            // ഇതിനകം ഉള്ള സ്കോർ ഉണ്ടെങ്കിൽ അത് അപ്ഡേറ്റ് ചെയ്യണം
-            grandTotal = 0;
-            daysSnap.forEach(d => {
-                const val = d.data();
-                grandTotal += (val.f||0) + (val.d||0) + (val.a||0) + (val.m||0) + (val.i||0);
-            });
-        }
+        let grandTotal = 0;
+        daysSnap.forEach(d => {
+            const val = d.data();
+            grandTotal += (val.f||0) + (val.d||0) + (val.a||0) + (val.m||0) + (val.i||0);
+        });
 
-        const sData = studentsData[sid]; // Use cached student data instead of fetching
+        const sInfo = students.find(s => s.id === sid);
+        if(!sInfo) return;
 
         await totalRef.set({
-            name: sData.name,
-            class: sData.class,
+            name: sInfo.name,
+            class: document.getElementById('classSelect').value,
             totalPoints: grandTotal,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
         
-        // RTDB-ലും സിങ്ക് ചെയ്യുന്നു (പഴയ ലീഡർബോർഡിനായി)
         rtdb.ref(`salah_total/${mId}/${sid}`).set(grandTotal);
+    }
+
+    // Restart Logic
+    function showConfirm() {
+        document.getElementById('restartBtn').style.display = 'none';
+        document.getElementById('confirmBox').style.display = 'block';
+    }
+
+    function hideConfirm() {
+        document.getElementById('restartBtn').style.display = 'inline-block';
+        document.getElementById('confirmBox').style.display = 'none';
+    }
+
+    async function executeRestart() {
+        const btn = document.querySelector('.btn-confirm');
+        btn.disabled = true;
+        btn.innerText = "ക്ലിയർ ചെയ്യുന്നു...";
+
+        try {
+            // 1. Clear totals from Firestore
+            const totalsSnap = await db.collection("salah_totals").doc(mId).collection("students").get();
+            const batch = db.batch();
+            totalsSnap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+
+            // 2. Clear from RTDB
+            await rtdb.ref(`salah_total/${mId}`).remove();
+
+            // Note: Individual daily records are kept in Firestore, 
+            // but since totals are cleared, the leaderboard will reset.
+            
+            alert("എല്ലാ മാർക്കുകളും വിജയകരമായി ക്ലിയർ ചെയ്തു!");
+            location.reload();
+        } catch (e) {
+            alert("Error: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "അതെ, ക്ലിയർ ചെയ്യുക";
+        }
     }
 </script>
 
