@@ -62,14 +62,42 @@
         <div class="header-section"><i class="fa fa-plus-circle"></i> പുതിയ പെയ്‌മെന്റ് നൽകുക</div>
         
         <div class="form-group">
-    <label>വിഷയം (Title)</label>
-    <input type="text" id="payTitle" list="titleHistory" placeholder="ഉദാ: പരീക്ഷ ഫീസ്">
-    <datalist id="titleHistory"></datalist>
-    
-    <p id="clearHistoryLink" style="font-size: 11px; color: #e74c3c; cursor: pointer; margin-top: 5px; display: none;" onclick="clearTitleHistory()">
-        <i class="fa fa-trash"></i> ഹിസ്റ്ററി ക്ലിയർ ചെയ്യുക
-    </p>
-</div>
+            <label>പെയ്‌മെന്റ് തരം</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <label style="flex: 1; border: 1.5px solid #ddd; padding: 10px; border-radius: 12px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" id="lblMonthly">
+                    <input type="radio" name="payType" value="monthly" onchange="togglePayType()" style="width: auto;"> മാസഫീസ്
+                </label>
+                <label style="flex: 1; border: 1.5px solid #ddd; padding: 10px; border-radius: 12px; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" id="lblOthers">
+                    <input type="radio" name="payType" value="others" onchange="togglePayType()" checked style="width: auto;"> മറ്റുള്ളവ
+                </label>
+            </div>
+        </div>
+
+        <div id="monthlySection" style="display: none;" class="form-group">
+            <label>മാസം തിരഞ്ഞെടുക്കുക</label>
+            <select id="monthSel">
+                <option value="">തിരഞ്ഞെടുക്കുക...</option>
+                <option value="ജനുവരി">ജനുവരി</option>
+                <option value="ഫെബ്രുവരി">ഫെബ്രുവരി</option>
+                <option value="മാർച്ച്">മാർച്ച്</option>
+                <option value="ഏപ്രിൽ">ഏപ്രിൽ</option>
+                <option value="മെയ്">മെയ്</option>
+                <option value="ജൂൺ">ജൂൺ</option>
+                <option value="ജൂലൈ">ജൂലൈ</option>
+                <option value="ആഗസ്റ്റ്">ആഗസ്റ്റ്</option>
+                <option value="സെപ്റ്റംബർ">സെപ്റ്റംബർ</option>
+                <option value="ഒക്ടോബർ">ഒക്ടോബർ</option>
+                <option value="നവംബർ">നവംബർ</option>
+                <option value="ഡിസംബർ">ഡിസംബർ</option>
+            </select>
+        </div>
+
+        <div id="othersSection" class="form-group">
+            <label>വിഷയം (Title)</label>
+            <input type="text" id="payTitle" placeholder="ഉദാ: പരീക്ഷ ഫീസ്" onfocus="showHistory()" oninput="hideHistoryDelay()">
+            <div id="historyPopup" style="display:none; position: absolute; background: white; width: calc(100% - 80px); max-width: 520px; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto;">
+            </div>
+        </div>
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div class="form-group">
@@ -191,10 +219,54 @@ function toggleSelectAll(master) {
     document.querySelectorAll('.sc').forEach(c => c.checked = master.checked);
 }
 
+// Toggle between Monthly and Others
+function togglePayType() {
+    const type = document.querySelector('input[name="payType"]:checked').value;
+    const monthlySec = document.getElementById('monthlySection');
+    const othersSec = document.getElementById('othersSection');
+    const lblMonthly = document.getElementById('lblMonthly');
+    const lblOthers = document.getElementById('lblOthers');
+
+    if(type === 'monthly') {
+        monthlySec.style.display = 'block';
+        othersSec.style.display = 'none';
+        lblMonthly.style.borderColor = 'var(--primary)';
+        lblMonthly.style.background = '#e8f5e9';
+        lblOthers.style.borderColor = '#ddd';
+        lblOthers.style.background = 'white';
+    } else {
+        monthlySec.style.display = 'none';
+        othersSec.style.display = 'block';
+        lblOthers.style.borderColor = 'var(--primary)';
+        lblOthers.style.background = '#e8f5e9';
+        lblMonthly.style.borderColor = '#ddd';
+        lblMonthly.style.background = 'white';
+    }
+}
+
+// Check if student already has this payment title
+async function studentHasPayment(reg, title) {
+    const snap = await rtdb.ref(`payments/${mID}/${reg}`).once('value');
+    let has = false;
+    snap.forEach(pay => {
+        if(pay.val().title === title) has = true;
+    });
+    return has;
+}
+
 // Save Payment Request
 async function requestPayment() {
-    const titleInput = document.getElementById('payTitle');
-    const title = titleInput.value.trim();
+    const type = document.querySelector('input[name="payType"]:checked').value;
+    let title = "";
+    
+    if(type === 'monthly') {
+        const month = document.getElementById('monthSel').value;
+        if(!month) return alert("മാസം തിരഞ്ഞെടുക്കുക!");
+        title = "മാസഫീസ് - " + month;
+    } else {
+        title = document.getElementById('payTitle').value.trim();
+    }
+
     const amt = document.getElementById('payAmt').value;
     const checks = document.querySelectorAll('.sc:checked');
     const btn = document.getElementById('requestBtn');
@@ -202,13 +274,19 @@ async function requestPayment() {
     if(!title || !amt || checks.length === 0) return alert("വിവരങ്ങൾ നൽകുക!");
 
     btn.disabled = true;
-    btn.innerText = "സേവ് ചെയ്യുന്നു...";
+    btn.innerText = "പരിശോധിക്കുന്നു...";
 
     try {
-        // ടൈറ്റിൽ ഹിസ്റ്ററിയിലേക്ക് സേവ് ചെയ്യാൻ (പുതിയ ഫംഗ്‌ഷൻ)
-        saveToHistory(title);
+        let skippedCount = 0;
+        let addedCount = 0;
 
         for(let c of checks) {
+            const has = await studentHasPayment(c.value, title);
+            if(has) {
+                skippedCount++;
+                continue;
+            }
+
             await rtdb.ref(`payments/${mID}/${c.value}`).push({
                 title: title, 
                 amount: amt, 
@@ -217,11 +295,17 @@ async function requestPayment() {
                 sName: c.getAttribute('data-name'), 
                 sClass: c.getAttribute('data-cls')
             });
+            addedCount++;
         }
         
-        alert("വിജയകരമായി സേവ് ചെയ്തു!");
-        titleInput.value = ""; // ടൈറ്റിൽ ക്ലിയർ ചെയ്യാൻ
-        document.getElementById('payAmt').value = ""; // തുക ക്ലിയർ ചെയ്യാൻ
+        if(type === 'others') saveToHistory(title);
+        
+        let msg = `${addedCount} പേർക്ക് പെയ്‌മെന്റ് ലിസ്റ്റ് സേവ് ചെയ്തു.`;
+        if(skippedCount > 0) msg += `\n${skippedCount} പേർക്ക് നേരത്തെ തന്നെ ഈ പെയ്‌മെന്റ് നൽകിയിട്ടുള്ളതിനാൽ ഒഴിവാക്കി.`;
+        alert(msg);
+
+        if(type === 'others') document.getElementById('payTitle').value = "";
+        document.getElementById('payAmt').value = "";
         updateProgramList();
         
     } catch (e) {
@@ -317,49 +401,96 @@ async function deletePayment(reg, payId) {
         }
     }
 }
-// പേജ് ലോഡ് ആകുമ്പോൾ തന്നെ പഴയ ടൈറ്റിലുകൾ ലോഡ് ചെയ്യുക
-window.onload = () => {
-    loadStudents();
-    updateProgramList();
-    loadTitleHistory(); // ഹിസ്റ്ററി ലോഡ് ചെയ്യാൻ
-};
-
-// ടൈറ്റിലുകൾ സേവ് ചെയ്യാനും കാണിക്കാനുമുള്ള ഫംഗ്‌ഷൻ
-function loadTitleHistory() {
+// Custom History Management
+function showHistory() {
     const history = JSON.parse(localStorage.getItem('payTitleHistory') || "[]");
-    const dataList = document.getElementById('titleHistory');
-    const clearLink = document.getElementById('clearHistoryLink');
-    
-    dataList.innerHTML = "";
-    if(history.length > 0) {
-        history.forEach(title => {
-            dataList.innerHTML += `<option value="${title}">`;
-        });
-        clearLink.style.display = "block";
-    } else {
-        clearLink.style.display = "none";
+    const popup = document.getElementById('historyPopup');
+    if(history.length === 0) {
+        popup.style.display = 'none';
+        return;
     }
+    
+    popup.innerHTML = "";
+    history.forEach((title, index) => {
+        const item = document.createElement('div');
+        item.style.padding = "12px 15px";
+        item.style.borderBottom = "1px solid #f0f0f0";
+        item.style.display = "flex";
+        item.style.justifyContent = "space-between";
+        item.style.alignItems = "center";
+        item.style.cursor = "pointer";
+        item.style.transition = "background 0.2s";
+        item.onmouseover = () => item.style.background = "#f8f9fa";
+        item.onmouseout = () => item.style.background = "transparent";
+        
+        const text = document.createElement('span');
+        text.innerText = title;
+        text.style.flex = "1";
+        text.style.fontSize = "14px";
+        text.onclick = () => {
+            document.getElementById('payTitle').value = title;
+            popup.style.display = 'none';
+        };
+        
+        const delBtn = document.createElement('div');
+        delBtn.innerHTML = '<i class="fa fa-trash-can"></i>';
+        delBtn.style.color = "#ff7675";
+        delBtn.style.padding = "8px";
+        delBtn.style.borderRadius = "8px";
+        delBtn.style.fontSize = "14px";
+        delBtn.style.transition = "0.2s";
+        delBtn.onmouseover = () => { delBtn.style.background = "#fff5f5"; delBtn.style.color = "#d63031"; };
+        delBtn.onmouseout = () => { delBtn.style.background = "transparent"; delBtn.style.color = "#ff7675"; };
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteFromHistory(index);
+        };
+        
+        item.appendChild(text);
+        item.appendChild(delBtn);
+        popup.appendChild(item);
+    });
+    popup.style.display = 'block';
 }
 
-// പെയ്‌മെന്റ് സേവ് ചെയ്യുന്ന സമയത്ത് ഈ ഫംഗ്‌ഷൻ കൂടി കോൾ ചെയ്യണം
+function hideHistoryDelay() {
+    setTimeout(() => {
+        // If the user is clicking the delete button, we don't want it to close immediately
+        // but it's simpler to just let them click.
+    }, 200);
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', (e) => {
+    const popup = document.getElementById('historyPopup');
+    const input = document.getElementById('payTitle');
+    if(e.target !== input && !popup.contains(e.target)) {
+        popup.style.display = 'none';
+    }
+});
+
 function saveToHistory(newTitle) {
+    if(!newTitle) return;
     let history = JSON.parse(localStorage.getItem('payTitleHistory') || "[]");
     if(!history.includes(newTitle)) {
-        history.push(newTitle);
+        history.unshift(newTitle); // Add to top
+        if(history.length > 10) history.pop(); // Keep last 10
         localStorage.setItem('payTitleHistory', JSON.stringify(history));
-        loadTitleHistory();
     }
 }
 
-// ഹിസ്റ്ററി ഡിലീറ്റ് ചെയ്യാൻ
-function clearTitleHistory() {
-    if(confirm("സേവ് ചെയ്തു വെച്ചിട്ടുള്ള ടൈറ്റിലുകൾ ഡിലീറ്റ് ചെയ്യണോ?")) {
-        localStorage.removeItem('payTitleHistory');
-        loadTitleHistory();
-    }
+function deleteFromHistory(index) {
+    let history = JSON.parse(localStorage.getItem('payTitleHistory') || "[]");
+    history.splice(index, 1);
+    localStorage.setItem('payTitleHistory', JSON.stringify(history));
+    showHistory(); // Refresh
 }
 
-window.onload = () => { loadStudents(); updateProgramList(); };
+window.onload = () => { 
+    loadStudents(); 
+    updateProgramList(); 
+    togglePayType();
+};
 </script>
 </body>
 </html>
