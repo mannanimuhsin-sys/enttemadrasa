@@ -31,37 +31,55 @@
         .save-bar { position: sticky; bottom: 20px; width: 100%; text-align: center; margin-top: 20px; }
         .btn-save { background: var(--primary); color: white; border: none; padding: 15px 50px; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
         .loading { text-align: center; padding: 20px; color: #666; }
+        .auth-gate { max-width: 520px; margin: 40px auto; text-align: center; }
+        .auth-gate p { color: #555; margin: 15px 0 20px; }
+        .auth-gate input { width: 100%; max-width: 320px; padding: 12px 14px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; margin-bottom: 12px; }
+        .auth-gate .btn-action { width: auto; padding: 12px 30px; }
+        .hidden-content { display: none; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <button onclick="history.back()" style="position: absolute; left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <i class="fa fa-arrow-left"></i>
-    </button>
-    <h2 style="margin:0;"><i class="fa fa-mosque"></i> SALAH TRACKER</h2>
-    <p style="margin:5px 0 0; font-size:13px;">വിദ്യാർത്ഥികളുടെ നിസ്‌കാര കണക്കുകൾ</p>
+<div id="authGate" class="card auth-gate">
+    <h3>അഡ്മിൻ ആക്‌സസ്</h3>
+    <p>ഈ പേജ് തുറക്കുമ്പോൾ നല്‍കിയ പാസ്‌വേഡ് ഇവിടെ തന്നെ നല്‍കുക. തെറ്റായ പാസ്‌വേഡ് നല്‍കിയാൽ ഉള്ളടക്കം കാണാൻ കഴിയില്ല.</p>
+    <button class="btn-save btn-action" onclick="openPasswordBox()">പാസ്‌വേഡ് നൽകാൻ ക്ലിക്ക് ചെയ്യുക</button>
+    <div id="passwordBox" style="display:none; margin-top: 20px;">
+        <input type="password" id="adminPasswordInput" placeholder="പാസ്‌വേഡ്">
+        <button class="btn-save btn-action" onclick="validatePassword()">പുഷ്‌ടിപ്പിക്കുക</button>
+        <div id="passwordError" style="color:#c00; margin-top: 10px;"></div>
+    </div>
 </div>
 
-<div class="card">
-    <label>തിയ്യതി തിരഞ്ഞെടുക്കുക:</label>
-    <input type="date" id="salahDate" onchange="loadStudents()">
+<div id="adminContent" class="hidden-content">
+    <div class="header">
+        <button onclick="history.back()" style="position: absolute; left: 15px; background: rgba(255,255,255,0.2); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <i class="fa fa-arrow-left"></i>
+        </button>
+        <h2 style="margin:0;"><i class="fa fa-mosque"></i> SALAH TRACKER</h2>
+        <p style="margin:5px 0 0; font-size:13px;">വിദ്യാർത്ഥികളുടെ നിസ്‌കാര കണക്കുകൾ</p>
+    </div>
+
+    <div class="card">
+        <label>തിയ്യതി തിരഞ്ഞെടുക്കുക:</label>
+        <input type="date" id="salahDate" onchange="loadStudents()">
+        
+        <label>ക്ലാസ് തിരഞ്ഞെടുക്കുക:</label>
+        <select id="classSelect" onchange="loadStudents()">
+            <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
+            <script>
+                for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
+                document.write(`<option value="11">Plus One (+1)</option>`);
+                document.write(`<option value="12">Plus Two (+2)</option>`);
+            </script>
+        </select>
+    </div>
+
+    <div id="studentList" style="display:none; margin-bottom: 80px;"></div>
     
-    <label>ക്ലാസ് തിരഞ്ഞെടുക്കുക:</label>
-    <select id="classSelect" onchange="loadStudents()">
-        <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
-        <script>
-            for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
-            document.write(`<option value="11">Plus One (+1)</option>`);
-            document.write(`<option value="12">Plus Two (+2)</option>`);
-        </script>
-    </select>
-</div>
-
-<div id="studentList" style="display:none; margin-bottom: 80px;"></div>
-
-<div class="save-bar" id="saveSection" style="display:none;">
-    <button class="btn-save" onclick="saveAllSalah()">SAVE DATA</button>
+    <div class="save-bar" id="saveSection" style="display:none;">
+        <button class="btn-save" onclick="saveAllSalah()">SAVE DATA</button>
+    </div>
 </div>
 
 <script>
@@ -81,6 +99,28 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const mId = urlParams.get('id'); // Madrasa ID
+    const expectedPassword = urlParams.get('pwd') || 'enttemadrasaadmin';
+
+    function openPasswordBox() {
+        document.getElementById('passwordBox').style.display = 'block';
+        document.getElementById('passwordError').innerText = '';
+    }
+
+    function validatePassword() {
+        const input = document.getElementById('adminPasswordInput').value;
+        const errorDiv = document.getElementById('passwordError');
+        if (!input) {
+            errorDiv.innerText = 'ദയവായി പാസ്‌വേഡ് നല്‍കുക.';
+            return;
+        }
+        if (input === expectedPassword) {
+            document.getElementById('authGate').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            document.getElementById('salahDate').valueAsDate = new Date();
+        } else {
+            errorDiv.innerText = 'തെറ്റായ പാസ്‌വേഡ്. വീണ്ടും ശ്രമിക്കുക.';
+        }
+    }
 
     document.getElementById('salahDate').valueAsDate = new Date();
     let currentSalahs = {};
