@@ -59,12 +59,14 @@
 </div>
 
 <div class="settings-box">
-    <h3><i class="fa fa-user-tie"></i> സദർ മുഅല്ലിം വിവരങ്ങൾ</h3>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <div style="flex:1;"><input type="text" id="sadarName" placeholder="സദർ മുഅല്ലിമിന്റെ പേര്"></div>
-        <div style="flex:1;"><input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ"></div>
-        <button class="btn btn-approve" onclick="saveSadarDetails()">UPDATE</button>
+    <h3><i class="fa fa-user-tie"></i> സദർ ഉസ്താദ് വിവരങ്ങൾ</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <div style="flex:2;"><input type="text" id="sadarName" placeholder="സദർ ഉസ്താദിന്റെ പേര്" readonly></div>
+        <div style="flex:1;"><input type="tel" id="sadarPhone" placeholder="മൊബൈൽ നമ്പർ" readonly></div>
+        <button class="btn btn-approve" id="sadarUpdateBtn" onclick="saveSadarDetails()" style="display:none;">UPDATE</button>
+        <button class="btn" id="sadarChangeBtn" style="background:#6c757d;" onclick="enableSadarEdit()">CHANGE</button>
     </div>
+    <div id="sadarStatus" style="font-size:12px; margin-top:5px; color: #28a745; font-weight:bold; min-height: 15px;"></div>
 </div>
 
 <div class="stats-grid">
@@ -203,16 +205,60 @@ async function loadSadarDetails() {
     if(doc.exists) {
         document.getElementById('sadarName').value = doc.data().sadar_name || "";
         document.getElementById('sadarPhone').value = doc.data().sadar_phone || "";
+        
+        // If data exists, keep it readonly initially
+        if(doc.data().sadar_name) {
+            document.getElementById('sadarName').readOnly = true;
+            document.getElementById('sadarPhone').readOnly = true;
+            document.getElementById('sadarUpdateBtn').style.display = 'none';
+            document.getElementById('sadarChangeBtn').style.display = 'inline-block';
+        } else {
+            enableSadarEdit(); // If empty, allow editing
+        }
+    } else {
+        enableSadarEdit();
     }
 }
 
 async function saveSadarDetails() {
+    const btn = document.getElementById('sadarUpdateBtn');
     const sName = document.getElementById('sadarName').value;
     const sPhone = document.getElementById('sadarPhone').value;
-    await db.collection("madrasa_settings").doc(mId).set({
-        sadar_name: sName, sadar_phone: sPhone, updated_at: new Date()
-    }, { merge: true });
-    alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
+    
+    if(!sName || !sPhone) {
+        alert("ദയവായി പേരും ഫോൺ നമ്പറും നൽകുക.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "SAVING...";
+
+    try {
+        await db.collection("madrasa_settings").doc(mId).set({
+            sadar_name: sName, sadar_phone: sPhone, updated_at: new Date()
+        }, { merge: true });
+        
+        document.getElementById('sadarStatus').innerText = "✓ വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!";
+        setTimeout(() => { document.getElementById('sadarStatus').innerText = ""; }, 3000);
+        
+        document.getElementById('sadarName').readOnly = true;
+        document.getElementById('sadarPhone').readOnly = true;
+        document.getElementById('sadarUpdateBtn').style.display = 'none';
+        document.getElementById('sadarChangeBtn').style.display = 'inline-block';
+    } catch (e) {
+        alert("Error: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "UPDATE";
+    }
+}
+
+function enableSadarEdit() {
+    document.getElementById('sadarName').readOnly = false;
+    document.getElementById('sadarPhone').readOnly = false;
+    document.getElementById('sadarUpdateBtn').style.display = 'inline-block';
+    document.getElementById('sadarChangeBtn').style.display = 'none';
+    document.getElementById('sadarName').focus();
 }
 
 async function loadStudents() {
