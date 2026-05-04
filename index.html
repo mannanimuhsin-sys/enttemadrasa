@@ -649,6 +649,14 @@
     regBtn.disabled = true;
 
     try {
+        // ✅ ഈ രജിസ്റ്റർ നമ്പർ നിലവിലുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+        const checkSnap = await db.ref('madrasa_requests/' + regNo).once('value');
+        if (checkSnap.exists()) {
+            alert("ഈ രജിസ്റ്റർ നമ്പറിൽ ഇതിനകം ഒരു മദ്റസ രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്! നിലവിലുള്ളത് ഡിലീറ്റ് ചെയ്താൽ മാത്രമേ പുതിയത് ചെയ്യാൻ സാധിക്കൂ.");
+            regBtn.innerText = "REGISTER NOW";
+            regBtn.disabled = false;
+            return;
+        }
         const uHash = await hashPassword(uPass);
         const pHash = await hashPassword(pPass);
         let photoUrl = "";

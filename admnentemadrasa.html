@@ -165,10 +165,10 @@
                         </div>
                     </div>
                     <div class="action-row">
-                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-check"></i> APPROVE</button>` : ''}
-                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked')"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved')"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
-                        <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}', '${data.place || ''}')"><i class="fas fa-edit"></i> EDIT</button>
-                        <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}')"><i class="fas fa-trash"></i> DELETE</button>
+                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}')"><i class="fas fa-check"></i> APPROVE</button>` : ''}
+                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked', '${data.reg || data.id}')"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}')"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
+                        <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}', '${data.place || ''}', '${data.reg || data.id}')"><i class="fas fa-edit"></i> EDIT</button>
+                        <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}', '${data.reg || data.id}')"><i class="fas fa-trash"></i> DELETE</button>
                     </div>
                 </div>
             `).join('');
@@ -176,7 +176,7 @@
     }
 
     // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
-  async function updateStatus(id, newStatus) {
+  async function updateStatus(id, newStatus, regNo) {
     if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
         // ക്ലിക്ക് ചെയ്ത ബട്ടൺ കണ്ടെത്താൻ
         const btn = event.currentTarget; 
@@ -185,20 +185,18 @@
         btn.disabled = true;
 
         try {
-            // 1. Realtime Database Update (ഇതാണ് ആദ്യം വേണ്ടത്)
+            // 1. Realtime Database Update
             await db.ref('madrasa_requests/' + id).update({ status: newStatus });
-            console.log("Realtime DB Updated");
 
             // 2. Firestore Sync
             await firestore.collection('madrasa_requests').doc(id).set({ status: newStatus }, { merge: true });
-            console.log("Firestore Updated");
 
-            // 3. Supabase Sync (ഉണ്ടെങ്കിൽ മാത്രം)
+            // 3. Supabase Sync
             if (typeof supabase !== 'undefined' && window.supabaseClient) {
                 const { error } = await window.supabaseClient
                     .from('madrasa_requests')
                     .update({ status: newStatus })
-                    .eq('reg', id); // നിങ്ങളുടെ ടേബിളിലെ ഐഡി 'reg' ആണോ എന്ന് ഉറപ്പുവരുത്തുക
+                    .eq('reg', regNo);
                 
                 if(error) console.error("Supabase Sync Error:", error);
             }
@@ -207,25 +205,31 @@
         } catch (e) {
             console.error("Overall Update Error:", e);
             alert("Error: " + e.message);
-            // പിശക് വന്നാൽ ബട്ടൺ പഴയ രൂപത്തിലാക്കാൻ
             btn.innerHTML = oldHTML;
             btn.disabled = false;
         }
     }
 }
 
-    async function deleteMadrasa(id) {
+    async function deleteMadrasa(id, regNo) {
         if(confirm("ഈ മദ്റസ നീക്കം ചെയ്യട്ടെ? ഈ നടപടി മാറ്റാൻ കഴിയില്ല.")) {
             try {
                 await db.ref('madrasa_requests/' + id).remove();
                 await firestore.collection('madrasa_requests').doc(id).delete();
-            } catch (e) { alert("Error deleting."); }
+                
+                if (typeof supabase !== 'undefined' && window.supabaseClient) {
+                    await window.supabaseClient.from('madrasa_requests').delete().eq('reg', regNo);
+                }
+                alert("വിജയകരമായി നീക്കം ചെയ്തു! ✅");
+            } catch (e) { alert("Error deleting: " + e.message); }
         }
     }
 
-    function openEditModal(id, name, place) {
+    let editingReg = "";
+    function openEditModal(id, name, place, reg) {
         editingId = id;
-        document.getElementById('targetName').innerText = name;
+        editingReg = reg;
+        document.getElementById('targetName').innerText = name + " (" + reg + ")";
         document.getElementById('newMadrasaName').value = name;
         document.getElementById('newMadrasaPlace').value = place || "";
         document.getElementById('editModal').style.display = 'block';
@@ -312,7 +316,7 @@
                     await window.supabaseClient
                         .from('madrasa_requests')
                         .update(sbUpdates)
-                        .eq('reg', editingId);
+                        .eq('reg', editingReg || editingId);
                 }
             }
             
