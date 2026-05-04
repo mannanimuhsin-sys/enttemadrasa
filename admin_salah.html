@@ -91,6 +91,10 @@
         const date = document.getElementById('salahDate').value;
         if(!cls || !date || !mId) return;
 
+        // മുൻപത്തെ ഡാറ്റ ക്ലിയർ ചെയ്യുന്നു (മാറിപ്പോകാതിരിക്കാൻ)
+        currentSalahs = {};
+        studentsData = {};
+
         const listDiv = document.getElementById('studentList');
         listDiv.innerHTML = "<div class='loading'>ലോഡ് ചെയ്യുന്നു...</div>";
         listDiv.style.display = 'block';

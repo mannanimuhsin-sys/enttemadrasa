@@ -140,15 +140,27 @@
                 });
             });
 
-            // ആദ്യത്തെ 3 പേരുടെ ഫോട്ടോ എടുക്കുന്നു
-            for(let i = 0; i < Math.min(3, winners.length); i++) {
+            // പത്തോളം വിജയികളുടെ പേരും ഫോട്ടോയും ഐഡി കാർഡ് സിസ്റ്റത്തിൽ നിന്ന് നേരിട്ട് എടുക്കുന്നു (കൃത്യത ഉറപ്പാക്കാൻ)
+            const detailPromises = winners.slice(0, 10).map(async (winner, index) => {
                 try {
-                    const stDoc = await db.collection("students").doc(winners[i].reg).get();
-                    if(stDoc.exists) {
-                        winners[i].photo = stDoc.data().photo || "";
+                    let sid = winner.reg;
+                    // ID-യിൽ മദ്റസ പ്രീഫിക്സ് ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+                    if(mId && !sid.startsWith(mId + "_")) {
+                        sid = mId + "_" + sid;
                     }
-                } catch(e) { console.error("Error fetching photo", e); }
-            }
+
+                    const stDoc = await db.collection("students").doc(sid).get();
+                    if(stDoc.exists) {
+                        const sData = stDoc.data();
+                        winners[index].name = sData.name; // ഐഡി കാർഡിലെ ഒറിജിനൽ പേര്
+                        winners[index].photo = sData.photo || "";
+                        winners[index].cls = sData.class;
+                        winners[index].reg = sData.regno || sData.number || winner.reg;
+                    }
+                } catch(e) { console.error("Error fetching details for " + winner.reg, e); }
+            });
+
+            await Promise.all(detailPromises);
 
             renderUI(winners);
 
