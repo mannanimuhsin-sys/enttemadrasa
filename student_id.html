@@ -133,8 +133,15 @@
                 </div>
             </div>
         </div>
-        <div style="max-width:360px; margin:20px auto; display:flex; gap:10px;">
-            <button class="main-btn" onclick="downloadID()">DOWNLOAD</button>
+        <div id="correctionUI" style="display:none; background:#fff; margin:20px auto; max-width:360px; padding:15px; border-radius:12px; border-left:5px solid #007bff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: left;">
+            <h3 style="margin-top:0; color:#007bff; font-size: 16px;"><i class="fa fa-info-circle"></i> അഡ്മിൻ വരുത്തിയ മാറ്റങ്ങൾ</h3>
+            <p style="font-size:12px; line-height: 1.4;">ഉസ്താദ് നിങ്ങളുടെ ഐഡി കാർഡിൽ ചില മാറ്റങ്ങൾ വരുത്തിയിട്ടുണ്ട്. താഴെ പറയുന്നവ ശരിയാണോ എന്ന് പരിശോധിച്ച് അപ്രൂവ് ചെയ്യുക. അപ്രൂവ് ചെയ്ത ശേഷം മാത്രമേ ഐഡി കാർഡ് ഡൗൺലോഡ് ചെയ്യാൻ കഴിയൂ.</p>
+            <div id="diffList" style="font-size:12px; margin: 10px 0; background: #f8f9fa; padding: 10px; border-radius: 8px;"></div>
+            <button class="main-btn" id="parentApproveBtn" onclick="parentApprove()">APPROVE CHANGES</button>
+        </div>
+
+        <div id="actionBtns" style="max-width:360px; margin:20px auto; display:flex; gap:10px;">
+            <button class="main-btn" id="dlBtn" onclick="downloadID()">DOWNLOAD</button>
             <button class="main-btn" style="background:#555" onclick="window.location.href='index.html'">BACK TO PORTAL</button>
         </div>
     </div>
@@ -314,7 +321,7 @@
                 if (doc.exists) {
                     const s = doc.data();
                     if (s.password === hPass) {
-                        if (s.status === "approved") { 
+                        if (s.status === "approved" || s.status === "admin_edited" || s.status === "parent_approved") { 
                             renderID(s); 
                         } else { 
                             alert("അഡ്മിൻ അപ്രൂവലിനായി കാത്തിരിക്കുക!"); 
@@ -333,16 +340,51 @@
         }
 
         async function renderID(s) {
-            document.getElementById('pName').innerText = s.name;
-            document.getElementById('pFather').innerText = s.father;
-            document.getElementById('pGender').innerText = s.gender;
-            document.getElementById('pClass').innerText = s.class;
-            document.getElementById('pMentor').innerText = s.mentor;
-            document.getElementById('pBlood').innerText = s.blood;
-            document.getElementById('pPhone').innerText = s.phone;
-            document.getElementById('pDob').innerText = s.dob.split("-").reverse().join("-");
-            document.getElementById('pReg').innerText = s.regno;
-            document.getElementById('pImg').src = s.photo;
+            let displayData = s;
+            const isEdited = s.status === 'admin_edited';
+            const isParentApproved = s.status === 'parent_approved';
+            
+            // If admin edited, we might want to show the NEW data in the card preview
+            if (isEdited && s.pending_updates) {
+                displayData = { ...s, ...s.pending_updates };
+                document.getElementById('correctionUI').style.display = "block";
+                document.getElementById('dlBtn').disabled = true;
+                document.getElementById('dlBtn').style.opacity = "0.5";
+                
+                // Show Diff
+                let diffHtml = "";
+                const fields = { name: "പേര്", class: "ക്ലാസ്", phone: "ഫോൺ", gender: "ജെൻഡർ", blood: "ബ്ലഡ് ഗ്രൂപ്പ്" };
+                for(let key in fields) {
+                    if (s.pending_updates[key] && s.pending_updates[key] !== s[key]) {
+                        diffHtml += `<div style="margin-bottom:5px;"><b>${fields[key]}:</b> <span style="text-decoration:line-through; color:red;">${s[key] || 'None'}</span> → <span style="color:green; font-weight:bold;">${s.pending_updates[key]}</span></div>`;
+                    }
+                }
+                if (s.pending_updates.photo && s.pending_updates.photo !== s.photo) {
+                    diffHtml += `<div style="margin-bottom:5px;"><b>ഫോട്ടോ:</b> <span style="color:green; font-weight:bold;">പുതിയ ഫോട്ടോ നൽകി</span></div>`;
+                }
+                document.getElementById('diffList').innerHTML = diffHtml || "ചില വിവരങ്ങളിൽ മാറ്റം വരുത്തിയിട്ടുണ്ട്.";
+            } else if (isParentApproved) {
+                document.getElementById('correctionUI').style.display = "block";
+                document.getElementById('correctionUI').style.borderLeftColor = "#28a745";
+                document.getElementById('correctionUI').innerHTML = `<h3 style="color:#28a745; font-size: 16px;"><i class="fa fa-check-circle"></i> Approved</h3><p style="font-size:12px;">നിങ്ങൾ മാറ്റങ്ങൾ അപ്രൂവ് ചെയ്തിട്ടുണ്ട്. ഉസ്താദ് ഇത് സെറ്റ് ചെയ്ത ശേഷം നിങ്ങൾക്ക് ഐഡി കാർഡ് ലഭിക്കുന്നതാണ്.</p>`;
+                document.getElementById('dlBtn').disabled = true;
+                document.getElementById('dlBtn').style.opacity = "0.5";
+            } else {
+                document.getElementById('correctionUI').style.display = "none";
+                document.getElementById('dlBtn').disabled = false;
+                document.getElementById('dlBtn').style.opacity = "1";
+            }
+
+            document.getElementById('pName').innerText = displayData.name;
+            document.getElementById('pFather').innerText = displayData.father;
+            document.getElementById('pGender').innerText = displayData.gender;
+            document.getElementById('pClass').innerText = displayData.class;
+            document.getElementById('pMentor').innerText = displayData.mentor;
+            document.getElementById('pBlood').innerText = displayData.blood;
+            document.getElementById('pPhone').innerText = displayData.phone;
+            document.getElementById('pDob').innerText = displayData.dob.split("-").reverse().join("-");
+            document.getElementById('pReg').innerText = displayData.regno;
+            document.getElementById('pImg').src = displayData.photo;
 
             // സദർ മുഅല്ലിം പേര് ലോഡ് ചെയ്യുന്നു
             const settings = await db.collection("madrasa_settings").doc(mId).get();
@@ -350,9 +392,30 @@
                 document.getElementById('sadarNameDisplay').innerText = settings.data().sadar_name || "";
             }
 
-            document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(s.regno)}`;
+            document.getElementById('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(displayData.regno)}`;
             document.getElementById('panel').style.display = "none";
             document.getElementById('idArea').style.display = "block";
+            window.currentStudent = s; // Save for approval
+        }
+
+        async function parentApprove() {
+            if (!window.currentStudent) return;
+            const s = window.currentStudent;
+            const docId = mId + "_" + s.regno;
+            const btn = document.getElementById('parentApproveBtn');
+            
+            btn.disabled = true;
+            btn.innerText = "Approving...";
+
+            try {
+                await db.collection("students").doc(docId).update({ status: 'parent_approved' });
+                alert("മാറ്റങ്ങൾ അപ്രൂവ് ചെയ്തു! ഉസ്താദ് ഇത് സെറ്റ് ചെയ്ത ശേഷം നിങ്ങൾക്ക് ഐഡി കാർഡ് ലഭിക്കുന്നതാണ്.");
+                location.reload();
+            } catch (e) {
+                alert("Error approving changes.");
+                btn.disabled = false;
+                btn.innerText = "APPROVE CHANGES";
+            }
         }
 
         function downloadID() {

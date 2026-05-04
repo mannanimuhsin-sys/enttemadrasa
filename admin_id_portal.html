@@ -33,6 +33,8 @@
         .status-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; }
         .pending { background: #fff3cd; color: #856404; }
         .approved { background: #d4edda; color: #155724; }
+        .admin_edited { background: #cce5ff; color: #004085; }
+        .parent_approved { background: #d1ecf1; color: #0c5460; }
         
         .action-btns { display: flex; gap: 5px; }
         .btn-small { padding: 5px 10px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; color: white; }
@@ -242,6 +244,10 @@ function renderStudents(students) {
         // പാസ്‌വേഡ് കാണിക്കുന്നു (ചുരുക്കരൂപത്തിൽ)
         const passDisplay = s.password ? s.password.substring(0, 8) + "..." : "N/A";
 
+        const statusText = s.status === 'admin_edited' ? 'Admin Edited' : 
+                          s.status === 'parent_approved' ? 'Parent Approved' : 
+                          s.status.toUpperCase();
+
         html += `
             <tr>
                 <td><img src="${s.photo}" class="student-img"></td>
@@ -250,10 +256,11 @@ function renderStudents(students) {
                 <td>${s.class}</td>
                 <td>${s.phone}</td>
                 <td><code title="${s.password}">${passDisplay}</code></td>
-                <td><span class="status-badge ${s.status}">${s.status.toUpperCase()}</span></td>
+                <td><span class="status-badge ${s.status}">${statusText}</span></td>
                 <td>
                     <div class="action-btns">
                         ${s.status === 'pending' ? `<button class="btn-small btn-approve" onclick="quickApprove('${displayRegNo}')">Approve</button>` : ''}
+                        ${s.status === 'parent_approved' ? `<button class="btn-small btn-approve" style="background:#6f42c1" onclick="finalizeUpdate('${displayRegNo}')">Set Final</button>` : ''}
                         <button class="btn-small btn-edit" onclick="openEdit(${JSON.stringify(s).replace(/"/g, '&quot;')})"><i class="fa fa-edit"></i></button>
                         <button class="btn-small btn-delete" onclick="deleteStudent('${displayRegNo}')"><i class="fa fa-trash"></i></button>
                     </div>
@@ -315,45 +322,36 @@ async function updateStudent() {
     btn.innerText = "Updating...";
 
     const updateObj = {
-        regno: newRegno,
-        number: newRegno,
-        name: document.getElementById('editName').value,
-        class: document.getElementById('editClass').value,
-        phone: document.getElementById('editPhone').value,
-        gender: document.getElementById('editGender').value,
-        blood: document.getElementById('editBlood').value,
-        status: document.getElementById('editStatus').value
+        status: "admin_edited",
+        pending_updates: {
+            regno: newRegno,
+            number: newRegno,
+            name: document.getElementById('editName').value,
+            class: document.getElementById('editClass').value,
+            phone: document.getElementById('editPhone').value,
+            gender: document.getElementById('editGender').value,
+            blood: document.getElementById('editBlood').value,
+        }
     };
 
     const passInput = document.getElementById('editPass').value;
-    // പാസ്‌വേഡ് മാറ്റിയിട്ടുണ്ടെങ്കിൽ മാത്രം ഹാഷ് ചെയ്യുക
     if (passInput && passInput.length < 50) { 
-        updateObj.password = await hashPassword(passInput);
+        updateObj.pending_updates.password = await hashPassword(passInput);
     }
 
     try {
-        // ഫോട്ടോ മാറ്റിയിട്ടുണ്ടെങ്കിൽ ImgBB വഴി അപ്‌ലോഡ് ചെയ്യുക
         if (newPhotoData) {
             const apiKey = "A0ec42450bb0e87699896f33dbd7c471";
             const formData = new FormData();
             formData.append("image", newPhotoData.split(',')[1]);
             const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
             const json = await res.json();
-            if (json.success) updateObj.photo = json.data.url;
+            if (json.success) updateObj.pending_updates.photo = json.data.url;
         }
 
-        if (oldRegno !== newRegno) {
-            const docSnap = await db.collection("students").doc(oldDocId).get();
-            if (docSnap.exists) {
-                const mergedData = { ...docSnap.data(), ...updateObj };
-                await db.collection("students").doc(newDocId).set(mergedData);
-                await db.collection("students").doc(oldDocId).delete();
-            }
-        } else {
-            await db.collection("students").doc(oldDocId).update(updateObj);
-        }
+        await db.collection("students").doc(oldDocId).update(updateObj);
 
-        alert("വിവരങ്ങൾ അപ്‌ഡേറ്റ് ചെയ്തു!");
+        alert("എഡിറ്റ് ചെയ്ത വിവരങ്ങൾ രക്ഷിതാവിന്റെ അപ്രൂവലിനായി അയച്ചു!");
         document.getElementById('editModal').style.display = 'none';
         loadStudents();
     } catch (e) {
@@ -361,6 +359,34 @@ async function updateStudent() {
     } finally {
         btn.disabled = false;
         btn.innerText = "UPDATE DATA";
+    }
+}
+
+async function finalizeUpdate(regno) {
+    const docId = mId + "_" + regno;
+    const docSnap = await db.collection("students").doc(docId).get();
+    if (!docSnap.exists) return;
+
+    const data = docSnap.data();
+    if (data.status !== 'parent_approved' || !data.pending_updates) return;
+
+    if (confirm("രക്ഷിതാവ് അപ്രൂവ് ചെയ്ത വിവരങ്ങൾ ഐഡി കാർഡിൽ സെറ്റ് ചെയ്യണമോ?")) {
+        const finalData = { ...data.pending_updates, status: 'approved' };
+        delete finalData.pending_updates; // Clean up
+        
+        // Handle regno change if it was part of edits
+        const oldReg = data.regno;
+        const newReg = data.pending_updates.regno;
+
+        if (oldReg !== newReg) {
+            await db.collection("students").doc(mId + "_" + newReg).set({ ...data, ...finalData });
+            await db.collection("students").doc(docId).delete();
+        } else {
+            await db.collection("students").doc(docId).update({ ...finalData, pending_updates: firebase.firestore.FieldValue.delete() });
+        }
+        
+        alert("ഐഡി കാർഡ് സെറ്റ് ചെയ്തു!");
+        loadStudents();
     }
 }
 
