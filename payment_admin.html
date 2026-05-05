@@ -204,21 +204,34 @@ async function loadStudents() {
     list.innerHTML = "<tr><td colspan='3' style='text-align:center'>Loading...</td></tr>";
     
     try {
-        let q = fs.collection("students").where("madrasa_id", "==", mID);
+        let q = fs.collection("students")
+                  .where("madrasa_id", "==", mID)
+                  .where("status", "==", "approved");
+        
         const snap = await q.get();
         list.innerHTML = "";
+        
+        let count = 0;
         snap.forEach(doc => {
             const s = doc.data();
             if(cls !== "All" && s.class != cls) return;
+            
             const reg = s.regno || s.number || "No-Reg";
-            // Use doc.id as value for uniqueness, and store reg for other uses
             list.innerHTML += `<tr>
                 <td><input type="checkbox" class="sc" value="${doc.id}" data-reg="${reg}" data-name="${s.name}" data-cls="${s.class}" checked></td>
                 <td>${s.name}</td>
                 <td>${s.class}</td>
             </tr>`;
+            count++;
         });
-    } catch (e) { console.log(e); }
+        
+        if(count === 0) {
+            list.innerHTML = "<tr><td colspan='3' style='text-align:center'>ഈ ക്ലാസ്സിൽ അപ്രൂവ് ചെയ്ത കുട്ടികളെ കണ്ടെത്തിയില്ല.</td></tr>";
+        }
+    } catch (e) { 
+        console.log(e); 
+        list.innerHTML = "<tr><td colspan='3' style='text-align:center; color:red;'>Error loading students.</td></tr>";
+    }
 }
 
 function toggleSelectAll(master) {
@@ -456,9 +469,9 @@ function calculateStats() {
             
             // Function to process a payment object
             const processPayment = (p, payId) => {
-                if(p.title === prog) {
-                    // Class Filter
-                    if(trackCls !== "All" && p.sClass != trackCls) return;
+                if(p.title && p.title.trim() === prog.trim()) {
+                    // Class Filter - Convert both to string for robust comparison
+                    if(trackCls !== "All" && String(p.sClass) !== String(trackCls)) return;
 
                     totalNeed += parseInt(p.amount) || 0;
                     const isPaid = p.status === "Paid";
