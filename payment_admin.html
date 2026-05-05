@@ -210,9 +210,10 @@ async function loadStudents() {
         snap.forEach(doc => {
             const s = doc.data();
             if(cls !== "All" && s.class != cls) return;
-            const reg = s.regno || s.number;
+            const reg = s.regno || s.number || "No-Reg";
+            // Use doc.id as value for uniqueness, and store reg for other uses
             list.innerHTML += `<tr>
-                <td><input type="checkbox" class="sc" value="${reg}" data-name="${s.name}" data-cls="${s.class}" checked></td>
+                <td><input type="checkbox" class="sc" value="${doc.id}" data-reg="${reg}" data-name="${s.name}" data-cls="${s.class}" checked></td>
                 <td>${s.name}</td>
                 <td>${s.class}</td>
             </tr>`;
@@ -249,9 +250,15 @@ function togglePayType() {
     }
 }
 
+// Helper to escape RTDB keys (Firebase doesn't allow ., $, #, [, ], / in keys)
+function escapeKey(key) {
+    return key ? key.replace(/[\.\$#\[\]\/]/g, '_') : "unknown";
+}
+
 // Check if student already has this payment title
-async function studentHasPayment(reg, title) {
-    const snap = await rtdb.ref(`payments/${mID}/${reg}`).once('value');
+async function studentHasPayment(stuId, title) {
+    const key = escapeKey(stuId);
+    const snap = await rtdb.ref(`payments/${mID}/${key}`).once('value');
     let has = false;
     snap.forEach(pay => {
         if(pay.val().title === title) has = true;
@@ -286,19 +293,22 @@ async function requestPayment() {
         let addedCount = 0;
 
         for(let c of checks) {
-            const has = await studentHasPayment(c.value, title);
+            const stuId = c.value;
+            const has = await studentHasPayment(stuId, title);
             if(has) {
                 skippedCount++;
                 continue;
             }
 
-            await rtdb.ref(`payments/${mID}/${c.value}`).push({
+            const key = escapeKey(stuId);
+            await rtdb.ref(`payments/${mID}/${key}`).push({
                 title: title, 
                 amount: amt, 
                 status: "Pending",
                 date: new Date().toLocaleDateString('en-GB'),
                 sName: c.getAttribute('data-name'), 
-                sClass: c.getAttribute('data-cls')
+                sClass: c.getAttribute('data-cls'),
+                sReg: c.getAttribute('data-reg')
             });
             addedCount++;
         }
@@ -441,37 +451,53 @@ function calculateStats() {
     list.innerHTML = "";
 
     rtdb.ref(`payments/${mID}`).once('value', snap => {
-        snap.forEach(student => {
-            const reg = student.key;
-            student.forEach(paySnap => {
-                const p = paySnap.val();
+        snap.forEach(studentSnap => {
+            const stuKey = studentSnap.key;
+            
+            // Function to process a payment object
+            const processPayment = (p, payId) => {
                 if(p.title === prog) {
                     // Class Filter
                     if(trackCls !== "All" && p.sClass != trackCls) return;
 
-                    totalNeed += parseInt(p.amount);
+                    totalNeed += parseInt(p.amount) || 0;
                     const isPaid = p.status === "Paid";
-                    if(isPaid) totalGot += parseInt(p.amount);
+                    if(isPaid) totalGot += parseInt(p.amount) || 0;
 
-                   list.innerHTML += `
+                    list.innerHTML += `
     <tr>
-        <td>${p.sName}</td>
-        <td>${p.sClass}</td>
+        <td>${p.sName || 'Unknown'}</td>
+        <td>${p.sClass || '-'}</td>
         <td><span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span></td>
         <td>
             <div style="display: flex; gap: 5px;">
-                <button class="btn-change" title="Change Status" onclick="changeStatus('${reg}', '${paySnap.key}', '${p.status}')">
+                <button class="btn-change" title="Change Status" onclick="changeStatus('${stuKey}', '${payId}', '${p.status}')">
                     <i class="fa fa-sync"></i>
                 </button>
                 <button class="btn-change" title="View Details" style="color: blue;" onclick="viewPayment('${p.sName}', '${p.title}', '${p.amount}', '${p.date}', '${p.status}')">
                     <i class="fa fa-eye"></i>
                 </button>
-                <button class="btn-change" title="Delete" style="color: red;" onclick="deletePayment('${reg}', '${paySnap.key}')">
+                <button class="btn-change" title="Delete" style="color: red;" onclick="deletePayment('${stuKey}', '${payId}')">
                     <i class="fa fa-trash"></i>
                 </button>
             </div>
         </td>
     </tr>`;
+                }
+            };
+
+            // Iterate over payments
+            studentSnap.forEach(paySnap => {
+                const val = paySnap.val();
+                if (val && val.title) {
+                    // Normal structure
+                    processPayment(val, paySnap.key);
+                } else if (val) {
+                    // Handle potential nesting (e.g. if key had '/')
+                    paySnap.forEach(subSnap => {
+                        const subVal = subSnap.val();
+                        if (subVal && subVal.title) processPayment(subVal, paySnap.key + "/" + subSnap.key);
+                    });
                 }
             });
         });
@@ -481,9 +507,9 @@ function calculateStats() {
     });
 }
 
-async function changeStatus(reg, payId, current) {
+async function changeStatus(stuKey, payId, current) {
     const newStatus = current === "Paid" ? "Pending" : "Paid";
-    await rtdb.ref(`payments/${mID}/${reg}/${payId}`).update({ status: newStatus });
+    await rtdb.ref(`payments/${mID}/${stuKey}/${payId}`).update({ status: newStatus });
     calculateStats();
 }
 // 1. പെയ്‌മെന്റ് വിവരങ്ങൾ കാണാൻ
@@ -492,10 +518,10 @@ function viewPayment(name, title, amount, date, status) {
 }
 
 // 2. പെയ്‌മെന്റ് ഡിലീറ്റ് ചെയ്യാൻ
-async function deletePayment(reg, payId) {
+async function deletePayment(stuKey, payId) {
     if (confirm("ഈ പെയ്‌മെന്റ് ലിസ്റ്റ് ഡിലീറ്റ് ചെയ്യണമെന്നുറപ്പാണോ?")) {
         try {
-            await rtdb.ref(`payments/${mID}/${reg}/${payId}`).remove();
+            await rtdb.ref(`payments/${mID}/${stuKey}/${payId}`).remove();
             alert("ഡിലീറ്റ് ചെയ്തു!");
             calculateStats(); // ലിസ്റ്റ് പുതുക്കാൻ
         } catch (e) {

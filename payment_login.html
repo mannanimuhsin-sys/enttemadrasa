@@ -77,6 +77,11 @@ async function hashPassword(password) {
     return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Helper to escape RTDB keys (matches payment_admin.html)
+function escapeKey(key) {
+    return key ? key.replace(/[\.\$#\[\]\/]/g, '_') : "unknown";
+}
+
 async function login() {
     const reg = document.getElementById('regNo').value.trim();
     const pass = document.getElementById('pass').value.trim();
@@ -106,8 +111,11 @@ function loadDashboard(s) {
     document.getElementById('madrasaName').value = s.madrasa_name || "മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ";
 
     const regNum = s.regno || s.number;
+    // We use the same escaped Firestore Doc ID as the key in RTDB
+    const docId = mID + "_" + regNum;
+    const rtdbKey = escapeKey(docId);
     
-    rtdb.ref(`payments/${mID}/${regNum}`).on('value', snap => {
+    rtdb.ref(`payments/${mID}/${rtdbKey}`).on('value', snap => {
         const list = document.getElementById('paymentList');
         let html = "";
         if(!snap.exists()) {
