@@ -353,10 +353,19 @@
                 
                 // Show Diff
                 let diffHtml = "";
-                const fields = { name: "പേര്", class: "ക്ലാസ്", phone: "ഫോൺ", gender: "ജെൻഡർ", blood: "ബ്ലഡ് ഗ്രൂപ്പ്" };
+                const fields = { name: "പേര്", class: "ക്ലാസ്", phone: "ഫോൺ", gender: "ജെൻഡർ", blood: "ബ്ലഡ് ഗ്രൂപ്പ്", dob: "ജനന തീയതി" };
                 for(let key in fields) {
                     if (s.pending_updates[key] && s.pending_updates[key] !== s[key]) {
-                        diffHtml += `<div style="margin-bottom:5px;"><b>${fields[key]}:</b> <span style="text-decoration:line-through; color:red;">${s[key] || 'None'}</span> → <span style="color:green; font-weight:bold;">${s.pending_updates[key]}</span></div>`;
+                        let oldVal = s[key] || 'None';
+                        let newVal = s.pending_updates[key];
+                        
+                        // Format date if key is dob
+                        if (key === 'dob') {
+                            if (oldVal !== 'None') oldVal = oldVal.split("-").reverse().join("-");
+                            newVal = newVal.split("-").reverse().join("-");
+                        }
+                        
+                        diffHtml += `<div style="margin-bottom:5px;"><b>${fields[key]}:</b> <span style="text-decoration:line-through; color:red;">${oldVal}</span> → <span style="color:green; font-weight:bold;">${newVal}</span></div>`;
                     }
                 }
                 if (s.pending_updates.photo && s.pending_updates.photo !== s.photo) {

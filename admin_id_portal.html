@@ -145,6 +145,9 @@
             </div>
         </div>
 
+        <label>Date of Birth</label>
+        <input type="date" id="editDOB">
+
         <label>Password (Hash)</label>
         <input type="text" id="editPass" placeholder="Enter new password to change">
         <small style="color: grey; font-size: 10px;">പുതിയ പാസ്‌വേഡ് നൽകിയാൽ മാത്രം മാറ്റം വരും.</small>
@@ -338,6 +341,7 @@ function openEdit(student) {
     document.getElementById('editPhone').value = student.phone || "";
     document.getElementById('editGender').value = student.gender || "Male";
     document.getElementById('editBlood').value = student.blood || "A+";
+    document.getElementById('editDOB').value = student.dob || "";
     document.getElementById('editPass').value = student.password || "";
     document.getElementById('editStatus').value = student.status;
     document.getElementById('editPhotoPreview').src = student.photo;
@@ -377,6 +381,7 @@ async function updateStudent() {
             phone: document.getElementById('editPhone').value,
             gender: document.getElementById('editGender').value,
             blood: document.getElementById('editBlood').value,
+            dob: document.getElementById('editDOB').value,
         }
     };
 
