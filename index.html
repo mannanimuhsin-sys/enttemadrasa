@@ -14,6 +14,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase_config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- ✅ കറക്റ്റ് അപ്ഡേഷൻ ലഭിക്കാൻ താഴെ ഉള്ളത് സഹായിക്കും -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <style>
         :root {
@@ -667,6 +672,23 @@
     </div>
 
     <script>
+        // ✅ ഫോഴ്സ് അപ്ഡേറ്റ് ലോജിക് (പഴയ പതിപ്പിൽ കുടുങ്ങിപ്പോയവർക്ക് വേണ്ടി)
+        const CURRENT_VERSION = '2.0';
+        if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
+            if ('serviceWorker' in navigator) {
+                caches.keys().then(names => {
+                    for (let name of names) caches.delete(name);
+                });
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) registration.unregister();
+                });
+            }
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            console.log("Version mismatch detected. Clearing cache and reloading...");
+            setTimeout(() => { location.reload(true); }, 500);
+        }
+    </script>
+    <script>
         let db, firestore, storage;
         try {
             const firebaseConfig = {
@@ -1103,10 +1125,30 @@
             overlay.style.display = 'block';
             iosView.style.display = 'block';
         }
-        // ✅ സർവീസ് വർക്കർ രജിസ്റ്റർ ചെയ്യുന്നു (ഇത് നിർബന്ധമാണ്)
+        // ✅ സർവീസ് വർക്കർ രജിസ്റ്റർ ചെയ്യുന്നു (അപ്ഡേഷൻ വേഗത്തിലാക്കാൻ മാറ്റങ്ങൾ വരുത്തിയിട്ടുണ്ട്)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // പുതിയ അപ്ഡേറ്റ് ഉണ്ടെങ്കിൽ ഓട്ടോമാറ്റിക്കായി പേജ് റിഫ്രഷ് ചെയ്യും
+                                console.log("New update found, reloading...");
+                                window.location.reload();
+                            }
+                        });
+                    });
+                });
+            });
+
+            // സർവീസ് വർക്കറിൽ മാറ്റം വന്നാൽ പേജ് റിഫ്രഷ് ചെയ്യുക
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    window.location.reload();
+                    refreshing = true;
+                }
             });
         }
 
