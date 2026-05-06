@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin | എന്‍റെ മദ്റസ</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase_config.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -106,6 +100,11 @@
     </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase_config.js"></script>
 <script>
     // Config (നിങ്ങൾ നൽകിയത് തന്നെ)
     const firebaseConfig = {
@@ -165,8 +164,8 @@
                         </div>
                     </div>
                     <div class="action-row">
-                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}')"><i class="fas fa-check"></i> APPROVE</button>` : ''}
-                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked', '${data.reg || data.id}')"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}')"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
+                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', event)"><i class="fas fa-check"></i> APPROVE</button>` : ''}
+                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked', '${data.reg || data.id}', event)"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', event)"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
                         <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}', '${data.place || ''}', '${data.reg || data.id}')"><i class="fas fa-edit"></i> EDIT</button>
                         <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}', '${data.reg || data.id}')"><i class="fas fa-trash"></i> DELETE</button>
                     </div>
@@ -176,10 +175,10 @@
     }
 
     // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
-  async function updateStatus(id, newStatus, regNo) {
+  async function updateStatus(id, newStatus, regNo, event) {
     if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
         // ക്ലിക്ക് ചെയ്ത ബട്ടൺ കണ്ടെത്താൻ
-        const btn = event.currentTarget; 
+        const btn = event.currentTarget;
         const oldHTML = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
         btn.disabled = true;
@@ -339,7 +338,7 @@
         });
     }
 
-    window.onload = loadMadrasas;
+    document.addEventListener('DOMContentLoaded', loadMadrasas);
 </script>
 
 </body>
