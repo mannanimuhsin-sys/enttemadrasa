@@ -408,7 +408,7 @@
 
 <body>
 
-    <button id="plusBtn" onclick="showPage('regPage')">➕</button>
+    <button id="plusBtn" onclick="checkAdminPassword()">➕</button>
 
     <div id="loadingOverlay">
         <div style="text-align: center;">
@@ -614,6 +614,15 @@
             document.getElementById(pageId).classList.add('active');
             document.getElementById('plusBtn').style.display = (pageId === 'loginPage') ? 'flex' : 'none';
             window.scrollTo(0, 0);
+        }
+
+        function checkAdminPassword() {
+            const password = prompt("ദയവായി പാസ്‌വേഡ് നൽകുക:");
+            if (password === "4321") {
+                showPage('regPage');
+            } else if (password !== null) {
+                alert("തെറ്റായ പാസ്‌വേഡ്!");
+            }
         }
 
         function previewImage(input) {
