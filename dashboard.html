@@ -8,8 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase_config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- ✅ കറക്റ്റ് അപ്ഡേഷൻ ലഭിക്കാൻ താഴെ ഉള്ളത് സഹായിക്കും -->
@@ -152,11 +150,13 @@
     <a href="javascript:history.back()" class="btn-back"><i class="fa fa-arrow-left"></i> BACK</a>
 </div>
 
-<script>
+<script type="module">
+    import { supabase } from './supabase_client.js';
+    window.supabaseClient = supabase;
+
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
-        databaseURL: "https://enttemadrasa-default-rtdb.firebaseio.com",
         projectId: "enttemadrasa",
         storageBucket: "enttemadrasa.firebasestorage.app",
         appId: "1:623531881201:web:b863793340c3901cedaf50"
