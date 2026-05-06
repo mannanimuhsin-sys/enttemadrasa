@@ -813,6 +813,7 @@
     </div>
 
     <script>
+        console.log("JS loaded");
         // ✅ ഫോഴ്സ് അപ്ഡേറ്റ് ലോജിക് (പഴയ പതിപ്പിൽ കുടുങ്ങിപ്പോയവർക്ക് വേണ്ടി)
         const CURRENT_VERSION = '2.1';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
@@ -984,102 +985,7 @@
 }
 
         async function handleLogin() {
-            const reg = document.getElementById('logReg').value.trim();
-            const pass = document.getElementById('logPass').value.trim();
-            const btn = document.getElementById('loginBtn');
-
-            if (!reg || !pass) {
-                alert("രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
-                return;
-            }
-
-            if (btn) {
-                btn.innerText = "Logging in...";
-                btn.disabled = true;
-            }
-
-            try {
-                const passHash = await hashPassword(pass);
-                let found = null;
-
-                // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും ഒരേസമയം തിരയുന്നു (സ്പീഡ് കൂട്ടാൻ)
-                const promises = [];
-                
-                // 1. സുപാബേസ് പ്രോമിസ്
-                if (window.supabaseClient) {
-                    promises.push(
-                        window.supabaseClient.from('madrasa_requests').select('*').eq('reg', reg).single()
-                        .then(res => ({ source: 'supabase', data: res.data, error: res.error }))
-                        .catch(err => ({ source: 'supabase', data: null, error: err }))
-                    );
-                }
-                
-                // 2. ഫയർസ്റ്റോർ പ്രോമിസ്
-                promises.push(
-                    firestore.collection('madrasa_requests').doc(reg).get()
-                    .then(doc => ({ source: 'firestore', data: doc.exists ? doc.data() : null }))
-                    .catch(err => ({ source: 'firestore', data: null, error: err }))
-                );
-                
-                // 3. RTDB പ്രോമിസ്
-                promises.push(
-                    db.ref('madrasa_requests/' + reg).once('value')
-                    .then(snap => ({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
-                    .catch(err => ({ source: 'rtdb', data: null, error: err }))
-                );
-
-                const results = await Promise.all(promises);
-
-                // ഡാറ്റ മെർജ് ചെയ്യുന്നു - ഏതെങ്കിലും ഡാറ്റാബേസിൽ approved ആണെങ്കിൽ അത് പരിഗണിക്കുന്നു
-                let mergedData = null;
-                for (const res of results) {
-                    const d = res.data;
-                    if (!d) continue;
-
-                    if (!mergedData) {
-                        mergedData = { ...d };
-                    } else {
-                        if (d.status === 'approved') mergedData.status = 'approved';
-                        if (d.photo) mergedData.photo = d.photo;
-                    }
-                }
-
-                if (mergedData) {
-                    const uPass = mergedData.usthad_pass || mergedData.usthadPass;
-                    const pPass = mergedData.parent_pass || mergedData.parentPass;
-
-                    if (uPass === passHash) {
-                        found = mergedData;
-                        currentRole = "admin";
-                    } else if (pPass === passHash) {
-                        found = mergedData;
-                        currentRole = "parent";
-                    }
-                }
-
-                if (btn) {
-                    btn.innerText = "LOGIN";
-                    btn.disabled = false;
-                }
-
-                if (found) {
-                    currentId = reg;
-                    if (found.status !== 'approved') return showPage('pendingPage');
-                    localStorage.setItem("madrasaId", currentId);
-                    localStorage.setItem("userRole", currentRole);
-                    localStorage.setItem("madrasaData", JSON.stringify(found));
-                    renderProfile(found);
-                } else {
-                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
-                }
-            } catch (e) {
-                if (btn) {
-                    btn.innerText = "LOGIN";
-                    btn.disabled = false;
-                }
-                console.error("Login Error Details:", e);
-                alert("കണക്ഷൻ പ്രശ്നം! (Error: " + (e.message || e) + ")");
-            }
+            alert("Login working");
         }
         async function loadProfile(sid) {
             if (!sid) return;

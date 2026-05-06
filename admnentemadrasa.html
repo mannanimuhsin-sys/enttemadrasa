@@ -107,6 +107,8 @@
     import { supabase } from './supabase_client.js';
     window.supabaseClient = supabase;
 
+    console.log("JS loaded");
+
     // Config (നിങ്ങൾ നൽകിയത് തന്നെ)
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
@@ -129,6 +131,14 @@
         const data = encoder.encode(password);
         const hash = await crypto.subtle.digest('SHA-256', data);
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function handleLogin() {
+        alert("Login working");
+    }
+
+    function checkAdminPassword() {
+        alert("Admin check working");
     }
 
     // ലോഡിംഗ് സ്പീഡ് കൂട്ടാൻ 'once' ഉപയോഗിച്ച് ഡാറ്റ എടുക്കുന്നു
