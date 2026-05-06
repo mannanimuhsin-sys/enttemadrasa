@@ -165,8 +165,8 @@
                         </div>
                     </div>
                     <div class="action-row">
-                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', event)"><i class="fas fa-check"></i> APPROVE</button>` : ''}
-                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked', '${data.reg || data.id}', event)"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', event)"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
+                        ${data.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', this)"><i class="fas fa-check"></i> APPROVE</button>` : ''}
+                        ${data.status !== 'blocked' ? `<button class="btn btn-block" onclick="updateStatus('${data.id}', 'blocked', '${data.reg || data.id}', this)"><i class="fas fa-ban"></i> BLOCK</button>` : `<button class="btn btn-approve" onclick="updateStatus('${data.id}', 'approved', '${data.reg || data.id}', this)"><i class="fas fa-unlock"></i> UNBLOCK</button>`}
                         <button class="btn btn-edit" onclick="openEditModal('${data.id}', '${data.name}', '${data.place || ''}', '${data.reg || data.id}')"><i class="fas fa-edit"></i> EDIT</button>
                         <button class="btn btn-delete" onclick="deleteMadrasa('${data.id}', '${data.reg || data.id}')"><i class="fas fa-trash"></i> DELETE</button>
                     </div>
@@ -176,10 +176,12 @@
     }
 
     // അപ്രൂവൽ/ബ്ലോക്ക് പ്രോസസ്സ് വേഗത്തിലാക്കാൻ
-  async function updateStatus(id, newStatus, regNo, event) {
+  async function updateStatus(id, newStatus, regNo, buttonElement) {
     if(confirm(`ഈ മദ്റസ ${newStatus} ചെയ്യട്ടെ?`)) {
-        // ക്ലിക്ക് ചെയ്ത ബട്ടൺ കണ്ടെത്താൻ
-        const btn = event.currentTarget;
+        // ഒരു സാധാരണ ബട്ടൺ എലമെന്റ് കണക്കാക്കുന്നു
+        const btn = buttonElement || event?.currentTarget || event?.target;
+        if (!btn) return alert('Button context missing. Please retry.');
+
         const oldHTML = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i>...";
         btn.disabled = true;
