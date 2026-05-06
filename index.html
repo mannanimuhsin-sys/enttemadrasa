@@ -673,7 +673,7 @@
 
     <script>
         // ✅ ഫോഴ്സ് അപ്ഡേറ്റ് ലോജിക് (പഴയ പതിപ്പിൽ കുടുങ്ങിപ്പോയവർക്ക് വേണ്ടി)
-        const CURRENT_VERSION = '2.0';
+        const CURRENT_VERSION = '2.1';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
             if ('serviceWorker' in navigator) {
                 caches.keys().then(names => {
@@ -1150,6 +1150,20 @@
                     refreshing = true;
                 }
             });
+
+            // ✅ ഇൻസ്റ്റാൾ ചെയ്ത ആപ്പുകളിൽ അപ്ഡേഷൻ ഉറപ്പാക്കാൻ (Visibility/Focus Check)
+            function checkForUpdates() {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.update();
+                    console.log("Checking for PWA updates...");
+                });
+            }
+
+            // ആപ്പ് ഓപ്പൺ ചെയ്യുമ്പോഴോ ബാക്ക്ഗ്രൗണ്ടിൽ നിന്ന് വരുമ്പോഴോ അപ്ഡേറ്റ് ചെക്ക് ചെയ്യും
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkForUpdates();
+            });
+            window.addEventListener('focus', checkForUpdates);
         }
 
     </script>
