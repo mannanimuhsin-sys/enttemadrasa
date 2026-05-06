@@ -85,10 +85,71 @@
         .login-box {
             width: 100%;
             background: white;
-            padding: 30px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid #f0f0f0;
+            padding: 40px 25px;
+            border-radius: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #2e7d32;
+            font-size: 18px;
+            z-index: 2;
+        }
+
+        .input-group input {
+            padding: 16px 16px 16px 50px !important;
+            margin: 0 !important;
+            background: #f9fbf9 !important;
+            border: 1px solid #edf2ed !important;
+            border-radius: 18px !important;
+            font-size: 15px !important;
+        }
+
+        .input-group input:focus {
+            background: white !important;
+            border-color: #2e7d32 !important;
+            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.05) !important;
+        }
+
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .remember-me input {
+            width: 18px !important;
+            height: 18px !important;
+            margin: 0 !important;
+            cursor: pointer;
+        }
+
+        .forgot-pass {
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: 600;
         }
 
         .page {
@@ -303,42 +364,79 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #006400);
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
             color: white;
-            box-shadow: 0 5px 15px rgba(0, 77, 0, 0.3);
+            box-shadow: 0 12px 24px rgba(46, 125, 50, 0.3);
+            border-radius: 18px;
+            height: 58px;
+            font-size: 18px;
+            letter-spacing: 0.5px;
         }
         
         .btn-primary:hover {
-            box-shadow: 0 8px 20px rgba(0, 77, 0, 0.4);
+            box-shadow: 0 15px 30px rgba(46, 125, 50, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
         }
 
         /* ✅ ഗ്രിഡ് ലേഔട്ട് */
         .card-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 18px;
             margin-top: 10px;
+            perspective: 1200px;
         }
 
         /* ✅ മനോഹരമായ കാർഡ് ഡിസൈൻ */
         .portal-card {
             background: white;
-            border-radius: 15px;
-            padding: 20px 10px;
+            border-radius: 20px;
+            padding: 25px 12px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
             cursor: pointer;
-            border-left: 5px solid #ddd;
+            border-left: 6px solid #ddd;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-decoration: none;
             color: #333;
-            transition: transform 0.2s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-10px) rotateX(6deg) rotateY(4deg);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-left-width: 8px;
         }
 
         .portal-card:active {
-            transform: scale(0.95);
+            transform: translateY(-2px) scale(0.96) rotateX(0) rotateY(0);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.1s ease;
+        }
+
+        .portal-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+            transform: skewX(-25deg);
+            transition: 0.75s;
+        }
+
+        .portal-card:hover::after {
+            left: 150%;
         }
 
         .portal-card i {
@@ -515,22 +613,31 @@
     <div class="container">
         <div id="loginPage" class="page">
             <div class="login-box">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <img src="logo.png" style="width: 100px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));">
-                    <h1 style="color: var(--primary); margin: 15px 0 5px 0; font-size: 28px; font-weight: 900;">എന്‍റെ മദ്റസ</h1>
-                    <p style="color: #666; font-size: 14px; margin: 0;">Smart Madrasa Management System</p>
+                <div style="text-align: center; margin-bottom: 35px;">
+                    <h1 style="color: #1a1a1a; margin: 0; font-size: 28px; font-weight: 800;">Welcome Back!</h1>
+                    <p style="color: #888; font-size: 14px; margin-top: 8px;">Login to continue to your account</p>
                 </div>
                 
-                <div style="text-align: left;">
-                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസ രജിസ്റ്റർ നമ്പർ</label>
-                    <input type="text" id="logReg" placeholder="Enter Register Number">
-                    
-                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px; margin-top: 10px; display: block;">പാസ്‌വേഡ്</label>
-                    <input type="password" id="logPass" placeholder="Enter Password">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="logReg" placeholder="Register Number">
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="logPass" placeholder="Password">
+                    <i class="fas fa-eye" style="left: auto; right: 18px; color: #bbb; cursor: pointer; font-size: 16px;" onclick="togglePass()"></i>
+                </div>
+
+                <div class="login-options">
+                    <label class="remember-me">
+                        <input type="checkbox" checked> Remember me
+                    </label>
+                    <a href="#" class="forgot-pass">Forgot Password?</a>
                 </div>
                 
                 <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">
-                    <i class="fas fa-sign-in-alt"></i> LOGIN
+                    Login <i class="fas fa-arrow-right" style="font-size: 14px; margin-left: 10px;"></i>
                 </button>
                 
             </div>
@@ -990,6 +1097,18 @@
                 }
             } catch (e) {
                 console.error("Profile load from remote error:", e);
+            }
+        }
+
+        function togglePass() {
+            const passInput = document.getElementById('logPass');
+            const eyeIcon = event.target;
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
 
