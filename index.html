@@ -1196,7 +1196,8 @@
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                 // പുതിയ അപ്ഡേറ്റ് വന്നാൽ UI ദൃഢമാക്കാൻ പേജ് സ്വയം റിഫ്രഷ് ചെയ്യരുത്.
-                                console.log("New update found, reload suppressed to keep UI stable.");
+                                console.log("New update found, reloading to apply changes.");
+                                window.location.reload();
                             }
                         });
                     });
@@ -1207,8 +1208,9 @@
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
-                    console.log("Service worker controller changed. Reload suppressed to keep UI stable.");
+                    console.log("Service worker controller changed, reloading page.");
                     refreshing = true;
+                    window.location.reload();
                 }
             });
 
