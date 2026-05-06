@@ -31,14 +31,19 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #004d00 0%, #002b00 100%);
             background-attachment: fixed;
             margin: 0;
             padding: 0;
-            min-height: 100vh;
             overflow-x: hidden;
+            overflow-y: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -47,17 +52,27 @@
         .container {
             width: 100%;
             max-width: 500px;
+            min-height: calc(100vh - 60px);
+            max-height: calc(100vh - 60px);
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(14px);
-            margin: 30px auto;
+            margin: 0 auto;
             position: relative;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             padding: 25px;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
+            transition: opacity 0.2s ease, transform 0.2s ease;
             border-radius: 30px;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .container.visible {
+            opacity: 1;
+            visibility: visible;
         }
 
         .container::before {
@@ -177,7 +192,7 @@
         .page {
             display: none !important;
             width: 100%;
-            animation: fadeIn 0.3s ease-out;
+            animation: none;
             box-sizing: border-box;
         }
 
@@ -803,6 +818,7 @@
         // ✅ ഫോഴ്സ് അപ്ഡേറ്റ് ലോജിക് (പഴയ പതിപ്പിൽ കുടുങ്ങിപ്പോയവർക്ക് വേണ്ടി)
         const CURRENT_VERSION = '2.1';
         if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
+            localStorage.setItem('app_version', CURRENT_VERSION);
             if ('serviceWorker' in navigator) {
                 caches.keys().then(names => {
                     for (let name of names) caches.delete(name);
@@ -811,9 +827,7 @@
                     for (let registration of registrations) registration.unregister();
                 });
             }
-            localStorage.setItem('app_version', CURRENT_VERSION);
-            console.log("Version mismatch detected. Clearing cache and reloading...");
-            setTimeout(() => { location.reload(true); }, 500);
+            console.log("Version mismatch detected. Cache cleared for next load.");
         }
     </script>
     <script>
@@ -1215,25 +1229,25 @@
             try {
                 const sid = localStorage.getItem("madrasaId");
                 const role = localStorage.getItem("userRole");
+                const container = document.querySelector('.container');
                 
                 if (sid) {
                     currentId = sid;
                     currentRole = role || "";
-                    
-                    // ലോഗിൻ വിവരങ്ങൾ ഉണ്ടെങ്കിൽ ഉടൻ തന്നെ പോർട്ടൽ കാണിക്കുന്നു
                     showPage('portalPage');
                     hideLoader();
-                    
-                    // പ്രൊഫൈൽ ലോഡ് ചെയ്യുന്നു (Cache -> Remote)
+                    if (container) container.classList.add('visible');
                     loadProfile(sid);
                     return;
                 }
-                
                 showPage('loginPage');
                 hideLoader();
+                if (container) container.classList.add('visible');
             } catch (e) {
                 console.error("Onload error:", e);
                 hideLoader();
+                const container = document.querySelector('.container');
+                if (container) container.classList.add('visible');
             }
         };
         let deferredPrompt;
@@ -1273,9 +1287,8 @@
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // പുതിയ അപ്ഡേറ്റ് ഉണ്ടെങ്കിൽ ഓട്ടോമാറ്റിക്കായി പേജ് റിഫ്രഷ് ചെയ്യും
-                                console.log("New update found, reloading...");
-                                window.location.reload();
+                                // പുതിയ അപ്ഡേറ്റ് വന്നാൽ UI ദൃഢമാക്കാൻ പേജ് സ്വയം റിഫ്രഷ് ചെയ്യരുത്.
+                                console.log("New update found, reload suppressed to keep UI stable.");
                             }
                         });
                     });
@@ -1286,7 +1299,7 @@
             let refreshing = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (!refreshing) {
-                    window.location.reload();
+                    console.log("Service worker controller changed. Reload suppressed to keep UI stable.");
                     refreshing = true;
                 }
             });
