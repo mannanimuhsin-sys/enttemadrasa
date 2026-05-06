@@ -661,7 +661,7 @@
                 <div class="input-group">
                     <i class="fas fa-lock"></i>
                     <input type="password" id="logPass" placeholder="Password">
-                    <i class="fas fa-eye" style="left: auto; right: 18px; color: #bbb; cursor: pointer; font-size: 16px;" onclick="togglePass()"></i>
+                    <i class="fas fa-eye" style="left: auto; right: 18px; color: #bbb; cursor: pointer; font-size: 16px;" onclick="togglePass(event)"></i>
                 </div>
 
                 <div class="login-options">
@@ -832,7 +832,33 @@
     <script type="module">
         import { supabase } from './supabase_client.js';
         window.supabaseClient = supabase;
+        console.log("Supabase client imported", window.supabaseClient);
+        if (window.supabaseClient) {
+            window.supabaseClient.from('madrasa_requests').select('reg').limit(1)
+                .then(res => {
+                    if (res.error) {
+                        console.error('Supabase connection test failed:', res.error);
+                    } else {
+                        console.log('Supabase connection test succeeded.', res.data);
+                    }
+                })
+                .catch(err => console.error('Supabase connectivity error:', err));
+        } else {
+            console.warn('Supabase client not available');
+        }
 
+        let currentId = "";
+        let currentRole = "";
+        Object.defineProperty(window, 'currentId', {
+            get() { return currentId; },
+            set(value) { currentId = value; },
+            configurable: true
+        });
+        Object.defineProperty(window, 'currentRole', {
+            get() { return currentRole; },
+            set(value) { currentRole = value; },
+            configurable: true
+        });
         let db, firestore, storage;
         try {
             const firebaseConfig = {
@@ -855,7 +881,8 @@
             console.error("Firebase Initialization Error:", e);
         }
 
-        let currentId = "", currentRole = "";
+        window.currentId = "";
+        window.currentRole = "";
 
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -985,7 +1012,106 @@
 }
 
         async function handleLogin() {
-            alert("Login working");
+            const reg = document.getElementById('logReg').value.trim();
+            const pass = document.getElementById('logPass').value.trim();
+            const btn = document.getElementById('loginBtn');
+
+            if (!reg || !pass) {
+                alert("ദയവായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+                return;
+            }
+
+            if (btn) {
+                btn.innerText = "Logging in...";
+                btn.disabled = true;
+            }
+
+            try {
+                const passHash = await hashPassword(pass);
+                console.log("Login attempt", { reg, passHash });
+
+                const results = [];
+                if (window.supabaseClient) {
+                    results.push(
+                        window.supabaseClient
+                            .from('madrasa_requests')
+                            .select('*')
+                            .eq('reg', reg)
+                            .single()
+                            .then(res => ({ source: 'supabase', data: res.data, error: res.error }))
+                            .catch(err => ({ source: 'supabase', data: null, error: err }))
+                    );
+                }
+                if (firestore) {
+                    results.push(
+                        firestore.collection('madrasa_requests').doc(reg).get()
+                            .then(doc => ({ source: 'firestore', data: doc.exists ? doc.data() : null }))
+                            .catch(err => ({ source: 'firestore', data: null, error: err }))
+                    );
+                }
+                if (db) {
+                    results.push(
+                        db.ref('madrasa_requests/' + reg).once('value')
+                            .then(snap => ({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
+                            .catch(err => ({ source: 'rtdb', data: null, error: err }))
+                    );
+                }
+
+                const queryResults = await Promise.all(results);
+                console.log("Login sources results", queryResults);
+
+                let mergedData = null;
+                for (const res of queryResults) {
+                    if (!res || !res.data) continue;
+                    if (!mergedData) {
+                        mergedData = { ...res.data };
+                    } else {
+                        if (res.data.status === 'approved') mergedData.status = 'approved';
+                        if (res.data.photo) mergedData.photo = res.data.photo;
+                    }
+                }
+
+                let found = null;
+                if (mergedData) {
+                    const uPass = mergedData.usthad_pass || mergedData.usthadPass;
+                    const pPass = mergedData.parent_pass || mergedData.parentPass;
+                    if (uPass === passHash) {
+                        found = mergedData;
+                        window.currentRole = "admin";
+                    } else if (pPass === passHash) {
+                        found = mergedData;
+                        window.currentRole = "parent";
+                    }
+                }
+
+                if (btn) {
+                    btn.innerText = "LOGIN";
+                    btn.disabled = false;
+                }
+
+                if (found) {
+                    window.currentId = reg;
+                    console.log("Login successful", { role: window.currentRole, reg, found });
+                    if (found.status !== 'approved') {
+                        showPage('pendingPage');
+                        return;
+                    }
+                    localStorage.setItem("madrasaId", window.currentId);
+                    localStorage.setItem("userRole", window.currentRole);
+                    localStorage.setItem("madrasaData", JSON.stringify(found));
+                    renderProfile(found);
+                } else {
+                    console.warn("Login failed: invalid credentials or record not found.");
+                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                }
+            } catch (e) {
+                console.error("Login Error Details:", e);
+                if (btn) {
+                    btn.innerText = "LOGIN";
+                    btn.disabled = false;
+                }
+                alert("Login error: " + (e.message || e));
+            }
         }
         window.handleLogin = handleLogin;
         async function loadProfile(sid) {
@@ -1043,9 +1169,10 @@
             }
         }
 
-        function togglePass() {
+        function togglePass(event) {
             const passInput = document.getElementById('logPass');
             const eyeIcon = event.target;
+            if (!passInput || !eyeIcon) return;
             if (passInput.type === 'password') {
                 passInput.type = 'text';
                 eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
@@ -1133,6 +1260,30 @@
         // സേഫ്റ്റി ഓപ്ഷൻ: 5 സെക്കൻഡിന് ശേഷം ലോഡർ തനിയെ മാറാൻ
         setTimeout(hideLoader, 5000);
 
+        const globalExports = {
+            showPage,
+            checkAdminPassword,
+            previewImage,
+            register,
+            handleLogin,
+            loadProfile,
+            togglePass,
+            renderProfile,
+            openDashboard,
+            openIDPortal,
+            openQuizPortal,
+            openPaymentPortal,
+            openSalahTracker,
+            openAdminSalah,
+            openAttendancePortal,
+            logout
+        };
+        Object.entries(globalExports).forEach(([name, fn]) => {
+            if (typeof fn === 'function') {
+                window[name] = fn;
+            }
+        });
+
         window.onload = () => {
             try {
                 const sid = localStorage.getItem("madrasaId");
@@ -1140,8 +1291,8 @@
                 const container = document.querySelector('.container');
                 
                 if (sid) {
-                    currentId = sid;
-                    currentRole = role || "";
+                    window.currentId = sid;
+                    window.currentRole = role || "";
                     showPage('portalPage');
                     hideLoader();
                     if (container) container.classList.add('visible');
@@ -1187,46 +1338,17 @@
             overlay.style.display = 'block';
             iosView.style.display = 'block';
         }
-        // ✅ സർവീസ് വർക്കർ രജിസ്റ്റർ ചെയ്യുന്നു (അപ്ഡേഷൻ വേഗത്തിലാക്കാൻ മാറ്റങ്ങൾ വരുത്തിയിട്ടുണ്ട്)
+        // Disable service worker registration for now to prevent stale SW and load conflicts.
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // പുതിയ അപ്ഡേറ്റ് വന്നാൽ UI ദൃഢമാക്കാൻ പേജ് സ്വയം റിഫ്രഷ് ചെയ്യരുത്.
-                                console.log("New update found, reloading to apply changes.");
-                                window.location.reload();
-                            }
-                        });
+            navigator.serviceWorker.getRegistrations()
+                .then(registrations => {
+                    registrations.forEach(registration => {
+                        registration.unregister().then(() => {
+                            console.log('Unregistered old service worker.');
+                        }).catch(err => console.error('Service worker unregister failed:', err));
                     });
-                });
-            });
-
-            // സർവീസ് വർക്കറിൽ മാറ്റം വന്നാൽ പേജ് റിഫ്രഷ് ചെയ്യുക
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    console.log("Service worker controller changed, reloading page.");
-                    refreshing = true;
-                    window.location.reload();
-                }
-            });
-
-            // ✅ ഇൻസ്റ്റാൾ ചെയ്ത ആപ്പുകളിൽ അപ്ഡേഷൻ ഉറപ്പാക്കാൻ (Visibility/Focus Check)
-            function checkForUpdates() {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.update();
-                    console.log("Checking for PWA updates...");
-                });
-            }
-
-            // ആപ്പ് ഓപ്പൺ ചെയ്യുമ്പോഴോ ബാക്ക്ഗ്രൗണ്ടിൽ നിന്ന് വരുമ്പോഴോ അപ്ഡേറ്റ് ചെക്ക് ചെയ്യും
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') checkForUpdates();
-            });
-            window.addEventListener('focus', checkForUpdates);
+                })
+                .catch(error => console.error('Service worker cleanup failed:', error));
         }
 
     </script>
