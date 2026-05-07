@@ -124,43 +124,53 @@
         });
     }
 
-    function renderUI(data) {
-        document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || mId) + ")";
-        document.getElementById('mPlaceHead').innerText = data.place || "";
-        
-        currentClasses = data.classes || [];
-        // സോർട്ടിങ്
-        currentClasses.sort((a,b) => (parseInt(a.name) || 0) - (parseInt(b.name) || 0));
+   function renderUI(data) {
+    document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || mId) + ")";
+    document.getElementById('mPlaceHead').innerText = data.place || "";
+    
+    currentClasses = data.classes || [];
+    currentClasses.sort((a,b) => (parseInt(a.name) || 0) - (parseInt(b.name) || 0));
 
-        let html = "";
-        let tb=0, tg=0, tt=0;
+    let html = "";
+    let tb=0, tg=0, tt=0;
 
-        currentClasses.forEach((item, index) => {
-            let b = parseInt(item.b) || 0;
-            let g = parseInt(item.g) || 0;
-            let sum = b + g;
-            tb += b; tg += g; tt += sum;
+    currentClasses.forEach((item, index) => {
+        let b = parseInt(item.b) || 0;
+        let g = parseInt(item.g) || 0;
+        let sum = b + g;
+        tb += b; tg += g; tt += sum;
 
-            html += `<tr>
-                <td>${item.name}</td><td>${item.div || ''}</td>
-                <td class="boys">${b}</td><td class="girls">${g}</td>
-                <td><b>${sum}</b></td><td>${item.u}</td>
-                <td>
-                    <div class="contact-btns">
-                        <a href="tel:${item.p}"><i class="fa fa-phone-alt"></i></a>
-                        ${role === 'admin' ? `
-                        <i class="fa fa-edit admin-action" onclick="window.editClass(${index})"></i>
-                        <i class="fa fa-trash admin-action" style="color:red" onclick="window.deleteClass(${index})"></i>` : ''}
-                    </div>
-                </td>
-            </tr>`;
-        });
+        html += `<tr>
+            <td><b>${item.name}</b></td>
+            <td>${item.div || ''}</td>
+            <td class="boys">${b}</td>
+            <td class="girls">${g}</td>
+            <td><b>${sum}</b></td>
+            <td style="text-align:left; padding-left:15px;">${item.u}</td>
+            <td>
+                <div class="contact-btns">
+                    <a href="tel:${item.p}" class="call-icon" style="color: #0d6efd; font-size: 20px; margin-right: 10px;">
+                        <i class="fa fa-phone-alt"></i>
+                    </a>
+                    
+                    <a href="https://wa.me/91${item.p}" class="whatsapp-icon" style="color: #25D366; font-size: 22px; margin-right: 10px;">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
 
-        document.getElementById('tableBody').innerHTML = html;
-        document.getElementById('totalBoysCard').innerText = tb;
-        document.getElementById('totalGirlsCard').innerText = tg;
-        document.getElementById('totalAllCard').innerText = tt;
-    }
+                    ${role === 'admin' ? `
+                        <i class="fa fa-edit admin-action" style="color:#0d6efd; cursor:pointer; margin-right: 10px;" onclick="window.editClass(${index})"></i>
+                        <i class="fa fa-trash admin-action" style="color:red; cursor:pointer;" onclick="window.deleteClass(${index})"></i>
+                    ` : ''}
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById('tableBody').innerHTML = html;
+    document.getElementById('totalBoysCard').innerText = tb;
+    document.getElementById('totalGirlsCard').innerText = tg;
+    document.getElementById('totalAllCard').innerText = tt;
+}
 
     // --- സേവ് ചെയ്യുന്ന ഫങ്ക്ഷൻ ---
     async function saveClass() {
