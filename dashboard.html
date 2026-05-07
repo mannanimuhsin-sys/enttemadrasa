@@ -7,85 +7,36 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- ✅ കറക്റ്റ് അപ്ഡേഷൻ ലഭിക്കാൻ താഴെ ഉള്ളത് സഹായിക്കും -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; background-image: var(--bg-image); background-size: cover; background-attachment: fixed; padding: 15px; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; background-size: cover; background-attachment: fixed; padding: 15px; margin: 0; }
         .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; border-top: 6px solid #2c3e50; }
-        
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 8px; font-size: 28px; font-weight: 900; letter-spacing: 0.4px; }
-        .subtitle { text-align: center; color: #4d5563; margin-bottom: 20px; font-size: 15px; letter-spacing: 0.5px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 8px; font-size: 28px; font-weight: 900; }
+        .subtitle { text-align: center; color: #4d5563; margin-bottom: 20px; font-size: 15px; }
 
         .summary-grid { display: grid; gap: 15px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 22px; }
-        .stat-card { border-radius: 16px; padding: 18px 20px; color: #fff; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px rgba(44,62,80,0.08); }
-        .stat-card span { text-transform: uppercase; letter-spacing: 1px; font-size: 12px; opacity: 0.85; }
-        .stat-card strong { display: block; font-size: 32px; margin-top: 10px; font-weight: 800; line-height: 1; }
-        .stat-boys { background: linear-gradient(135deg, #2f80ed 0%, #3b82f6 100%); }
-        .stat-girls { background: linear-gradient(135deg, #d63384 0%, #e83e8c 100%); }
-        .stat-total { background: linear-gradient(135deg, #20c997 0%, #2ebf7f 100%); }
+        .stat-card { border-radius: 16px; padding: 18px 20px; color: #fff; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-card strong { font-size: 32px; font-weight: 800; }
+        .stat-boys { background: linear-gradient(135deg, #2f80ed, #3b82f6); }
+        .stat-girls { background: linear-gradient(135deg, #d63384, #e83e8c); }
+        .stat-total { background: linear-gradient(135deg, #20c997, #2ebf7f); }
 
-        .card-grid { display: none; gap: 16px; margin-bottom: 20px; }
-        .class-card { border-radius: 18px; background: #ffffff; border: 1px solid rgba(44,62,80,0.08); box-shadow: 0 10px 30px rgba(15,23,42,0.06); padding: 18px; }
-        .card-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .card-title span { font-size: 17px; font-weight: 800; color: #1f2937; }
-        .card-total { font-size: 14px; color: #16a34a; font-weight: 700; }
-        .card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: #475569; }
-        .card-row strong { font-size: 16px; color: #111827; }
-        .card-row.contact-row { gap: 10px; flex-wrap: wrap; }
-        .card-row.contact-row a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; transition: 0.2s; }
-        .card-row.contact-row a:hover { background: #eff6ff; }
-
-        /* Admin Entry Box */
         .admin-section { background: #eef2f3; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: none; border: 1px solid #d1d8db; }
-        .admin-section h4 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
         .input-group { display: flex; flex-wrap: wrap; gap: 10px; }
         .admin-section input { padding: 12px; border: 1px solid #ccc; border-radius: 8px; flex: 1; min-width: 150px; }
-        .btn-add { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .btn-add { background: #004d00; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
 
-        /* Table Styling */
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; }
+        .table-responsive { overflow-x: auto; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { border: 1px solid #e6e8eb; padding: 14px 10px; text-align: center; vertical-align: middle; }
-        th { background: #2c3e50; color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.7px; }
-        td { background: #ffffff; }
+        th, td { border: 1px solid #e6e8eb; padding: 12px; text-align: center; }
+        th { background: #2c3e50; color: #fff; font-size: 13px; }
         .boys { color: #0b5ed7; font-weight: 700; }
         .girls { color: #d63384; font-weight: 700; }
-        .total-cell { color: #198754; font-weight: 700; background: #f8fcf9; }
-        .usthad-name { text-align: left; font-weight: 600; color: #333; padding-left: 15px; }
-
-        /* Contact Icons - No Number Displayed */
-        .contact-btns { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .contact-btns a, .admin-action { font-size: 22px; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .contact-btns a:hover, .admin-action:hover { transform: translateY(-3px); }
-        .admin-action { cursor: pointer; color: #0d6efd; padding: 8px; border-radius: 10px; background: #eef4ff; }
-        .admin-action.delete-action { color: #dc3545; background: #fff0f0; }
-        .call-icon { color: #0d6efd; }
-        .whatsapp-icon { color: #25D366; }
-
-        tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
-        tfoot td { border: none; padding: 15px; }
         
-        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
-
-        @media(max-width: 992px) {
-            .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-
-        @media(max-width: 768px) {
-            h1 { font-size: 22px; }
-            .container { padding: 18px; }
-            .summary-grid { grid-template-columns: 1fr; }
-            .card-grid { display: grid; }
-            .table-responsive { display: none; }
-            .admin-section input { min-width: 100%; }
-            .input-group { flex-direction: column; }
-            .btn-add { width: 100%; }
-        }
+        .contact-btns { display: flex; justify-content: center; gap: 10px; }
+        .admin-action { cursor: pointer; padding: 5px; border-radius: 5px; }
+        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -95,32 +46,21 @@
     <div class="subtitle" id="mPlaceHead">Student Strength & Staff Details</div>
 
     <div class="summary-grid">
-        <div class="stat-card stat-boys">
-            <span>BOYS</span>
-            <strong id="totalBoysCard">0</strong>
-        </div>
-        <div class="stat-card stat-girls">
-            <span>GIRLS</span>
-            <strong id="totalGirlsCard">0</strong>
-        </div>
-        <div class="stat-card stat-total">
-            <span>TOTAL STUDENTS</span>
-            <strong id="totalAllCard">0</strong>
-        </div>
+        <div class="stat-card stat-boys"><span>BOYS</span><strong id="totalBoysCard">0</strong></div>
+        <div class="stat-card stat-girls"><span>GIRLS</span><strong id="totalGirlsCard">0</strong></div>
+        <div class="stat-card stat-total"><span>TOTAL</span><strong id="totalAllCard">0</strong></div>
     </div>
-
-    <div id="cardView" class="card-grid"></div>
 
     <div id="adminArea" class="admin-section">
         <h4>പുതിയ ക്ലാസ് വിവരങ്ങൾ ചേർക്കുക</h4>
         <div class="input-group">
-            <input type="text" id="cName" placeholder="ക്ലാസ് (eg: I, II)">
-            <input type="text" id="cDiv" placeholder="ഡിവിഷൻ (eg: A, B)">
-            <input type="number" id="cBoys" placeholder="ആൺകുട്ടികൾ">
-            <input type="number" id="cGirls" placeholder="പെൺകുട്ടികൾ">
+            <input type="text" id="cName" placeholder="ക്ലാസ് (I, II...)">
+            <input type="text" id="cDiv" placeholder="ഡിവിഷൻ (A, B...)">
+            <input type="number" id="cBoys" placeholder="Boys">
+            <input type="number" id="cGirls" placeholder="Girls">
             <input type="text" id="cUsthad" placeholder="ഉസ്താദിന്റെ പേര്">
-            <input type="number" id="cPhone" placeholder="ഫോൺ നമ്പർ (WhatsApp)">
-            <button class="btn-add" onclick="saveClass()">SAVE DATA</button>
+            <input type="number" id="cPhone" placeholder="ഫോൺ നമ്പർ">
+            <button class="btn-add" onclick="window.saveClass()">SAVE DATA</button>
         </div>
     </div>
 
@@ -128,22 +68,10 @@
         <table>
             <thead>
                 <tr>
-                    <th rowspan="2">CLASS</th>
-                    <th rowspan="2">DIV</th>
-                    <th colspan="3">വിദ്യാർത്ഥികളുടെ എണ്ണം</th>
-                    <th rowspan="2">CLASS USTHAD</th>
-                    <th rowspan="2">CONTACT</th>
-                </tr>
-                <tr>
-                    <th>BOYS</th>
-                    <th>GIRLS</th>
-                    <th>TOTAL</th>
+                    <th>CLASS</th><th>DIV</th><th>BOYS</th><th>GIRLS</th><th>TOTAL</th><th>USTHAD</th><th>CONTACT</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
-                </tbody>
-            <tfoot id="tableFoot">
-                </tfoot>
+            <tbody id="tableBody"></tbody>
         </table>
     </div>
 
@@ -152,8 +80,8 @@
 
 <script type="module">
     import { supabase } from './supabase_client.js';
-    window.supabaseClient = supabase;
 
+    // Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBAPJUq6ubYpALsqaT0DJi9KnLabtuaMyI",
         authDomain: "enttemadrasa.firebaseapp.com",
@@ -162,526 +90,147 @@
         appId: "1:623531881201:web:b863793340c3901cedaf50"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // Initialize Firebase
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const firestore = firebase.firestore();
-    const storage = firebase.storage();
+    const db = firebase.database();
 
     const urlParams = new URLSearchParams(window.location.search);
-    let mId = urlParams.get('id') || localStorage.getItem("madrasaId");
-    let role = urlParams.get('role') || localStorage.getItem("userRole");
+    const mId = urlParams.get('id') || localStorage.getItem("madrasaId");
+    const role = urlParams.get('role') || localStorage.getItem("userRole");
 
-    // 🔧 ഡീബഗ് ലോജിംഗ് സെറ്റআപ്പ്
-    let debugLogs = [];
-    // Debug panel disabled - clean UI for all users
-    
-    
-    // ലോഗിൻ വിവരങ്ങൾ ഇല്ലെങ്കിൽ തിരിച്ചയക്കുന്നു
+    let editingIndex = -1;
+    let currentClasses = [];
+
     if(!mId) {
-        alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല! ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.");
+        alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല!");
         window.location.href = 'index.html';
     }
 
-    // അഡ്മിൻ ആണെങ്കിൽ മാത്രം എൻട്രി ബോക്സ് കാണിക്കുക
-    if(role === 'admin') {
-        document.getElementById('adminArea').style.display = 'block';
-    }
+    if(role === 'admin') document.getElementById('adminArea').style.display = 'block';
 
-    // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
+    // --- ഡാറ്റ ലോഡ് ചെയ്യുന്ന ഫങ്ക്ഷൻ ---
     async function loadData() {
-        if (!mId) {
-            console.warn("mId not found!");
-            return;
-        }
-
-        console.log("Loading data for mId:", mId);
-        let dataLoaded = false;
-
-        // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു
-        if (window.supabaseClient) {
-            try {
-                console.log("Checking Supabase...");
-                // .single() causes issues with duplicate data, use .limit(1) instead
-                const { data, error } = await window.supabaseClient
-                    .from('madrasa_requests')
-                    .select('*')
-                    .eq('reg', mId)
-                    .limit(1);
-                
-                if (error) {
-                    console.log("Supabase error:", error.message);
-                } else if (data && data.length > 0) {
-                    console.log("✅ Data loaded from Supabase:", data[0]);
-                    renderContent(data[0]);
-                    dataLoaded = true;
-                    
-                    // Real-time listener for Supabase
-                    const sub = window.supabaseClient
-                        .channel('m_req_changes')
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'madrasa_requests', filter: `reg=eq.${mId}` }, payload => {
-                            console.log("Supabase real-time update:", payload);
-                            renderContent(payload.new);
-                        })
-                        .subscribe();
-                    return;
-                }
-            } catch(e) {
-                console.error("Supabase exception:", e);
-            }
-        }
-
-        // ✅ ഫയർസ്റ്റോറിൽ റിയൽ-ടൈം ലിസണർ വെക്കുന്നു (Fallback)
-        console.log("Setting up Firestore listener...");
-        firestore.collection('madrasa_requests').doc(mId).onSnapshot(
-            doc => {
-                if (doc.exists) {
-                    console.log("✅ Data loaded from Firestore:", doc.data());
-                    renderContent(doc.data());
-                    dataLoaded = true;
-                } else {
-                    console.log("⚠️ No data in Firestore, trying RTDB...");
-                    // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
-                    db.ref('madrasa_requests/' + mId).on('value', snap => {
-                        if (snap.val()) {
-                            console.log("✅ Data loaded from RTDB:", snap.val());
-                            renderContent(snap.val());
-                            dataLoaded = true;
-                        } else {
-                            console.log("❌ No data found in any database!");
-                        }
-                    });
-                }
-            },
-            error => {
-                console.error("Firestore listener error:", error);
-                // Try RTDB directly if Firestore listener fails
+        console.log("Fetching data for:", mId);
+        firestore.collection('madrasa_requests').doc(mId).onSnapshot(doc => {
+            if (doc.exists) {
+                renderUI(doc.data());
+            } else {
+                // ബാക്ക്അപ്പിനായി RTDB നോക്കുന്നു
                 db.ref('madrasa_requests/' + mId).on('value', snap => {
-                    if (snap.val()) {
-                        console.log("✅ Data loaded from RTDB (after Firestore error):", snap.val());
-                        renderContent(snap.val());
-                        dataLoaded = true;
-                    }
+                    if (snap.val()) renderUI(snap.val());
                 });
             }
-        );
+        });
     }
 
-    function renderContent(data) {
-        if(!data) {
-            console.warn("No data to render!");
-            return;
-        }
-
-        console.log("Rendering content with data:", data);
-        
-        document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || "") + ")";
+    function renderUI(data) {
+        document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || mId) + ")";
         document.getElementById('mPlaceHead').innerText = data.place || "";
         
-        // ✅ ബാക്ക്ഗ്രൗണ്ട് ഇമേജ് ലോഡിംഗ്
-        if(data.photo && data.photo !== "MIGRATED_TO_CLOUD") {
-            document.body.style.backgroundImage = "url(" + data.photo + ")";
-        }
-
-        let classes = data.classes || [];
-        console.log("Classes found:", classes.length, classes);
-
-        // --- സോർട്ടിങ് ലോജിക് ---
-        sortClassesArray(classes);
-        currentClasses = classes;
+        currentClasses = data.classes || [];
+        // സോർട്ടിങ്
+        currentClasses.sort((a,b) => (parseInt(a.name) || 0) - (parseInt(b.name) || 0));
 
         let html = "";
-        let totalBoys = 0, totalGirls = 0, totalAll = 0;
-        let cardHtml = "";
+        let tb=0, tg=0, tt=0;
 
-        classes.forEach((item, index) => {
+        currentClasses.forEach((item, index) => {
             let b = parseInt(item.b) || 0;
             let g = parseInt(item.g) || 0;
-            let rowTotal = b + g;
+            let sum = b + g;
+            tb += b; tg += g; tt += sum;
 
-            totalBoys += b;
-            totalGirls += g;
-            totalAll += rowTotal;
-
-            let divDisplay = (item.div && item.div.trim() !== "") ? `<b>${item.div}</b>` : "";
-
-            html += `
-            <tr>
-                <td><b>${item.name}</b></td>
-                <td>${divDisplay}</td>
-                <td class="boys">${b}</td>
-                <td class="girls">${g}</td>
-                <td class="total-cell">${rowTotal}</td>
-                <td class="usthad-name">${item.u}</td>
+            html += `<tr>
+                <td>${item.name}</td><td>${item.div || ''}</td>
+                <td class="boys">${b}</td><td class="girls">${g}</td>
+                <td><b>${sum}</b></td><td>${item.u}</td>
                 <td>
                     <div class="contact-btns">
-                        <a href="tel:${item.p}" class="call-icon" title="Call"><i class="fa fa-phone-alt"></i></a>
+                        <a href="tel:${item.p}"><i class="fa fa-phone-alt"></i></a>
                         ${role === 'admin' ? `
-                        <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
-                        <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
-                        <a href="https://wa.me/91${item.p}" class="whatsapp-icon" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        <i class="fa fa-edit admin-action" onclick="window.editClass(${index})"></i>
+                        <i class="fa fa-trash admin-action" style="color:red" onclick="window.deleteClass(${index})"></i>` : ''}
                     </div>
                 </td>
             </tr>`;
-
-            cardHtml += `
-            <div class="class-card">
-                <div class="card-title">
-                    <span>${item.name}${item.div ? ' (' + item.div + ')' : ''}</span>
-                    <span class="card-total">${rowTotal} students</span>
-                </div>
-                <div class="card-row"><span>BOYS</span><strong>${b}</strong></div>
-                <div class="card-row"><span>GIRLS</span><strong>${g}</strong></div>
-                <div class="card-row"><span>TOTAL</span><strong>${rowTotal}</strong></div>
-                <div class="card-row"><span>USTHAD</span><strong>${item.u || '-'}</strong></div>
-                <div class="card-row contact-row">
-                    <a href="tel:${item.p}" title="Call"><i class="fa fa-phone-alt"></i> CALL</a>
-                    ${role === 'admin' ? `
-                    <span class="admin-action" title="Edit" onclick="editClass(${index})"><i class="fa fa-edit"></i></span>
-                    <span class="admin-action delete-action" title="Delete" onclick="deleteClass(${index})"><i class="fa fa-trash"></i></span>` : ''}
-                    <a href="https://wa.me/91${item.p}" title="WhatsApp"><i class="fab fa-whatsapp"></i> WHATSAPP</a>
-                </div>
-            </div>`;
         });
 
         document.getElementById('tableBody').innerHTML = html;
-        document.getElementById('cardView').innerHTML = cardHtml;
-        document.getElementById('totalBoysCard').innerText = totalBoys;
-        document.getElementById('totalGirlsCard').innerText = totalGirls;
-        document.getElementById('totalAllCard').innerText = totalAll;
-        
-        document.getElementById('tableFoot').innerHTML = `
-            <tr>
-                <td colspan="2">ആകെ (TOTAL)</td>
-                <td>${totalBoys}</td>
-                <td>${totalGirls}</td>
-                <td>${totalAll}</td>
-                <td colspan="2">TOTAL STRENGTH</td>
-            </tr>`;
+        document.getElementById('totalBoysCard').innerText = tb;
+        document.getElementById('totalGirlsCard').innerText = tg;
+        document.getElementById('totalAllCard').innerText = tt;
     }
-    let currentClasses = [];
-    let editingIndex = -1;
 
-    // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
+    // --- സേവ് ചെയ്യുന്ന ഫങ്ക്ഷൻ ---
     async function saveClass() {
-        if(!mId) {
-            alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
-            return;
-        }
-        
         const name = document.getElementById('cName').value.trim();
         const div = document.getElementById('cDiv').value.trim();
-        const b = parseInt(document.getElementById('cBoys').value) || 0;
-        const g = parseInt(document.getElementById('cGirls').value) || 0;
+        const b = document.getElementById('cBoys').value;
+        const g = document.getElementById('cGirls').value;
         const u = document.getElementById('cUsthad').value.trim();
         const p = document.getElementById('cPhone').value.trim();
 
-        console.log("Saving:", {name, div, b, g, u, p, mId});
+        if(!name || !u || !p) return alert("ക്ലാസ്, ഉസ്താദ്, ഫോൺ എന്നിവ നിർബന്ധമാണ്!");
 
-        if(!name || !u || !p) {
-            alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
-            return;
-        }
-
-        if(p.length < 10) {
-            alert("ദയവായി സാധുവായ ഫോൺ നമ്പർ നൽകുക!");
-            return;
-        }
+        const btn = document.querySelector('.btn-add');
+        btn.disabled = true;
+        btn.innerText = "Saving...";
 
         try {
-            // Show saving indicator
-            const btn = document.querySelector('.btn-add');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = "⏳ സേവ് ചെയ്യുന്നു...";
-            
-            // Get latest data to ensure we don't overwrite other fields
-            let data = null;
-            let dataSource = "none";
-
-            // Try Supabase first
-            if (window.supabaseClient) {
-                try {
-                    const { data: sData, error } = await window.supabaseClient
-                        .from('madrasa_requests')
-                        .select('*')
-                        .eq('reg', mId)
-                        .single();
-                    if (sData && !error) {
-                        data = sData;
-                        dataSource = "supabase";
-                        console.log("Data loaded from Supabase");
-                    }
-                } catch(e) { console.log("Supabase error:", e); }
-            }
-            
-            // Try Firestore if Supabase failed
-            if (!data) {
-                try {
-                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                    if (doc.exists) {
-                        data = doc.data();
-                        dataSource = "firestore";
-                        console.log("Data loaded from Firestore");
-                    }
-                } catch(e) { console.log("Firestore error:", e); }
-            }
-
-            // Try RTDB as last resort
-            if (!data) {
-                try {
-                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
-                    if (snap.val()) {
-                        data = snap.val();
-                        dataSource = "rtdb";
-                        console.log("Data loaded from RTDB");
-                    }
-                } catch(e) { console.log("RTDB error:", e); }
-            }
-
-            if (!data) {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                alert("Madrasa data not found! ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.");
-                return;
-            }
-
-            let classes = data.classes || [];
-            sortClassesArray(classes);
+            let updatedClasses = [...currentClasses];
+            const newData = { name, div, b: parseInt(b)||0, g: parseInt(g)||0, u, p };
 
             if (editingIndex !== -1) {
-                classes[editingIndex] = { name, div, b, g, u, p };
+                updatedClasses[editingIndex] = newData;
                 editingIndex = -1;
             } else {
-                classes.push({ name, div, b, g, u, p });
-            }
-            
-            sortClassesArray(classes);
-            
-            let saveSuccess = false;
-            let savedIn = [];
-
-            // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു
-            try {
-                await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
-                saveSuccess = true;
-                savedIn.push("Firestore");
-                console.log("Saved to Firestore");
-            } catch(e) { 
-                console.error("Firestore save error:", e); 
+                updatedClasses.push(newData);
             }
 
-            // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
-            if (window.supabaseClient) {
-                try {
-                    const { error } = await window.supabaseClient
-                        .from('madrasa_requests')
-                        .upsert({
-                            reg: mId,
-                            classes: classes
-                        });
-                    if (!error) {
-                        saveSuccess = true;
-                        savedIn.push("Supabase");
-                        console.log("Saved to Supabase");
-                    }
-                } catch(e) { 
-                    console.error("Supabase save error:", e); 
-                }
+            // ഫയർസ്റ്റോറിലും സുപാബേസിലും ഒരേസമയം സേവ് ചെയ്യുന്നു
+            await firestore.collection('madrasa_requests').doc(mId).set({ classes: updatedClasses, reg: mId }, { merge: true });
+            
+            if (supabase) {
+                await supabase.from('madrasa_requests').upsert({ reg: mId, classes: updatedClasses });
             }
 
-            // ✅ RTDB-ലേക്ക് സിങ്ക് ചെയ്യുന്നു (Fallback)
-            try {
-                await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
-                saveSuccess = true;
-                savedIn.push("RTDB");
-                console.log("Saved to RTDB");
-            } catch(e) { 
-                console.error("RTDB save error:", e); 
-            }
-
-            if (!saveSuccess) {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                alert("സേവ് ഓപ്പറേഷൻ ব്യর്ഥമായി! " + JSON.stringify(savedIn));
-                return;
-            }
-            
-            // ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
-            document.getElementById('cName').value = "";
-            document.getElementById('cDiv').value = "";
-            document.getElementById('cBoys').value = "";
-            document.getElementById('cGirls').value = "";
-            document.getElementById('cUsthad').value = "";
-            document.getElementById('cPhone').value = "";
-            
+            alert("വിജയകരമായി സേവ് ചെയ്തു!");
+            document.querySelectorAll('.admin-section input').forEach(i => i.value = "");
+            btn.innerText = "SAVE DATA";
+        } catch (e) {
+            alert("Error: " + e.message);
+        } finally {
             btn.disabled = false;
-            btn.innerHTML = "SAVE DATA";
-            btn.style.backgroundColor = "#004d00";
-            
-            alert("✅ വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു! (" + savedIn.join(", ") + ")");
-            
-            // UI Update explicitly
-            data.classes = classes;
-            renderContent(data);
-            console.log("Final data:", data);
-        } catch (error) {
-            console.error("Save Class Error:", error);
-            const btn = document.querySelector('.btn-add');
-            btn.disabled = false;
-            btn.innerHTML = "SAVE DATA";
-            alert("❌ പിശക് സംഭവിച്ചു: " + error.message);
         }
     }
 
-    // എഡിറ്റ് ചെയ്യാൻ
-    function editClass(index) {
-        const data = currentClasses[index];
-        if(data) {
-            document.getElementById('cName').value = data.name || "";
-            document.getElementById('cDiv').value = data.div || "";
-            document.getElementById('cBoys').value = data.b || "";
-            document.getElementById('cGirls').value = data.g || "";
-            document.getElementById('cUsthad').value = data.u || "";
-            document.getElementById('cPhone').value = data.p || "";
+    // --- എഡിറ്റ് & ഡിലീറ്റ് ---
+    window.editClass = (index) => {
+        const item = currentClasses[index];
+        document.getElementById('cName').value = item.name;
+        document.getElementById('cDiv').value = item.div;
+        document.getElementById('cBoys').value = item.b;
+        document.getElementById('cGirls').value = item.g;
+        document.getElementById('cUsthad').value = item.u;
+        document.getElementById('cPhone').value = item.p;
+        editingIndex = index;
+        document.querySelector('.btn-add').innerText = "UPDATE DATA";
+        window.scrollTo(0,0);
+    };
 
-            editingIndex = index;
-            
-            // Change button text to indicate update mode
-            const btn = document.querySelector('.btn-add');
-            btn.innerHTML = "UPDATE DATA";
-            btn.style.backgroundColor = "#0056b3";
-
-            // Scroll to the admin area so user can see the form
-            document.getElementById('adminArea').scrollIntoView({behavior: 'smooth', block: 'center'});
-            document.getElementById('cName').focus();
+    window.deleteClass = async (index) => {
+        if(confirm("ഈ ക്ലാസ് നീക്കം ചെയ്യട്ടെ?")) {
+            let updatedClasses = [...currentClasses];
+            updatedClasses.splice(index, 1);
+            await firestore.collection('madrasa_requests').doc(mId).set({ classes: updatedClasses }, { merge: true });
+            alert("നീക്കം ചെയ്തു.");
         }
-    }
+    };
 
-    // ഡിലീറ്റ് ചെയ്യാൻ
-    async function deleteClass(index) {
-        if(confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
-            try {
-                let data = null;
-                
-                // Try Supabase first
-                if (window.supabaseClient) {
-                    try {
-                        const { data: sData } = await window.supabaseClient
-                            .from('madrasa_requests')
-                            .select('*')
-                            .eq('reg', mId)
-                            .single();
-                        if (sData) data = sData;
-                    } catch(e) { console.log("Supabase delete error:", e); }
-                }
-                
-                // Try Firestore if Supabase failed
-                if (!data) {
-                    try {
-                        const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                        if (doc.exists) data = doc.data();
-                    } catch(e) { console.log("Firestore delete error:", e); }
-                }
-                
-                // Try RTDB as last resort
-                if (!data) {
-                    try {
-                        const snap = await db.ref('madrasa_requests/' + mId).once('value');
-                        if (snap.val()) data = snap.val();
-                    } catch(e) { console.log("RTDB delete error:", e); }
-                }
-                
-                if (!data) {
-                    alert("Madrasa data not found!");
-                    return;
-                }
+    // വിൻഡോയിലേക്ക് ഫങ്ക്ഷനുകൾ നൽകുന്നു (onclick വർക്ക് ചെയ്യാൻ)
+    window.saveClass = saveClass;
 
-                let classes = data.classes || [];
-                sortClassesArray(classes);
-                classes.splice(index, 1);
-
-                let deleteSuccess = false;
-                let deletedFrom = [];
-
-                // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
-                try {
-                    await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
-                    deleteSuccess = true;
-                    deletedFrom.push("Firestore");
-                } catch(e) { console.error("Firestore delete error:", e); }
-                
-                if (window.supabaseClient) {
-                    try {
-                        await window.supabaseClient.from('madrasa_requests').upsert({
-                            reg: mId,
-                            classes: classes
-                        });
-                        deleteSuccess = true;
-                        deletedFrom.push("Supabase");
-                    } catch(e) { console.error("Supabase delete error:", e); }
-                }
-                
-                try {
-                    await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
-                    deleteSuccess = true;
-                    deletedFrom.push("RTDB");
-                } catch(e) { console.error("RTDB delete error:", e); }
-
-                if (!deleteSuccess) {
-                    alert("ഡിലീറ്റ് ഓപ്പറേഷൻ ব്യര്ഥമായി!");
-                    return;
-                }
-                
-                // Explicit UI Update
-                data.classes = classes;
-                renderContent(data);
-                
-                // If the deleted item was being edited, reset the form
-                if (editingIndex === index) {
-                    editingIndex = -1;
-                    document.getElementById('cName').value = "";
-                    document.getElementById('cDiv').value = "";
-                    document.getElementById('cBoys').value = "";
-                    document.getElementById('cGirls').value = "";
-                    document.getElementById('cUsthad').value = "";
-                    document.getElementById('cPhone').value = "";
-                    const btn = document.querySelector('.btn-add');
-                    btn.innerHTML = "SAVE DATA";
-                    btn.style.backgroundColor = "#004d00";
-                } else if (editingIndex > index) {
-                    editingIndex--; // Adjust index if a previous item was deleted
-                }
-                
-                alert("✅ നീക്കം ചെയ്തു! (" + deletedFrom.join(", ") + ")");
-            } catch (error) {
-                console.error("Delete Class Error:", error);
-                alert("❌ ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്: " + error.message);
-            }
-        }
-    }
-
-    function sortClassesArray(classes) {
-        classes.sort((a, b) => {
-            const getVal = (name) => {
-                const roman = { "I":1, "II":2, "III":3, "IV":4, "V":5, "VI":6, "VII":7, "VIII":8, "IX":9, "X":10, "XI":11, "XII":12 };
-                return roman[name ? name.toUpperCase() : ""] || parseInt(name) || 0;
-            };
-
-            let valA = getVal(a.name);
-            let valB = getVal(b.name);
-
-            if (valA !== valB) {
-                return valA - valB;
-            } else {
-                let divA = (a.div || "").toUpperCase();
-                let divB = (b.div || "").toUpperCase();
-                return divA.localeCompare(divB);
-            }
-        });
-    }
-
-    // Admin നിന്ന് recovery toggle - REMOVED
-    
     loadData();
 </script>
 </body>
