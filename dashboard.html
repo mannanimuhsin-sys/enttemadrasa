@@ -312,33 +312,87 @@
 
     // വിവരങ്ങൾ സേവ് ചെയ്യാൻ
     async function saveClass() {
-        if(!mId) return alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
+        if(!mId) {
+            alert("മദ്റസ ഐഡി ലഭ്യമല്ല!");
+            return;
+        }
         
         const name = document.getElementById('cName').value.trim();
         const div = document.getElementById('cDiv').value.trim();
-        const b = document.getElementById('cBoys').value || 0;
-        const g = document.getElementById('cGirls').value || 0;
+        const b = parseInt(document.getElementById('cBoys').value) || 0;
+        const g = parseInt(document.getElementById('cGirls').value) || 0;
         const u = document.getElementById('cUsthad').value.trim();
         const p = document.getElementById('cPhone').value.trim();
 
-        if(!name || !u || !p) return alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
+        console.log("Saving:", {name, div, b, g, u, p, mId});
+
+        if(!name || !u || !p) {
+            alert("ദയവായി ക്ലാസ്, ഉസ്താദിന്റെ പേര്, ഫോൺ എന്നിവ നൽകുക!");
+            return;
+        }
+
+        if(p.length < 10) {
+            alert("ദയവായി സാധുവായ ഫോൺ നമ്പർ നൽകുക!");
+            return;
+        }
 
         try {
+            // Show saving indicator
+            const btn = document.querySelector('.btn-add');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = "⏳ സേവ് ചെയ്യുന്നു...";
+            
             // Get latest data to ensure we don't overwrite other fields
             let data = null;
+            let dataSource = "none";
+
+            // Try Supabase first
             if (window.supabaseClient) {
-                const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
-                data = sData;
+                try {
+                    const { data: sData, error } = await window.supabaseClient
+                        .from('madrasa_requests')
+                        .select('*')
+                        .eq('reg', mId)
+                        .single();
+                    if (sData && !error) {
+                        data = sData;
+                        dataSource = "supabase";
+                        console.log("Data loaded from Supabase");
+                    }
+                } catch(e) { console.log("Supabase error:", e); }
             }
+            
+            // Try Firestore if Supabase failed
             if (!data) {
-                const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                data = doc.exists ? doc.data() : null;
+                try {
+                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                    if (doc.exists) {
+                        data = doc.data();
+                        dataSource = "firestore";
+                        console.log("Data loaded from Firestore");
+                    }
+                } catch(e) { console.log("Firestore error:", e); }
             }
+
+            // Try RTDB as last resort
             if (!data) {
-                const snap = await db.ref('madrasa_requests/' + mId).once('value');
-                data = snap.val();
+                try {
+                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
+                    if (snap.val()) {
+                        data = snap.val();
+                        dataSource = "rtdb";
+                        console.log("Data loaded from RTDB");
+                    }
+                } catch(e) { console.log("RTDB error:", e); }
             }
-            if (!data) return alert("Madrasa data not found!");
+
+            if (!data) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                alert("Madrasa data not found! ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.");
+                return;
+            }
 
             let classes = data.classes || [];
             sortClassesArray(classes);
@@ -346,30 +400,60 @@
             if (editingIndex !== -1) {
                 classes[editingIndex] = { name, div, b, g, u, p };
                 editingIndex = -1;
-                
-                // Reset button text
-                const btn = document.querySelector('.btn-add');
-                btn.innerHTML = "SAVE DATA";
-                btn.style.backgroundColor = "#004d00";
             } else {
                 classes.push({ name, div, b, g, u, p });
             }
             
             sortClassesArray(classes);
+            
+            let saveSuccess = false;
+            let savedIn = [];
 
             // ✅ ഫയർസ്റ്റോറിൽ സേവ് ചെയ്യുന്നു
-            await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
-            
+            try {
+                await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
+                saveSuccess = true;
+                savedIn.push("Firestore");
+                console.log("Saved to Firestore");
+            } catch(e) { 
+                console.error("Firestore save error:", e); 
+            }
+
             // ✅ സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു 
             if (window.supabaseClient) {
-                await window.supabaseClient.from('madrasa_requests').upsert({
-                    reg: mId,
-                    classes: classes
-                });
+                try {
+                    const { error } = await window.supabaseClient
+                        .from('madrasa_requests')
+                        .upsert({
+                            reg: mId,
+                            classes: classes
+                        });
+                    if (!error) {
+                        saveSuccess = true;
+                        savedIn.push("Supabase");
+                        console.log("Saved to Supabase");
+                    }
+                } catch(e) { 
+                    console.error("Supabase save error:", e); 
+                }
             }
 
             // ✅ RTDB-ലേക്ക് സിങ്ക് ചെയ്യുന്നു (Fallback)
-            await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+            try {
+                await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+                saveSuccess = true;
+                savedIn.push("RTDB");
+                console.log("Saved to RTDB");
+            } catch(e) { 
+                console.error("RTDB save error:", e); 
+            }
+
+            if (!saveSuccess) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                alert("സേവ് ഓപ്പറേഷൻ ব്യর്ഥമായി! " + JSON.stringify(savedIn));
+                return;
+            }
             
             // ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
             document.getElementById('cName').value = "";
@@ -379,14 +463,22 @@
             document.getElementById('cUsthad').value = "";
             document.getElementById('cPhone').value = "";
             
-            alert("വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു!");
+            btn.disabled = false;
+            btn.innerHTML = "SAVE DATA";
+            btn.style.backgroundColor = "#004d00";
+            
+            alert("✅ വിവരങ്ങൾ വിജയകരമായി സേവ് ചെയ്തു! (" + savedIn.join(", ") + ")");
             
             // UI Update explicitly
             data.classes = classes;
             renderContent(data);
+            console.log("Final data:", data);
         } catch (error) {
             console.error("Save Class Error:", error);
-            alert("പിശക് സംഭവിച്ചു: " + error.message);
+            const btn = document.querySelector('.btn-add');
+            btn.disabled = false;
+            btn.innerHTML = "SAVE DATA";
+            alert("❌ പിശക് സംഭവിച്ചു: " + error.message);
         }
     }
 
@@ -419,36 +511,75 @@
         if(confirm("ഈ ക്ലാസ് വിവരങ്ങൾ നീക്കം ചെയ്യട്ടെ?")) {
             try {
                 let data = null;
+                
+                // Try Supabase first
                 if (window.supabaseClient) {
-                    const { data: sData } = await window.supabaseClient.from('madrasa_requests').select('*').eq('reg', mId).single();
-                    data = sData;
-                }
-                if (!data) {
-                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                    data = doc.exists ? doc.data() : null;
-                }
-                if (!data) {
-                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
-                    data = snap.val();
+                    try {
+                        const { data: sData } = await window.supabaseClient
+                            .from('madrasa_requests')
+                            .select('*')
+                            .eq('reg', mId)
+                            .single();
+                        if (sData) data = sData;
+                    } catch(e) { console.log("Supabase delete error:", e); }
                 }
                 
-                if (!data) return;
+                // Try Firestore if Supabase failed
+                if (!data) {
+                    try {
+                        const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                        if (doc.exists) data = doc.data();
+                    } catch(e) { console.log("Firestore delete error:", e); }
+                }
+                
+                // Try RTDB as last resort
+                if (!data) {
+                    try {
+                        const snap = await db.ref('madrasa_requests/' + mId).once('value');
+                        if (snap.val()) data = snap.val();
+                    } catch(e) { console.log("RTDB delete error:", e); }
+                }
+                
+                if (!data) {
+                    alert("Madrasa data not found!");
+                    return;
+                }
 
                 let classes = data.classes || [];
                 sortClassesArray(classes);
                 classes.splice(index, 1);
 
+                let deleteSuccess = false;
+                let deletedFrom = [];
+
                 // ✅ എല്ലാ ഡാറ്റാബേസുകളിലും അപ്‌ഡേറ്റ് ചെയ്യുന്നു
-                await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
+                try {
+                    await firestore.collection('madrasa_requests').doc(mId).set({ classes: classes }, { merge: true });
+                    deleteSuccess = true;
+                    deletedFrom.push("Firestore");
+                } catch(e) { console.error("Firestore delete error:", e); }
                 
                 if (window.supabaseClient) {
-                    await window.supabaseClient.from('madrasa_requests').upsert({
-                        reg: mId,
-                        classes: classes
-                    });
+                    try {
+                        await window.supabaseClient.from('madrasa_requests').upsert({
+                            reg: mId,
+                            classes: classes
+                        });
+                        deleteSuccess = true;
+                        deletedFrom.push("Supabase");
+                    } catch(e) { console.error("Supabase delete error:", e); }
                 }
                 
-                await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+                try {
+                    await db.ref('madrasa_requests/' + mId + '/classes').set(classes);
+                    deleteSuccess = true;
+                    deletedFrom.push("RTDB");
+                } catch(e) { console.error("RTDB delete error:", e); }
+
+                if (!deleteSuccess) {
+                    alert("ഡിലീറ്റ് ഓപ്പറേഷൻ ব്യര്ഥമായി!");
+                    return;
+                }
                 
                 // Explicit UI Update
                 data.classes = classes;
@@ -469,9 +600,11 @@
                 } else if (editingIndex > index) {
                     editingIndex--; // Adjust index if a previous item was deleted
                 }
+                
+                alert("✅ നീക്കം ചെയ്തു! (" + deletedFrom.join(", ") + ")");
             } catch (error) {
                 console.error("Delete Class Error:", error);
-                alert("ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്!");
+                alert("❌ ഡിലീറ്റ് ചെയ്യുന്നതിൽ പിശക്: " + error.message);
             }
         }
     }
@@ -494,6 +627,166 @@
                 return divA.localeCompare(divB);
             }
         });
+    }
+
+    // 📋 ഡാറ്റ റികവറി ഫംഗ്ഷനുകൾ
+    async function checkDataInSupabase() {
+        const output = document.getElementById('recoveryOutput');
+        output.innerHTML = "🔍 Checking Supabase...";
+        try {
+            if (!window.supabaseClient) throw new Error("Supabase not initialized");
+            const { data, error } = await window.supabaseClient
+                .from('madrasa_requests')
+                .select('*')
+                .eq('reg', mId)
+                .single();
+            if (error) throw error;
+            output.innerHTML = `✅ Supabase Data Found:\n${JSON.stringify(data, null, 2)}`;
+        } catch(e) {
+            output.innerHTML = `❌ Supabase Error: ${e.message}`;
+        }
+    }
+
+    async function checkDataInFirestore() {
+        const output = document.getElementById('recoveryOutput');
+        output.innerHTML = "🔍 Checking Firestore...";
+        try {
+            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+            if (doc.exists) {
+                output.innerHTML = `✅ Firestore Data Found:\n${JSON.stringify(doc.data(), null, 2)}`;
+            } else {
+                output.innerHTML = "⚠️ No data in Firestore for this madrasa";
+            }
+        } catch(e) {
+            output.innerHTML = `❌ Firestore Error: ${e.message}`;
+        }
+    }
+
+    async function checkDataInRTDB() {
+        const output = document.getElementById('recoveryOutput');
+        output.innerHTML = "🔍 Checking RTDB...";
+        try {
+            const snap = await db.ref('madrasa_requests/' + mId).once('value');
+            if (snap.val()) {
+                output.innerHTML = `✅ RTDB Data Found:\n${JSON.stringify(snap.val(), null, 2)}`;
+            } else {
+                output.innerHTML = "⚠️ No data in RTDB for this madrasa";
+            }
+        } catch(e) {
+            output.innerHTML = `❌ RTDB Error: ${e.message}`;
+        }
+    }
+
+    async function recoverMissingData() {
+        const output = document.getElementById('recoveryOutput');
+        output.innerHTML = "🔄 Recovering missing data...";
+        try {
+            let bestData = null;
+            
+            // Try to get from all sources
+            try {
+                if (window.supabaseClient) {
+                    const { data } = await window.supabaseClient
+                        .from('madrasa_requests')
+                        .select('*')
+                        .eq('reg', mId)
+                        .single();
+                    if (data && data.classes) bestData = data;
+                }
+            } catch(e) {}
+
+            if (!bestData) {
+                try {
+                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
+                    if (doc.exists && doc.data().classes) bestData = doc.data();
+                } catch(e) {}
+            }
+
+            if (!bestData) {
+                try {
+                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
+                    if (snap.val() && snap.val().classes) bestData = snap.val();
+                } catch(e) {}
+            }
+
+            if (!bestData) {
+                output.innerHTML = "❌ No data found in any database!";
+                return;
+            }
+
+            // Now sync to all databases
+            let syncedTo = [];
+            if (bestData.classes) {
+                try {
+                    await firestore.collection('madrasa_requests').doc(mId).set(bestData, { merge: true });
+                    syncedTo.push("Firestore");
+                } catch(e) {}
+
+                try {
+                    if (window.supabaseClient) {
+                        await window.supabaseClient.from('madrasa_requests').upsert({
+                            reg: mId,
+                            ...bestData
+                        });
+                        syncedTo.push("Supabase");
+                    }
+                } catch(e) {}
+
+                try {
+                    await db.ref('madrasa_requests/' + mId).set(bestData);
+                    syncedTo.push("RTDB");
+                } catch(e) {}
+            }
+
+            output.innerHTML = `✅ Data Recovered & Synced!\nSynced to: ${syncedTo.join(', ')}\n\nData:\n${JSON.stringify(bestData, null, 2)}`;
+            
+            // Reload UI
+            renderContent(bestData);
+            alert("✅ ഡാറ്റ സഫലമായി വീണ്ടെടുക്കിയത്!");
+        } catch(e) {
+            output.innerHTML = `❌ Recovery Error: ${e.message}`;
+        }
+    }
+
+    // Admin നിന്ന് recovery toggle
+    if(role === 'admin') {
+        setTimeout(() => {
+            const adminArea = document.getElementById('adminArea');
+            const recoveryBtn = document.createElement('button');
+            recoveryBtn.innerHTML = "🔧 ഡാറ്റ റികവറി";
+            recoveryBtn.className = 'btn-add';
+            recoveryBtn.style.background = '#ff6600';
+            recoveryBtn.style.marginTop = '10px';
+            recoveryBtn.onclick = () => {
+                const recovery = document.getElementById('recoverySection');
+                recovery.style.display = recovery.style.display === 'none' ? 'block' : 'none';
+            };
+            adminArea.appendChild(document.createElement('br'));
+            adminArea.appendChild(recoveryBtn);
+
+            // Add recovery section to DOM
+            const container = document.querySelector('.container');
+            const recoverySection = document.createElement('div');
+            recoverySection.id = 'recoverySection';
+            recoverySection.style.background = '#fff3cd';
+            recoverySection.style.padding = '20px';
+            recoverySection.style.borderRadius = '12px';
+            recoverySection.style.marginTop = '20px';
+            recoverySection.style.border = '1px solid #ffc107';
+            recoverySection.style.display = 'none';
+            recoverySection.innerHTML = `
+                <h4 style="color: #856404; margin-top: 0;">📋 ഡാറ്റ റികവറി (Data Recovery)</h4>
+                <p style="color: #856404; margin: 10px 0;">വിവിധ ഡാറ്റാബേസുകളിൽ സേവ് ചെയ്ത ഡാറ്റ കാണുക:</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn-add" onclick="checkDataInSupabase()" style="background: #0066cc;">Check Supabase</button>
+                    <button class="btn-add" onclick="checkDataInFirestore()" style="background: #ff8c00;">Check Firestore</button>
+                    <button class="btn-add" onclick="checkDataInRTDB()" style="background: #00aa00;">Check RTDB</button>
+                    <button class="btn-add" onclick="recoverMissingData()" style="background: #cc0000;">🔄 നഷ്ടപ്പെട്ട ഡാറ്റ വീണ്ടെടുക്കുക</button>
+                </div>
+                <div id="recoveryOutput" style="background: white; padding: 10px; margin-top: 10px; border-radius: 8px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #333;"></div>
+            `;
+            container.appendChild(recoverySection);
+        }, 500);
     }
 
     loadData();
