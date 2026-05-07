@@ -148,12 +148,6 @@
     </div>
 
     <a href="javascript:history.back()" class="btn-back"><i class="fa fa-arrow-left"></i> BACK</a>
-    
-    <!-- 🔧 ഡീബഗ് പാനൽ -->
-    <div id="debugPanel" style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ccc; display: none; max-height: 200px; overflow-y: auto;">
-        <h4 style="margin-top: 0; cursor: pointer; color: #333;" onclick="document.getElementById('debugContent').style.display = document.getElementById('debugContent').style.display === 'none' ? 'block' : 'none';">🔧 ഡീബഗ് - ക്ലിക്ക് ചെയ്യുക പതിയേ കാണാൻ</h4>
-        <div id="debugContent" style="display: none; background: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; color: #333;"></div>
-    </div>
 </div>
 
 <script type="module">
@@ -179,30 +173,11 @@
 
     // 🔧 ഡീബഗ് ലോജിംഗ് സെറ്റআപ്പ്
     let debugLogs = [];
-    function addDebugLog(msg) {
-        const timestamp = new Date().toLocaleTimeString();
-        const logMsg = `[${timestamp}] ${msg}`;
-        debugLogs.push(logMsg);
-        console.log(logMsg);
-        
-        // Update debug panel
-        const panel = document.getElementById('debugPanel');
-        if (panel) {
-            panel.style.display = 'block';
-            document.getElementById('debugContent').innerText = debugLogs.slice(-20).join('\n');
-        }
-    }
-
-    addDebugLog("📱 Dashboard loaded");
-    addDebugLog("mId from URL: " + urlParams.get('id'));
-    addDebugLog("mId from localStorage: " + localStorage.getItem("madrasaId"));
-    addDebugLog("Using mId: " + mId);
-    addDebugLog("Role: " + role);
-    addDebugLog("Firebase initialized");
-
+    // Debug panel disabled - clean UI for all users
+    
+    
     // ലോഗിൻ വിവരങ്ങൾ ഇല്ലെങ്കിൽ തിരിച്ചയക്കുന്നു
     if(!mId) {
-        addDebugLog("❌ mId not found - redirecting to login");
         alert("മദ്റസ ഐഡി കണ്ടെത്തിയില്ല! ദയവായി വീണ്ടും ലോഗിൻ ചെയ്യുക.");
         window.location.href = 'index.html';
     }
@@ -215,78 +190,74 @@
     // ഡാറ്റാബേസിൽ നിന്ന് വിവരങ്ങൾ എടുക്കുന്നു
     async function loadData() {
         if (!mId) {
-            addDebugLog("❌ mId not found!");
+            console.warn("mId not found!");
             return;
         }
 
-        addDebugLog("🔄 Loading data for mId: " + mId);
+        console.log("Loading data for mId:", mId);
         let dataLoaded = false;
 
         // ✅ ആദ്യം സുപാബേസിൽ നോക്കുന്നു
         if (window.supabaseClient) {
             try {
-                addDebugLog("🔍 Checking Supabase...");
+                console.log("Checking Supabase...");
+                // .single() causes issues with duplicate data, use .limit(1) instead
                 const { data, error } = await window.supabaseClient
                     .from('madrasa_requests')
                     .select('*')
                     .eq('reg', mId)
-                    .single();
+                    .limit(1);
                 
                 if (error) {
-                    addDebugLog("⚠️ Supabase error: " + error.message);
-                } else if (data) {
-                    addDebugLog("✅ Data found in Supabase");
-                    addDebugLog("📊 Classes: " + (data.classes ? data.classes.length : 0));
-                    renderContent(data);
+                    console.log("Supabase error:", error.message);
+                } else if (data && data.length > 0) {
+                    console.log("✅ Data loaded from Supabase:", data[0]);
+                    renderContent(data[0]);
                     dataLoaded = true;
                     
                     // Real-time listener for Supabase
                     const sub = window.supabaseClient
                         .channel('m_req_changes')
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'madrasa_requests', filter: `reg=eq.${mId}` }, payload => {
-                            addDebugLog("🔄 Supabase real-time update");
+                            console.log("Supabase real-time update:", payload);
                             renderContent(payload.new);
                         })
                         .subscribe();
                     return;
                 }
             } catch(e) {
-                addDebugLog("❌ Supabase exception: " + e.message);
+                console.error("Supabase exception:", e);
             }
         }
 
         // ✅ ഫയർസ്റ്റോറിൽ റിയൽ-ടൈം ലിസണർ വെക്കുന്നു (Fallback)
-        addDebugLog("🔍 Setting up Firestore listener...");
+        console.log("Setting up Firestore listener...");
         firestore.collection('madrasa_requests').doc(mId).onSnapshot(
             doc => {
                 if (doc.exists) {
-                    addDebugLog("✅ Data found in Firestore");
-                    const docData = doc.data();
-                    addDebugLog("📊 Classes: " + (docData.classes ? docData.classes.length : 0));
-                    renderContent(docData);
+                    console.log("✅ Data loaded from Firestore:", doc.data());
+                    renderContent(doc.data());
                     dataLoaded = true;
                 } else {
-                    addDebugLog("⚠️ No data in Firestore, trying RTDB...");
+                    console.log("⚠️ No data in Firestore, trying RTDB...");
                     // ഫയർസ്റ്റോറിൽ ഇല്ലെങ്കിൽ ബാക്ക്-അപ്പ് ആയി RTDB നോക്കുന്നു
                     db.ref('madrasa_requests/' + mId).on('value', snap => {
                         if (snap.val()) {
-                            addDebugLog("✅ Data found in RTDB");
-                            const rtdbData = snap.val();
-                            addDebugLog("📊 Classes: " + (rtdbData.classes ? rtdbData.classes.length : 0));
-                            renderContent(rtdbData);
+                            console.log("✅ Data loaded from RTDB:", snap.val());
+                            renderContent(snap.val());
                             dataLoaded = true;
                         } else {
-                            addDebugLog("❌ No data found in any database!");
+                            console.log("❌ No data found in any database!");
                         }
                     });
                 }
             },
             error => {
-                addDebugLog("❌ Firestore listener error: " + error.message);
+                console.error("Firestore listener error:", error);
                 // Try RTDB directly if Firestore listener fails
                 db.ref('madrasa_requests/' + mId).on('value', snap => {
                     if (snap.val()) {
-                        addDebugLog("✅ Data found in RTDB (after Firestore error)");
+                        console.log("✅ Data loaded from RTDB (after Firestore error):", snap.val());
                         renderContent(snap.val());
                         dataLoaded = true;
                     }
@@ -297,11 +268,11 @@
 
     function renderContent(data) {
         if(!data) {
-            addDebugLog("⚠️ No data to render!");
+            console.warn("No data to render!");
             return;
         }
 
-        addDebugLog("✅ Rendering content...");
+        console.log("Rendering content with data:", data);
         
         document.getElementById('mNameHead').innerText = (data.name || "മദ്റസ") + " (" + (data.reg || "") + ")";
         document.getElementById('mPlaceHead').innerText = data.place || "";
@@ -312,7 +283,7 @@
         }
 
         let classes = data.classes || [];
-        addDebugLog("📊 Processing " + classes.length + " classes");
+        console.log("Classes found:", classes.length, classes);
 
         // --- സോർട്ടിങ് ലോജിക് ---
         sortClassesArray(classes);
@@ -386,8 +357,6 @@
                 <td>${totalAll}</td>
                 <td colspan="2">TOTAL STRENGTH</td>
             </tr>`;
-        
-        addDebugLog("✅ Page rendered: " + totalAll + " students total");
     }
     let currentClasses = [];
     let editingIndex = -1;
@@ -711,194 +680,8 @@
         });
     }
 
-    // 📋 ഡാറ്റ റികവറി ഫംഗ്ഷനുകൾ
-    async function checkDataInSupabase() {
-        const output = document.getElementById('recoveryOutput');
-        output.innerHTML = "🔍 Checking Supabase...";
-        addDebugLog("🔍 Admin checking Supabase...");
-        try {
-            if (!window.supabaseClient) throw new Error("Supabase not initialized");
-            const { data, error } = await window.supabaseClient
-                .from('madrasa_requests')
-                .select('*')
-                .eq('reg', mId)
-                .single();
-            if (error) throw error;
-            addDebugLog("✅ Supabase recovery check complete");
-            output.innerHTML = `✅ Supabase Data Found:\n${JSON.stringify(data, null, 2)}`;
-        } catch(e) {
-            addDebugLog("❌ Supabase check error: " + e.message);
-            output.innerHTML = `❌ Supabase Error: ${e.message}`;
-        }
-    }
-
-    async function checkDataInFirestore() {
-        const output = document.getElementById('recoveryOutput');
-        output.innerHTML = "🔍 Checking Firestore...";
-        addDebugLog("🔍 Admin checking Firestore...");
-        try {
-            const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-            if (doc.exists) {
-                addDebugLog("✅ Firestore recovery check complete");
-                output.innerHTML = `✅ Firestore Data Found:\n${JSON.stringify(doc.data(), null, 2)}`;
-            } else {
-                addDebugLog("⚠️ No data in Firestore");
-                output.innerHTML = "⚠️ No data in Firestore for this madrasa";
-            }
-        } catch(e) {
-            addDebugLog("❌ Firestore check error: " + e.message);
-            output.innerHTML = `❌ Firestore Error: ${e.message}`;
-        }
-    }
-
-    async function checkDataInRTDB() {
-        const output = document.getElementById('recoveryOutput');
-        output.innerHTML = "🔍 Checking RTDB...";
-        addDebugLog("🔍 Admin checking RTDB...");
-        try {
-            const snap = await db.ref('madrasa_requests/' + mId).once('value');
-            if (snap.val()) {
-                addDebugLog("✅ RTDB recovery check complete");
-                output.innerHTML = `✅ RTDB Data Found:\n${JSON.stringify(snap.val(), null, 2)}`;
-            } else {
-                addDebugLog("⚠️ No data in RTDB");
-                output.innerHTML = "⚠️ No data in RTDB for this madrasa";
-            }
-        } catch(e) {
-            addDebugLog("❌ RTDB check error: " + e.message);
-            output.innerHTML = `❌ RTDB Error: ${e.message}`;
-        }
-    }
-
-    async function recoverMissingData() {
-        const output = document.getElementById('recoveryOutput');
-        output.innerHTML = "🔄 Recovering missing data...";
-        addDebugLog("🔄 Starting data recovery...");
-        try {
-            let bestData = null;
-            
-            // Try to get from all sources
-            try {
-                if (window.supabaseClient) {
-                    const { data } = await window.supabaseClient
-                        .from('madrasa_requests')
-                        .select('*')
-                        .eq('reg', mId)
-                        .single();
-                    if (data && data.classes) {
-                        bestData = data;
-                        addDebugLog("📦 Best data source: Supabase");
-                    }
-                }
-            } catch(e) { addDebugLog("ℹ️ Supabase not available for recovery"); }
-
-            if (!bestData) {
-                try {
-                    const doc = await firestore.collection('madrasa_requests').doc(mId).get();
-                    if (doc.exists && doc.data().classes) {
-                        bestData = doc.data();
-                        addDebugLog("📦 Best data source: Firestore");
-                    }
-                } catch(e) { addDebugLog("ℹ️ Firestore not available for recovery"); }
-            }
-
-            if (!bestData) {
-                try {
-                    const snap = await db.ref('madrasa_requests/' + mId).once('value');
-                    if (snap.val() && snap.val().classes) {
-                        bestData = snap.val();
-                        addDebugLog("📦 Best data source: RTDB");
-                    }
-                } catch(e) { addDebugLog("ℹ️ RTDB not available for recovery"); }
-            }
-
-            if (!bestData) {
-                addDebugLog("❌ No data found in any database for recovery!");
-                output.innerHTML = "❌ No data found in any database!";
-                return;
-            }
-
-            // Now sync to all databases
-            let syncedTo = [];
-            if (bestData.classes) {
-                try {
-                    await firestore.collection('madrasa_requests').doc(mId).set(bestData, { merge: true });
-                    syncedTo.push("Firestore");
-                    addDebugLog("✅ Synced to Firestore");
-                } catch(e) { addDebugLog("⚠️ Firestore sync failed"); }
-
-                try {
-                    if (window.supabaseClient) {
-                        await window.supabaseClient.from('madrasa_requests').upsert({
-                            reg: mId,
-                            ...bestData
-                        });
-                        syncedTo.push("Supabase");
-                        addDebugLog("✅ Synced to Supabase");
-                    }
-                } catch(e) { addDebugLog("⚠️ Supabase sync failed"); }
-
-                try {
-                    await db.ref('madrasa_requests/' + mId).set(bestData);
-                    syncedTo.push("RTDB");
-                    addDebugLog("✅ Synced to RTDB");
-                } catch(e) { addDebugLog("⚠️ RTDB sync failed"); }
-            }
-
-            addDebugLog("✅ Recovery complete! Synced to: " + syncedTo.join(", "));
-            output.innerHTML = `✅ Data Recovered & Synced!\nSynced to: ${syncedTo.join(', ')}\n\nData:\n${JSON.stringify(bestData, null, 2)}`;
-            
-            // Reload UI
-            renderContent(bestData);
-            alert("✅ ഡാറ്റ സഫലമായി വീണ്ടെടുക്കിയത്!");
-        } catch(e) {
-            addDebugLog("❌ Recovery error: " + e.message);
-            output.innerHTML = `❌ Recovery Error: ${e.message}`;
-        }
-    }
-
-    // Admin നിന്ന് recovery toggle
-    if(role === 'admin') {
-        setTimeout(() => {
-            const adminArea = document.getElementById('adminArea');
-            const recoveryBtn = document.createElement('button');
-            recoveryBtn.innerHTML = "🔧 ഡാറ്റ റികവറി";
-            recoveryBtn.className = 'btn-add';
-            recoveryBtn.style.background = '#ff6600';
-            recoveryBtn.style.marginTop = '10px';
-            recoveryBtn.onclick = () => {
-                const recovery = document.getElementById('recoverySection');
-                recovery.style.display = recovery.style.display === 'none' ? 'block' : 'none';
-            };
-            adminArea.appendChild(document.createElement('br'));
-            adminArea.appendChild(recoveryBtn);
-
-            // Add recovery section to DOM
-            const container = document.querySelector('.container');
-            const recoverySection = document.createElement('div');
-            recoverySection.id = 'recoverySection';
-            recoverySection.style.background = '#fff3cd';
-            recoverySection.style.padding = '20px';
-            recoverySection.style.borderRadius = '12px';
-            recoverySection.style.marginTop = '20px';
-            recoverySection.style.border = '1px solid #ffc107';
-            recoverySection.style.display = 'none';
-            recoverySection.innerHTML = `
-                <h4 style="color: #856404; margin-top: 0;">📋 ഡാറ്റ റികവറി (Data Recovery)</h4>
-                <p style="color: #856404; margin: 10px 0;">വിവിധ ഡാറ്റാബേസുകളിൽ സേവ് ചെയ്ത ഡാറ്റ കാണുക:</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn-add" onclick="checkDataInSupabase()" style="background: #0066cc;">Check Supabase</button>
-                    <button class="btn-add" onclick="checkDataInFirestore()" style="background: #ff8c00;">Check Firestore</button>
-                    <button class="btn-add" onclick="checkDataInRTDB()" style="background: #00aa00;">Check RTDB</button>
-                    <button class="btn-add" onclick="recoverMissingData()" style="background: #cc0000;">🔄 നഷ്ടപ്പെട്ട ഡാറ്റ വീണ്ടെടുക്കുക</button>
-                </div>
-                <div id="recoveryOutput" style="background: white; padding: 10px; margin-top: 10px; border-radius: 8px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #333;"></div>
-            `;
-            container.appendChild(recoverySection);
-        }, 500);
-    }
-
-    addDebugLog("🚀 Starting loadData...");
+    // Admin നിന്ന് recovery toggle - REMOVED
+    
     loadData();
 </script>
 </body>
