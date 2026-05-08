@@ -273,23 +273,7 @@
             }
         }
 
-        /* ✅ ഹൈഡ് ചെയ്ത പ്ലസ് ബട്ടൺ (ഏറ്റവും മുകളിൽ) */
-        #plusBtn {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            width: 50px;
-            height: 50px;
-            background: transparent;
-            border: none;
-            font-size: 24px;
-            color: rgba(0, 0, 0, 0.15); /* Slightly more visible */
-            cursor: pointer;
-            z-index: 100000 !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+
 
         #profileArea {
             width: 100%;
@@ -698,162 +682,6 @@
 
         /* Sidebar settings panel */
         /* Settings Panel */
-        #settingsPanel {
-            background: linear-gradient(135deg, rgba(46, 125, 50, 0.12), rgba(46, 125, 50, 0.06));
-            border: 1px solid rgba(46, 125, 50, 0.25);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #settingsPanel h3 {
-            margin: 0 0 16px 0;
-            font-size: 16px;
-            font-weight: 900;
-            color: #2e7d32;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .settings-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 14px;
-        }
-
-        .settings-row.full {
-            grid-template-columns: 1fr;
-        }
-
-        .settings-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .settings-item label {
-            font-size: 12px;
-            font-weight: 700;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .settings-item select,
-        .settings-item button {
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid #ddd;
-            background: #fff;
-            color: #333;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .settings-item select:focus,
-        .settings-item button:hover {
-            border-color: #2e7d32;
-            background: #f9fbf9;
-            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
-        }
-
-        .theme-buttons {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .theme-btn {
-            flex: 1;
-            padding: 12px 10px;
-            border: 2px solid #ddd;
-            background: #fff;
-            color: #333;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 13px;
-            transition: all 0.2s ease;
-        }
-
-        .theme-btn:hover {
-            border-color: #2e7d32;
-            background: #f9fbf9;
-        }
-
-        .theme-btn.active {
-            background: #2e7d32;
-            color: white;
-            border-color: #2e7d32;
-            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-        }
-
-        .logout-btn {
-            background: #d32f2f;
-            color: white;
-            border-color: #d32f2f;
-            width: 100%;
-        }
-
-        .logout-btn:hover {
-            background: #b71c1c;
-            border-color: #b71c1c;
-            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
-        }
-
-        body.light-theme #settingsPanel {
-            background: linear-gradient(135deg, rgba(46, 125, 50, 0.08), rgba(46, 125, 50, 0.04));
-            border-color: rgba(46, 125, 50, 0.2);
-        }
-
-        body.light-theme #settingsPanel h3 {
-            color: #1b5e20;
-        }
-
-        body.light-theme .settings-item label {
-            color: #555;
-        }
-
-        body.light-theme .settings-item select,
-        body.light-theme .settings-item button,
-        body.light-theme .theme-btn {
-            background: #fff;
-            color: #333;
-            border-color: #ddd;
-        }
-
-        body.dark-theme #settingsPanel {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-
-        body.dark-theme #settingsPanel h3 {
-            color: #81c784;
-        }
-
-        body.dark-theme .settings-item label {
-            color: #b0b0b0;
-        }
-
-        body.dark-theme .settings-item select,
-        body.dark-theme .settings-item button,
-        body.dark-theme .theme-btn {
-            background: rgba(255, 255, 255, 0.08);
-            color: #e0e0e0;
-            border-color: rgba(255, 255, 255, 0.14);
-        }
-
-        body.dark-theme .theme-btn.active {
-            background: #2e7d32;
-            color: white;
-            border-color: #2e7d32;
-        }
 
         @media (max-width: 720px) {
             #sidebar {
@@ -957,8 +785,7 @@
 
 <body>
 
-    <button id="plusBtn" onclick="checkAdminPassword()">➕</button>
-    <button id="settingsButton" onclick="toggleSidebar()" title="Open settings"><i class="fa fa-gear"></i></button>
+
 
     <div id="loadingOverlay">
         <div style="text-align: center;">
@@ -1058,35 +885,6 @@
 
         <div id="portalPage" class="page">
             <div id="profileArea"></div>
-
-            <!-- Settings Panel -->
-            <div id="settingsPanel">
-                <h3><i class="fa fa-cog"></i> Preferences</h3>
-                
-                <div class="settings-row">
-                    <div class="settings-item">
-                        <label for="languageSelect">Language</label>
-                        <select id="languageSelect" onchange="setLanguage(this.value)">
-                            <option value="ml">മലയാളം</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="settings-row full">
-                    <div class="settings-item">
-                        <label>Theme</label>
-                        <div class="theme-buttons">
-                            <button type="button" class="theme-btn" id="lightThemeBtn" onclick="setTheme('light')"><i class="fa fa-sun"></i> Light</button>
-                            <button type="button" class="theme-btn" id="darkThemeBtn" onclick="setTheme('dark')"><i class="fa fa-moon"></i> Dark</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-row full">
-                    <button class="logout-btn" onclick="sidebarLogout()"><i class="fa fa-sign-out"></i> Logout</button>
-                </div>
-            </div>
 
             <div class="card-grid">
                 <div class="portal-card c-green" onclick="openDashboard()">
@@ -1256,7 +1054,6 @@
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            document.getElementById('plusBtn').style.display = (pageId === 'loginPage') ? 'flex' : 'none';
             window.scrollTo(0, 0);
         }
 
@@ -1577,9 +1374,6 @@
                 </div>
             </div>`;
     }
-
-    const plusBtn = document.getElementById('plusBtn');
-    if (plusBtn) plusBtn.style.display = 'none';
 
     const sid = d.reg || currentId || localStorage.getItem("madrasaId");
     if (sid) {

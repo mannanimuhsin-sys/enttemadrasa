@@ -37,6 +37,143 @@
         .contact-btns { display: flex; justify-content: center; gap: 10px; }
         .admin-action { cursor: pointer; padding: 5px; border-radius: 5px; }
         .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; }
+
+        /* Preferences Panel - Horizontal Layout */
+        #settingsPanel {
+            background: linear-gradient(135deg, rgba(46, 125, 50, 0.1), rgba(46, 125, 50, 0.05));
+            border: 1px solid rgba(46, 125, 50, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        #settingsPanel h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-item label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .settings-item select {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+
+        .settings-item select:focus {
+            border-color: #2e7d32;
+            background: #f9fbf9;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+            outline: none;
+        }
+
+        .theme-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .theme-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .theme-btn:hover {
+            border-color: #2e7d32;
+            background: #f9fbf9;
+        }
+
+        .theme-btn.active {
+            background: #2e7d32;
+            color: white;
+            border-color: #2e7d32;
+            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+        }
+
+        .logout-btn {
+            background: #d32f2f;
+            color: white;
+            border: 1px solid #d32f2f;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .logout-btn:hover {
+            background: #b71c1c;
+            border-color: #b71c1c;
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            #settingsPanel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .settings-item {
+                width: 100%;
+            }
+            
+            .settings-item select {
+                width: 100%;
+            }
+            
+            .theme-buttons {
+                width: 100%;
+            }
+            
+            .theme-btn {
+                flex: 1;
+            }
+            
+            .logout-btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -44,6 +181,29 @@
 <div class="container">
     <h1 id="mNameHead">മദ്റസ വിവരങ്ങൾ</h1>
     <div class="subtitle" id="mPlaceHead">Student Strength & Staff Details</div>
+
+    <!-- Preferences Panel -->
+    <div id="settingsPanel">
+        <h3><i class="fa fa-cog"></i> Preferences</h3>
+        
+        <div class="settings-item">
+            <label for="languageSelect">Language:</label>
+            <select id="languageSelect" onchange="setLanguage(this.value)">
+                <option value="ml">മലയാളം</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <div class="settings-item">
+            <label>Theme:</label>
+            <div class="theme-buttons">
+                <button type="button" class="theme-btn" id="lightThemeBtn" onclick="setTheme('light')"><i class="fa fa-sun"></i> Light</button>
+                <button type="button" class="theme-btn" id="darkThemeBtn" onclick="setTheme('dark')"><i class="fa fa-moon"></i> Dark</button>
+            </div>
+        </div>
+
+        <button class="logout-btn" onclick="dashboardLogout()"><i class="fa fa-sign-out"></i> Logout</button>
+    </div>
 
     <div class="summary-grid">
         <div class="stat-card stat-boys"><span>BOYS</span><strong id="totalBoysCard">0</strong></div>
@@ -240,6 +400,53 @@
 
     // വിൻഡോയിലേക്ക് ഫങ്ക്ഷനുകൾ നൽകുന്നു (onclick വർക്ക് ചെയ്യാൻ)
     window.saveClass = saveClass;
+
+    // ========== Preferences Panel Functions ==========
+    
+    function setTheme(theme) {
+        const body = document.body;
+        if (!body) return;
+        body.classList.remove('light-theme', 'dark-theme');
+        if (theme === 'light') {
+            body.classList.add('light-theme');
+        } else {
+            body.classList.add('dark-theme');
+        }
+        localStorage.setItem('siteTheme', theme);
+        updateThemeButtons(theme);
+    }
+
+    function updateThemeButtons(theme) {
+        const lightBtn = document.getElementById('lightThemeBtn');
+        const darkBtn = document.getElementById('darkThemeBtn');
+        if (lightBtn && darkBtn) {
+            lightBtn.classList.toggle('active', theme === 'light');
+            darkBtn.classList.toggle('active', theme === 'dark');
+        }
+    }
+
+    function setLanguage(lang) {
+        localStorage.setItem('siteLanguage', lang);
+        const select = document.getElementById('languageSelect');
+        if (select) select.value = lang;
+    }
+
+    function dashboardLogout() {
+        localStorage.clear();
+        location.href = 'index.html';
+    }
+
+    function loadUserPreferences() {
+        const storedTheme = localStorage.getItem('siteTheme') || 'dark';
+        const storedLanguage = localStorage.getItem('siteLanguage') || 'ml';
+        setTheme(storedTheme);
+        setLanguage(storedLanguage);
+    }
+
+    // Load user preferences on page load
+    loadUserPreferences();
+
+    // ========== End of Preferences Functions ==========
 
     loadData();
 </script>
