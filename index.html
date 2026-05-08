@@ -814,56 +814,12 @@
         }
     </style>
 
-    <div id="topActions" style="position: fixed; top: 15px; left: 0; right: 0; margin: 0 auto; width: 92%; max-width: 540px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; pointer-events: none;">
-        <div id="sidebarToggle" onclick="toggleSidebar()" style="pointer-events: auto; width: 42px; height: 42px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.1); color: white;">
-            <i class="fa fa-cog"></i>
-        </div>
-        <div id="regPlusBtn" onclick="checkAdminPassword()" style="pointer-events: auto; width: 42px; height: 42px; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 0 15px rgba(255,255,255,0.4); color: white; animation: subtlePulse 2s infinite alternate;">
-            <i class="fa fa-plus"></i>
-        </div>
-    </div>
-
-    <!-- Sidebar / Settings Overlay -->
-    <div id="sidebarOverlay" onclick="toggleSidebar()" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s ease;"></div>
-    <div id="sidebar" style="position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: white; z-index: 2001; box-shadow: -5px 0 30px rgba(0,0,0,0.15); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 30px 20px; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <h2 style="margin: 0; font-size: 20px; color: var(--primary);">Preferences</h2>
-            <i class="fa fa-times" onclick="toggleSidebar()" style="cursor: pointer; font-size: 20px; color: #888;"></i>
-        </div>
-
-        <div style="margin-bottom: 25px;">
-            <label style="display: block; font-size: 13px; font-weight: 700; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Language</label>
-            <select id="languageSelect" onchange="setLanguage(this.value)" style="width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: #f9f9f9; font-weight: 600;">
-                <option value="ml">മലയാളം</option>
-                <option value="en">English</option>
-            </select>
-        </div>
-
-        <div style="margin-bottom: 25px;">
-            <label style="display: block; font-size: 13px; font-weight: 700; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Theme</label>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button id="lightBtn" onclick="setTheme('light')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa fa-sun"></i> Light
-                </button>
-                <button id="darkBtn" onclick="setTheme('dark')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa fa-moon"></i> Dark
-                </button>
-            </div>
-        </div>
-
-        <div style="margin-top: auto;">
-            <button onclick="sidebarLogout()" style="width: 100%; padding: 14px; border-radius: 12px; border: none; background: #fee2e2; color: #ef4444; font-weight: 700; cursor: pointer;">
-                <i class="fa fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    </div>
-
-    <style>
-        /* Styles moved to head */
-    </style>
-
     <div class="container">
         <div id="loginPage" class="page">
+            <!-- Subtle Plus Button for Registration (Only on Login Page) -->
+            <div id="regPlusBtn" onclick="checkAdminPassword()" style="position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.08); font-size: 14px; z-index: 10;">
+                <i class="fa fa-plus"></i>
+            </div>
             <div class="login-box">
                 <div style="text-align: center; margin-bottom: 35px;">
                     <h1 style="color: #1a1a1a; margin: 0; font-size: 28px; font-weight: 800;">Welcome Back!</h1>
@@ -1516,7 +1472,7 @@
         }
 
         function loadUserPreferences() {
-            const storedTheme = localStorage.getItem('siteTheme') || 'dark';
+            const storedTheme = localStorage.getItem('siteTheme') || 'light';
             const storedLanguage = localStorage.getItem('siteLanguage') || 'ml';
             setTheme(storedTheme);
             setLanguage(storedLanguage);

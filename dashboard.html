@@ -401,16 +401,16 @@
     // വിൻഡോയിലേക്ക് ഫങ്ക്ഷനുകൾ നൽകുന്നു (onclick വർക്ക് ചെയ്യാൻ)
     window.saveClass = saveClass;
 
-    // ========== Preferences Panel Functions ==========
+    // ========== Preferences Panel Functions (Make them global) ==========
     
-    function setTheme(theme) {
+    window.setTheme = function(theme) {
         const body = document.body;
         if (!body) return;
         body.classList.remove('light-theme', 'dark-theme');
         body.classList.add(theme + '-theme');
         localStorage.setItem('siteTheme', theme);
         updateThemeButtons(theme);
-    }
+    };
 
     function updateThemeButtons(theme) {
         const lightBtn = document.getElementById('lightThemeBtn');
@@ -421,22 +421,24 @@
         }
     }
 
-    function setLanguage(lang) {
+    window.setLanguage = function(lang) {
         localStorage.setItem('siteLanguage', lang);
         const select = document.getElementById('languageSelect');
         if (select) select.value = lang;
-    }
+    };
 
-    function dashboardLogout() {
-        localStorage.clear();
+    window.dashboardLogout = function() {
+        // We only clear identity, not preferences
+        localStorage.removeItem("madrasaId");
+        localStorage.removeItem("userRole");
         location.href = 'index.html';
-    }
+    };
 
     function loadUserPreferences() {
-        const storedTheme = localStorage.getItem('siteTheme') || 'dark';
+        const storedTheme = localStorage.getItem('siteTheme') || 'light'; // Default to light as per user request
         const storedLanguage = localStorage.getItem('siteLanguage') || 'ml';
-        setTheme(storedTheme);
-        setLanguage(storedLanguage);
+        window.setTheme(storedTheme);
+        window.setLanguage(storedLanguage);
     }
 
     // Load user preferences on page load
