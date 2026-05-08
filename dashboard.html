@@ -407,11 +407,7 @@
         const body = document.body;
         if (!body) return;
         body.classList.remove('light-theme', 'dark-theme');
-        if (theme === 'light') {
-            body.classList.add('light-theme');
-        } else {
-            body.classList.add('dark-theme');
-        }
+        body.classList.add(theme + '-theme');
         localStorage.setItem('siteTheme', theme);
         updateThemeButtons(theme);
     }

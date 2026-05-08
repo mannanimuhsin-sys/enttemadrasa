@@ -780,6 +780,18 @@
             background: rgba(255,255,255,0.08);
             color: #eef2f5;
         }
+
+        /* Sidebar & Pulse Styles */
+        @keyframes subtlePulse {
+            from { transform: scale(1); box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+            to { transform: scale(1.08); box-shadow: 0 0 25px rgba(255,255,255,0.5); }
+        }
+        #sidebar.open { right: 0; }
+        .theme-btn-active { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+        
+        #sidebar {
+            position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: white; z-index: 2001; box-shadow: -5px 0 30px rgba(0,0,0,0.15); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 30px 20px; display: flex; flex-direction: column;
+        }
     </style>
 </head>
 
@@ -800,6 +812,54 @@
             50% { transform: scale(1.1); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
+    </style>
+
+    <div id="topActions" style="position: fixed; top: 15px; left: 0; right: 0; margin: 0 auto; width: 92%; max-width: 540px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; pointer-events: none;">
+        <div id="sidebarToggle" onclick="toggleSidebar()" style="pointer-events: auto; width: 42px; height: 42px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.1); color: white;">
+            <i class="fa fa-cog"></i>
+        </div>
+        <div id="regPlusBtn" onclick="checkAdminPassword()" style="pointer-events: auto; width: 42px; height: 42px; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 0 15px rgba(255,255,255,0.4); color: white; animation: subtlePulse 2s infinite alternate;">
+            <i class="fa fa-plus"></i>
+        </div>
+    </div>
+
+    <!-- Sidebar / Settings Overlay -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s ease;"></div>
+    <div id="sidebar" style="position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: white; z-index: 2001; box-shadow: -5px 0 30px rgba(0,0,0,0.15); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 30px 20px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2 style="margin: 0; font-size: 20px; color: var(--primary);">Preferences</h2>
+            <i class="fa fa-times" onclick="toggleSidebar()" style="cursor: pointer; font-size: 20px; color: #888;"></i>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-size: 13px; font-weight: 700; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Language</label>
+            <select id="languageSelect" onchange="setLanguage(this.value)" style="width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: #f9f9f9; font-weight: 600;">
+                <option value="ml">മലയാളം</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-size: 13px; font-weight: 700; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Theme</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button id="lightBtn" onclick="setTheme('light')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa fa-sun"></i> Light
+                </button>
+                <button id="darkBtn" onclick="setTheme('dark')" style="padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa fa-moon"></i> Dark
+                </button>
+            </div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <button onclick="sidebarLogout()" style="width: 100%; padding: 14px; border-radius: 12px; border: none; background: #fee2e2; color: #ef4444; font-weight: 700; cursor: pointer;">
+                <i class="fa fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <style>
+        /* Styles moved to head */
     </style>
 
     <div class="container">
@@ -1414,25 +1474,37 @@
             logout();
         }
 
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 300);
+            } else {
+                overlay.style.display = 'block';
+                setTimeout(() => {
+                    overlay.style.opacity = '1';
+                    sidebar.classList.add('open');
+                }, 10);
+            }
+        }
+
         function setTheme(theme) {
             const body = document.body;
             if (!body) return;
             body.classList.remove('light-theme', 'dark-theme');
-            if (theme === 'light') {
-                body.classList.add('light-theme');
-            } else {
-                body.classList.add('dark-theme');
-            }
+            body.classList.add(theme + '-theme');
             localStorage.setItem('siteTheme', theme);
             updateThemeButtons(theme);
         }
 
         function updateThemeButtons(theme) {
-            const lightBtn = document.getElementById('lightThemeBtn');
-            const darkBtn = document.getElementById('darkThemeBtn');
+            const lightBtn = document.getElementById('lightBtn');
+            const darkBtn = document.getElementById('darkBtn');
             if (lightBtn && darkBtn) {
-                lightBtn.classList.toggle('active', theme === 'light');
-                darkBtn.classList.toggle('active', theme === 'dark');
+                lightBtn.classList.toggle('theme-btn-active', theme === 'light');
+                darkBtn.classList.toggle('theme-btn-active', theme === 'dark');
             }
         }
 
@@ -1440,6 +1512,7 @@
             localStorage.setItem('siteLanguage', lang);
             const select = document.getElementById('languageSelect');
             if (select) select.value = lang;
+            // Optionally reload or update translations here
         }
 
         function loadUserPreferences() {

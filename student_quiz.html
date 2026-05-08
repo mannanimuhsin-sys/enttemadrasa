@@ -289,6 +289,7 @@
         };
 
         try {
+            console.log("Submitting resultData", resultData);
             // ✅ ഫയർസ്റ്റോറിലേക്ക് സബ്മിറ്റ് ചെയ്യുന്നു
             await db.collection('quiz_submissions').doc(mID).collection('students').doc(currentStudent.regNo).set(resultData);
             
@@ -317,10 +318,20 @@
             alert(`സബ്മിഷൻ പൂർത്തിയായി! സ്കോർ: ${resultData.score}/${resultData.totalQuestions}`);
             location.reload();
         } catch (error) {
-            console.error(error);
-            alert('സബ്മിഷൻ പിഴവ്. ദയവായി വീണ്ടും ശ്രമിക്കുക.');
+            console.error("Submission Error Details:", error);
+            alert('സബ്മിഷൻ പിഴവ്: ' + error.message);
         }
     }
+
+    function loadUserPreferences() {
+        const theme = localStorage.getItem('siteTheme') || 'dark';
+        document.body.classList.remove('light-theme', 'dark-theme');
+        document.body.classList.add(theme + '-theme');
+        
+        const lang = localStorage.getItem('siteLanguage') || 'ml';
+        // Language specific logic if needed
+    }
+    window.addEventListener('DOMContentLoaded', loadUserPreferences);
 </script>
 
 </body>
