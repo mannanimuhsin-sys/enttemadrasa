@@ -87,19 +87,31 @@ async function login() {
     const pass = document.getElementById('pass').value.trim();
     if(!reg || !pass || !mID) return alert("ദയവായി വിവരങ്ങൾ നൽകുക!");
 
-    const docId = mID + "_" + reg;
-    const doc = await db.collection("students").doc(docId).get();
+    try {
+        // Search by regno or number within the specific madrasa
+        let q1 = db.collection("students").where("madrasa_id", "==", mID).where("regno", "==", reg);
+        let q2 = db.collection("students").where("madrasa_id", "==", mID).where("number", "==", reg);
+        
+        const [snap1, snap2] = await Promise.all([q1.get(), q2.get()]);
+        let studentDoc = null;
+        
+        if (!snap1.empty) studentDoc = snap1.docs[0];
+        else if (!snap2.empty) studentDoc = snap2.docs[0];
 
-    if(doc.exists) {
-        const student = doc.data();
-        const inputHash = await hashPassword(pass);
-        if(inputHash === student.password) {
-            loadDashboard(student);
-        } else { alert("പാസ്‌വേഡ് തെറ്റാണ്!"); }
-    } else { alert("വിദ്യാർത്ഥിയെ കണ്ടെത്തിയില്ല!"); }
+        if(studentDoc) {
+            const student = studentDoc.data();
+            const inputHash = await hashPassword(pass);
+            if(inputHash === student.password) {
+                // Pass the actual Firestore Doc ID to loadDashboard
+                loadDashboard(student, studentDoc.id);
+            } else { alert("പാസ്‌വേഡ് തെറ്റാണ്!"); }
+        } else { alert("വിദ്യാർത്ഥിയെ കണ്ടെത്തിയില്ല!"); }
+    } catch (e) {
+        alert("ലോഗിൻ ചെയ്യുന്നതിൽ പിശക്: " + e.message);
+    }
 }
 
-function loadDashboard(s) {
+function loadDashboard(s, actualDocId) {
     document.getElementById('loginArea').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('displayName').innerText = s.name;
@@ -110,11 +122,11 @@ function loadDashboard(s) {
     // ഫയർസ്റ്റോറിൽ നിന്ന് മദ്റസയുടെ പേര് എടുക്കുന്നു
     document.getElementById('madrasaName').value = s.madrasa_name || "മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ";
 
-    const regNum = s.regno || s.number;
-    // We use the same escaped Firestore Doc ID as the key in RTDB
-    const docId = mID + "_" + regNum;
-    const rtdbKey = escapeKey(docId);
+    // We use the ACTUAL Firestore Doc ID (escaped) as the key in RTDB
+    const rtdbKey = escapeKey(actualDocId);
     
+    console.log("Loading payments for key:", rtdbKey);
+
     rtdb.ref(`payments/${mID}/${rtdbKey}`).on('value', snap => {
         const list = document.getElementById('paymentList');
         let html = "";
