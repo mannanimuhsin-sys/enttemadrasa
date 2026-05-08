@@ -125,46 +125,78 @@ async function login() {
 }
 
 function loadDashboard(s, actualDocId) {
+    const cleanMID = mID ? mID.trim() : "";
     document.getElementById('loginArea').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('displayName').innerText = s.name;
     document.getElementById('displayClass').innerText = "Class: " + s.class;
-    document.getElementById('displayReg').innerText = "Reg: " + (s.regno || s.number);
+    const regNum = (s.regno || s.number || "").toString().trim();
+    document.getElementById('displayReg').innerText = "Reg: " + regNum;
     document.getElementById('displayPhoto').src = s.photo || "";
     
-    // ഫയർസ്റ്റോറിൽ നിന്ന് മദ്റസയുടെ പേര് എടുക്കുന്നു
     document.getElementById('madrasaName').value = s.madrasa_name || "മദ്റസ പെയ്‌മെന്റ് പോർട്ടൽ";
 
-    // We use the ACTUAL Firestore Doc ID (escaped) as the key in RTDB
-    const rtdbKey = escapeKey(actualDocId);
-    
-    console.log("Loading payments for key:", rtdbKey);
+    // We check multiple possible keys to ensure legacy data is found
+    const keysToCheck = new Set();
+    keysToCheck.add(escapeKey(actualDocId));
+    if (regNum) keysToCheck.add(escapeKey(regNum));
+    if (cleanMID && regNum) keysToCheck.add(escapeKey(cleanMID + "_" + regNum));
 
-    rtdb.ref(`payments/${mID}/${rtdbKey}`).on('value', snap => {
-        const list = document.getElementById('paymentList');
-        let html = "";
-        if(!snap.exists()) {
-            list.innerHTML = "<p style='text-align:center;'>പെയ്‌മെന്റ് അറിയിപ്പുകൾ ഒന്നുമില്ല.</p>";
-            return;
-        }
+    const list = document.getElementById('paymentList');
+    list.innerHTML = "<p style='text-align:center;'>പെയ്‌മെന്റുകൾ ലോഡ് ചെയ്യുന്നു...</p>";
 
-        snap.forEach(child => {
-            const p = child.val();
-            const isPaid = p.status === 'Paid';
-            html += `
-                <div class="pay-card ${isPaid ? 'paid-border' : ''}">
-                    <div class="pay-info">
-                        <h4>${p.title}</h4>
-                        <p>₹${p.amount}</p>
-                    </div>
-                    <div style="text-align:right;">
-                        <span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span><br>
-                        ${isPaid ? `<button class="btn-receipt" onclick="printReceipt('${p.title}', '${p.amount}', '${p.date}')"><i class="fa fa-download"></i> Receipt</button>` : ''}
-                    </div>
-                </div>`;
+    const allPayments = [];
+    let pendingChecks = keysToCheck.size;
+
+    keysToCheck.forEach(rtdbKey => {
+        rtdb.ref(`payments/${cleanMID}/${rtdbKey}`).on('value', snap => {
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const val = child.val();
+                    if (val && val.title) {
+                        allPayments.push(val);
+                    } else if (val) {
+                        // Handle potential nesting (legacy data or keys with slashes)
+                        child.forEach(subChild => {
+                            const subVal = subChild.val();
+                            if (subVal && subVal.title) allPayments.push(subVal);
+                        });
+                    }
+                });
+            }
+            
+            pendingChecks--;
+            if (pendingChecks <= 0) {
+                renderPayments(allPayments);
+            }
         });
-        list.innerHTML = html;
     });
+}
+
+function renderPayments(payments) {
+    const list = document.getElementById('paymentList');
+    if (payments.length === 0) {
+        list.innerHTML = "<p style='text-align:center;'>പെയ്‌മെന്റ് അറിയിപ്പുകൾ ഒന്നുമില്ല.</p>";
+        return;
+    }
+
+    // Sort by date (optional, but good for UX)
+    let html = "";
+    payments.forEach(p => {
+        const isPaid = p.status === 'Paid';
+        html += `
+            <div class="pay-card ${isPaid ? 'paid-border' : ''}">
+                <div class="pay-info">
+                    <h4>${p.title}</h4>
+                    <p>₹${p.amount}</p>
+                </div>
+                <div style="text-align:right;">
+                    <span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span><br>
+                    ${isPaid ? `<button class="btn-receipt" onclick="printReceipt('${p.title}', '${p.amount}', '${p.date}')"><i class="fa fa-download"></i> Receipt</button>` : ''}
+                </div>
+            </div>`;
+    });
+    list.innerHTML = html;
 }
 
 function printReceipt(title, amount, date) {
