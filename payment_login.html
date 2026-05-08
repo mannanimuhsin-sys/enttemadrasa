@@ -88,15 +88,28 @@ async function login() {
     if(!reg || !pass || !mID) return alert("ദയവായി വിവരങ്ങൾ നൽകുക!");
 
     try {
-        // Search by regno or number within the specific madrasa
-        let q1 = db.collection("students").where("madrasa_id", "==", mID).where("regno", "==", reg);
-        let q2 = db.collection("students").where("madrasa_id", "==", mID).where("number", "==", reg);
+        const regNum = parseInt(reg);
         
-        const [snap1, snap2] = await Promise.all([q1.get(), q2.get()]);
+        // Search by regno or number within the specific madrasa (handle both string and number types)
+        let queries = [
+            db.collection("students").where("madrasa_id", "==", mID).where("regno", "==", reg),
+            db.collection("students").where("madrasa_id", "==", mID).where("number", "==", reg)
+        ];
+        
+        if (!isNaN(regNum)) {
+            queries.push(db.collection("students").where("madrasa_id", "==", mID).where("regno", "==", regNum));
+            queries.push(db.collection("students").where("madrasa_id", "==", mID).where("number", "==", regNum));
+        }
+        
+        const snaps = await Promise.all(queries.map(q => q.get()));
         let studentDoc = null;
         
-        if (!snap1.empty) studentDoc = snap1.docs[0];
-        else if (!snap2.empty) studentDoc = snap2.docs[0];
+        for (const snap of snaps) {
+            if (!snap.empty) {
+                studentDoc = snap.docs[0];
+                break;
+            }
+        }
 
         if(studentDoc) {
             const student = studentDoc.data();
