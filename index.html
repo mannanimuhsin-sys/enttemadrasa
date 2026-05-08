@@ -623,6 +623,246 @@
             color: var(--primary);
             transform: translateY(-2px);
         }
+
+        /* Sidebar settings panel */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: rgba(16, 24, 36, 0.98);
+            color: #f5f7fb;
+            box-shadow: -12px 0 45px rgba(0,0,0,0.35);
+            z-index: 100001;
+            display: flex;
+            flex-direction: column;
+            padding: 22px;
+            gap: 18px;
+            transition: right 0.28s ease;
+        }
+
+        #sidebar.open {
+            right: 0;
+        }
+
+        #sidebarHandle {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 120px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px 0 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            z-index: 100002;
+            box-shadow: -4px 0 14px rgba(0,0,0,0.18);
+        }
+
+        #sidebarHandle:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        #sidebarHandle span {
+            transform: rotate(90deg);
+            letter-spacing: 1px;
+            font-size: 11px;
+            color: #f5f7fb;
+            font-weight: 700;
+        }
+
+        #sidebar .sidebar-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        #sidebar .sidebar-description,
+        #sidebar .sidebar-note {
+            font-size: 13px;
+            opacity: 0.82;
+            line-height: 1.5;
+        }
+
+        #sidebar .sidebar-item {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #sidebar label {
+            font-size: 13px;
+            color: #d8e1f0;
+            font-weight: 600;
+        }
+
+        #sidebar select,
+        #sidebar button {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.08);
+            color: #f5f7fb;
+            font-size: 14px;
+            padding: 12px 14px;
+        }
+
+        #sidebar select {
+            appearance: none;
+        }
+
+        #sidebar button {
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        #sidebar button.logout {
+            background: #d32f2f;
+            border-color: rgba(255,255,255,0.24);
+            color: white;
+        }
+
+        #sidebar button.logout:hover {
+            background: #b71c1c;
+        }
+
+        #sidebar .sidebar-option-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #sidebar .theme-pill {
+            flex: 1;
+            text-align: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.16);
+            color: #f5f7fb;
+            padding: 11px 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #sidebar .theme-pill.active {
+            background: #ffffff;
+            color: #141820;
+            border-color: rgba(255,255,255,0.9);
+        }
+
+        #sidebar .sidebar-footer {
+            margin-top: auto;
+            font-size: 12px;
+            opacity: 0.72;
+            text-align: center;
+            color: #cbd6eb;
+        }
+
+        @media (max-width: 720px) {
+            #sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            #sidebarHandle {
+                display: none;
+            }
+        }
+
+        body.light-theme {
+            background: linear-gradient(135deg, #eef2f8 0%, #ffffff 100%);
+            color: #111;
+        }
+
+        body.light-theme .container {
+            background: rgba(255,255,255,0.98);
+            color: #111;
+        }
+
+        body.light-theme .login-box,
+        body.light-theme input {
+            background: #fff;
+            color: #111;
+            border-color: #dfe3e8;
+        }
+
+        body.light-theme .login-box h1,
+        body.light-theme p,
+        body.light-theme label,
+        body.light-theme .portal-card span,
+        body.light-theme .portal-card i,
+        body.light-theme .footer-credits,
+        body.light-theme .footer-socials a {
+            color: #222;
+        }
+
+        body.light-theme .portal-card {
+            background: #fff;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            border-left-color: #ccc;
+        }
+
+        body.dark-theme {
+            background: linear-gradient(135deg, #030912 0%, #07101f 100%);
+            color: #eef2f5;
+        }
+
+        body.dark-theme .container {
+            background: rgba(6, 12, 22, 0.95);
+            color: #eef2f5;
+        }
+
+        body.dark-theme .login-box,
+        body.dark-theme input {
+            background: rgba(255,255,255,0.04);
+            color: #eef2f5;
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        body.dark-theme .login-box h1,
+        body.dark-theme p,
+        body.dark-theme label,
+        body.dark-theme .portal-card span,
+        body.dark-theme .portal-card i,
+        body.dark-theme .footer-credits,
+        body.dark-theme .footer-socials a {
+            color: #e7edf8;
+        }
+
+        body.dark-theme .portal-card {
+            background: rgba(255,255,255,0.06);
+            border-left-color: rgba(255,255,255,0.18);
+        }
+
+        body.dark-theme .btn {
+            color: #eef2f5;
+        }
+
+        body.dark-theme .btn-primary {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+        }
+
+        body.dark-theme #sidebar {
+            background: rgba(14, 24, 38, 0.98);
+        }
+
+        body.dark-theme #sidebar .sidebar-item {
+            background: rgba(255,255,255,0.06);
+        }
+
+        body.dark-theme #sidebar select,
+        body.dark-theme #sidebar button {
+            background: rgba(255,255,255,0.08);
+            color: #eef2f5;
+        }
     </style>
 </head>
 
@@ -767,8 +1007,39 @@
                     <i class="fa fa-cog"></i> SETTINGS
                 </button>
             </div>
-            <button class="btn" style="background: #f8d7da; color: #721c24; margin-top: 30px;"
-                onclick="logout()">LOGOUT</button>
+        </div>
+
+        <div id="sidebar" class="sidebar" aria-label="App Settings Sidebar">
+            <div class="sidebar-title">Settings</div>
+            <div class="sidebar-description">Drag the handle to open the sidebar. Use these options for language, theme, and logout.</div>
+
+            <div class="sidebar-item">
+                <label for="languageSelect">ഭാഷ തിരഞ്ഞെടുക്കുക / Choose language</label>
+                <select id="languageSelect" onchange="setLanguage(this.value)">
+                    <option value="ml">മലയാളം</option>
+                    <option value="en">English</option>
+                </select>
+                <div class="sidebar-note" id="languageNote">Notification language will follow this setting.</div>
+            </div>
+
+            <div class="sidebar-item">
+                <label>Theme</label>
+                <div class="sidebar-option-row">
+                    <button type="button" class="theme-pill" id="lightThemeBtn" onclick="setTheme('light')">Light</button>
+                    <button type="button" class="theme-pill" id="darkThemeBtn" onclick="setTheme('dark')">Dark</button>
+                </div>
+                <div class="sidebar-note">Choose light or dark mode for the whole app.</div>
+            </div>
+
+            <div class="sidebar-item">
+                <label>Quick action</label>
+                <button class="logout" onclick="sidebarLogout()">Logout</button>
+            </div>
+
+            <div class="sidebar-footer">This sidebar keeps your settings accessible anywhere in the app.</div>
+        </div>
+        <div id="sidebarHandle" onmousedown="startSidebarDrag(event)" ontouchstart="startSidebarDrag(event)" onclick="toggleSidebar()">
+            <span>SETTINGS</span>
         </div>
 
         <div id="pendingPage" class="page">
@@ -1247,6 +1518,114 @@
             location.reload(); 
         }
 
+        function sidebarLogout() {
+            logout();
+        }
+
+        let sidebarOpen = false;
+        let sidebarDrag = { active: false, startX: 0, startRight: 0 };
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            sidebarOpen = !sidebarOpen;
+            sidebar.classList.toggle('open', sidebarOpen);
+        }
+
+        function setTheme(theme) {
+            const body = document.body;
+            if (!body) return;
+            body.classList.remove('light-theme', 'dark-theme');
+            if (theme === 'light') {
+                body.classList.add('light-theme');
+            } else {
+                body.classList.add('dark-theme');
+            }
+            localStorage.setItem('siteTheme', theme);
+            updateThemeButtons(theme);
+        }
+
+        function updateThemeButtons(theme) {
+            const lightBtn = document.getElementById('lightThemeBtn');
+            const darkBtn = document.getElementById('darkThemeBtn');
+            if (lightBtn && darkBtn) {
+                lightBtn.classList.toggle('active', theme === 'light');
+                darkBtn.classList.toggle('active', theme === 'dark');
+            }
+        }
+
+        function setLanguage(lang) {
+            localStorage.setItem('siteLanguage', lang);
+            const select = document.getElementById('languageSelect');
+            const note = document.getElementById('languageNote');
+            if (select) select.value = lang;
+            if (note) {
+                note.textContent = (lang === 'en') ? 'Notifications will appear in English.' : 'നോട്ടിഫിക്കേഷൻ മലയാളത്തിൽ വരും.';
+            }
+        }
+
+        function loadUserPreferences() {
+            const storedTheme = localStorage.getItem('siteTheme') || 'dark';
+            const storedLanguage = localStorage.getItem('siteLanguage') || 'ml';
+            setTheme(storedTheme);
+            setLanguage(storedLanguage);
+        }
+
+        function startSidebarDrag(event) {
+            if (!event) return;
+            sidebarDrag.active = true;
+            sidebarDrag.startX = event.type === 'touchstart' ? event.touches[0].clientX : event.clientX;
+            const sidebar = document.getElementById('sidebar');
+            sidebarDrag.startRight = parseInt(getComputedStyle(sidebar).right, 10) || -280;
+            sidebar.style.transition = 'none';
+            window.addEventListener('mousemove', onSidebarDrag);
+            window.addEventListener('mouseup', stopSidebarDrag);
+            window.addEventListener('touchmove', onSidebarDrag, { passive: false });
+            window.addEventListener('touchend', stopSidebarDrag);
+        }
+
+        function onSidebarDrag(event) {
+            if (!sidebarDrag.active) return;
+            event.preventDefault();
+            const clientX = event.type.startsWith('touch') ? event.touches[0].clientX : event.clientX;
+            const sidebar = document.getElementById('sidebar');
+            const width = sidebar.offsetWidth;
+            let newRight = sidebarDrag.startRight + (sidebarDrag.startX - clientX);
+            newRight = Math.min(0, Math.max(-width, newRight));
+            sidebar.style.right = `${newRight}px`;
+        }
+
+        function stopSidebarDrag() {
+            if (!sidebarDrag.active) return;
+            sidebarDrag.active = false;
+            const sidebar = document.getElementById('sidebar');
+            const width = sidebar.offsetWidth;
+            const currentRight = parseInt(getComputedStyle(sidebar).right, 10);
+            const open = currentRight > -width / 2;
+            sidebar.style.transition = '';
+            sidebar.classList.toggle('open', open);
+            sidebarOpen = open;
+            window.removeEventListener('mousemove', onSidebarDrag);
+            window.removeEventListener('mouseup', stopSidebarDrag);
+            window.removeEventListener('touchmove', onSidebarDrag);
+            window.removeEventListener('touchend', stopSidebarDrag);
+        }
+
+        function showNotificationText(key) {
+            const lang = localStorage.getItem('siteLanguage') || 'ml';
+            const messages = {
+                en: {
+                    welcome: 'Welcome!',
+                    logout: 'Logged out successfully!',
+                },
+                ml: {
+                    welcome: 'സ്വാഗതം!',
+                    logout: 'ലോഗൗട്ട് വിജയകരമായി!',
+                }
+            };
+            return (messages[lang] && messages[lang][key]) || messages[lang].welcome;
+        }
+
         function hideLoader() {
             const loader = document.getElementById('loadingOverlay');
             if (loader && loader.style.display !== 'none') {
@@ -1296,10 +1675,12 @@
                     showPage('portalPage');
                     hideLoader();
                     if (container) container.classList.add('visible');
+                    loadUserPreferences();
                     loadProfile(sid);
                     return;
                 }
                 showPage('loginPage');
+                loadUserPreferences();
                 hideLoader();
                 if (container) container.classList.add('visible');
             } catch (e) {
