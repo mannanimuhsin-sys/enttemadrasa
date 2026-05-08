@@ -1203,95 +1203,88 @@
             }
 
             if (btn) {
-                btn.innerText = "Logging in...";
+                btn.innerText = "ലോഗിൻ ചെയ്യുന്നു...";
                 btn.disabled = true;
             }
 
             try {
                 const passHash = await hashPassword(pass);
-                console.log("Login attempt", { reg, passHash });
+                console.log("Login attempt for:", reg);
 
-                const results = [];
+                let loginFound = false;
+                
+                const validateSource = (res) => {
+                    if (loginFound || !res || !res.data) return;
+                    const data = res.data;
+                    const uPass = data.usthad_pass || data.usthadPass;
+                    const pPass = data.parent_pass || data.parentPass;
+
+                    if (uPass === passHash || pPass === passHash) {
+                        loginFound = true;
+                        window.currentRole = (uPass === passHash) ? "admin" : "parent";
+                        window.currentId = reg;
+                        
+                        if (data.status !== 'approved') {
+                            showPage('pendingPage');
+                        } else {
+                            localStorage.setItem("madrasaId", window.currentId);
+                            localStorage.setItem("userRole", window.currentRole);
+                            localStorage.setItem("madrasaData", JSON.stringify(data));
+                            renderProfile(data);
+                        }
+                        
+                        if (btn) {
+                            btn.innerText = "SUCCESS";
+                            btn.disabled = false;
+                        }
+                    }
+                };
+
+                // Start all queries in parallel but handle them as they come
+                const promises = [];
+                
                 if (window.supabaseClient) {
-                    results.push(
-                        window.supabaseClient
-                            .from('madrasa_requests')
-                            .select('*')
-                            .eq('reg', reg)
-                            .single()
-                            .then(res => ({ source: 'supabase', data: res.data, error: res.error }))
-                            .catch(err => ({ source: 'supabase', data: null, error: err }))
+                    promises.push(
+                        window.supabaseClient.from('madrasa_requests').select('*').eq('reg', reg).single()
+                            .then(res => validateSource({ source: 'supabase', data: res.data }))
+                            .catch(() => {})
                     );
                 }
+                
                 if (firestore) {
-                    results.push(
+                    promises.push(
                         firestore.collection('madrasa_requests').doc(reg).get()
-                            .then(doc => ({ source: 'firestore', data: doc.exists ? doc.data() : null }))
-                            .catch(err => ({ source: 'firestore', data: null, error: err }))
+                            .then(doc => validateSource({ source: 'firestore', data: doc.exists ? doc.data() : null }))
+                            .catch(() => {})
                     );
                 }
+                
                 if (db) {
-                    results.push(
+                    promises.push(
                         db.ref('madrasa_requests/' + reg).once('value')
-                            .then(snap => ({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
-                            .catch(err => ({ source: 'rtdb', data: null, error: err }))
+                            .then(snap => validateSource({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
+                            .catch(() => {})
                     );
                 }
 
-                const queryResults = await Promise.all(results);
-                console.log("Login sources results", queryResults);
+                // Wait for either success or all to fail/timeout
+                await Promise.all(promises);
 
-                let mergedData = null;
-                for (const res of queryResults) {
-                    if (!res || !res.data) continue;
-                    if (!mergedData) {
-                        mergedData = { ...res.data };
-                    } else {
-                        if (res.data.status === 'approved') mergedData.status = 'approved';
-                        if (res.data.photo) mergedData.photo = res.data.photo;
+                if (!loginFound) {
+                    if (btn) {
+                        btn.innerText = "LOGIN";
+                        btn.disabled = false;
                     }
-                }
-
-                let found = null;
-                if (mergedData) {
-                    const uPass = mergedData.usthad_pass || mergedData.usthadPass;
-                    const pPass = mergedData.parent_pass || mergedData.parentPass;
-                    if (uPass === passHash) {
-                        found = mergedData;
-                        window.currentRole = "admin";
-                    } else if (pPass === passHash) {
-                        found = mergedData;
-                        window.currentRole = "parent";
-                    }
-                }
-
-                if (btn) {
-                    btn.innerText = "LOGIN";
-                    btn.disabled = false;
-                }
-
-                if (found) {
-                    window.currentId = reg;
-                    console.log("Login successful", { role: window.currentRole, reg, found });
-                    if (found.status !== 'approved') {
-                        showPage('pendingPage');
-                        return;
-                    }
-                    localStorage.setItem("madrasaId", window.currentId);
-                    localStorage.setItem("userRole", window.currentRole);
-                    localStorage.setItem("madrasaData", JSON.stringify(found));
-                    renderProfile(found);
-                } else {
-                    console.warn("Login failed: invalid credentials or record not found.");
                     alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
                 }
+
             } catch (e) {
-                console.error("Login Error Details:", e);
+                console.error("Login Error:", e);
                 if (btn) {
                     btn.innerText = "LOGIN";
                     btn.disabled = false;
                 }
-                alert("Login error: " + (e.message || e));
+                alert("Login error: " + e.message);
             }
         }
         window.handleLogin = handleLogin;
