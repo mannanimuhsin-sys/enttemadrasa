@@ -214,7 +214,8 @@ async function loadStudents() {
         let count = 0;
         snap.forEach(doc => {
             const s = doc.data();
-            if(cls !== "All" && s.class != cls) return;
+            // Robust class matching
+            if(cls !== "All" && String(s.class).trim() !== String(cls).trim()) return;
             
             const reg = s.regno || s.number || "No-Reg";
             list.innerHTML += `<tr>

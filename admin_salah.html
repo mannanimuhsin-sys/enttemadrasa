@@ -167,7 +167,6 @@
         try {
             const snap = await db.collection("students")
                                  .where("madrasa_id", "==", mId)
-                                 .where("class", "==", cls)
                                  .where("status", "==", "approved")
                                  .get();
 
@@ -176,7 +175,8 @@
             
             const promises = snap.docs.map(async doc => {
                 const s = doc.data();
-                if(s.gender === "Male") {
+                // Robust class matching
+                if (String(s.class).trim() === String(cls).trim()) {
                     const sid = doc.id;
                     const sDoc = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).get();
                     const dayData = sDoc.exists ? sDoc.data() : {f:0, d:0, a:0, m:0, i:0};

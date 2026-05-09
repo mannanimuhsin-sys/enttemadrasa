@@ -285,7 +285,8 @@ function renderStudents(students) {
     const filterGender = document.getElementById('filterGender').value;
 
     students.forEach(s => {
-        if(filterClass && s.class != filterClass) return;
+        // Robust class matching (string/number and trim)
+        if(filterClass && String(s.class).trim() !== String(filterClass).trim()) return;
         if(filterGender && s.gender != filterGender) return;
 
         allStudents.push(s);

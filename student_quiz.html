@@ -118,20 +118,31 @@
         }
 
         try {
-            const doc = await db.collection('students').doc(reg).get();
+            const docId = mID + "_" + reg;
+            const doc = await db.collection('students').doc(docId).get();
+            
             if (!doc.exists) {
-                return alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!");
+                // Try fallback search by regno field if docId doesn't match
+                const qSnap = await db.collection('students')
+                    .where("madrasa_id", "==", mID)
+                    .where("regno", "==", reg)
+                    .get();
+                
+                if (qSnap.empty) {
+                    return alert("രജിസ്റ്റർ നമ്പർ കണ്ടെത്തിയില്ല!");
+                }
+                currentStudent = { ...qSnap.docs[0].data(), regNo: reg };
+            } else {
+                currentStudent = { ...doc.data(), regNo: reg };
             }
 
-            const s = doc.data();
-            if (s.madrasa_id !== mID || s.password !== pass) {
-                return alert("തെറ്റായ രജിസ്റ്റർ നമ്പർ അല്ലെങ്കിൽ പാസ്‌വേഡാണ്!");
+            if (currentStudent.password !== pass) {
+                return alert("തെറ്റായ പാസ്‌വേഡാണ്!");
             }
-            if (s.status !== 'approved') {
+            
+            if (currentStudent.status !== 'approved') {
                 return alert("അഡ്മിൻ അംഗീകാരത്തിനായി കാത്തിരിക്കൂ.");
             }
-
-            currentStudent = { ...s, regNo: reg };
             
             // ✅ ലോഗിൻ ചെയ്ത ശേഷം സബ്മിഷൻ ഉണ്ടോ എന്ന് ഫയർസ്റ്റോറിൽ നോക്കുന്നു
             const submissionDoc = await db.collection('quiz_submissions').doc(mID).collection('students').doc(reg).get();
@@ -167,13 +178,14 @@
         document.getElementById('quizSection').style.display = 'block';
 
         // പ്രൊഫൈൽ കാർഡ് നിർമ്മാണം
+        const regNo = currentStudent.regno || currentStudent.number || currentStudent.regNo;
         document.getElementById('stuProfileCard').innerHTML = `
             <div class="student-card">
                 <img src="${currentStudent.photo || 'https://via.placeholder.com/100'}">
                 <div class="student-info">
                     <h4>${currentStudent.name}</h4>
-                    <p>Reg No: ${currentStudent.regNo} | Class: ${currentStudent.class}</p>
-                    <p>Mentor: ${currentStudent.mentor}</p>
+                    <p>Reg No: ${regNo} | Class: ${currentStudent.class}</p>
+                    <p>Mentor: ${currentStudent.mentor || '-'}</p>
                 </div>
             </div>`;
 
@@ -278,7 +290,7 @@
 
         const resultData = {
             studentName: currentStudent.name,
-            regNo: currentStudent.regNo,
+            regNo: currentStudent.regno || currentStudent.number || currentStudent.regNo,
             class: currentStudent.class,
             mentor: currentStudent.mentor || '',
             photo: currentStudent.photo || '',

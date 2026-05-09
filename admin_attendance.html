@@ -185,18 +185,23 @@ async function loadStudents() {
     }
     
     try {
-        // Load students for this class
+        // Load students for this madrasa
         const query = db.collection("students")
             .where("madrasa_id", "==", madrasaId)
-            .where("class", "==", classNum)
             .where("status", "==", "approved");
         
         const snap = await query.get();
         currentStudents = [];
         
         snap.forEach(doc => {
-            currentStudents.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            // Robust class matching (string/number and trim)
+            if (String(data.class).trim() === String(classNum).trim()) {
+                currentStudents.push({ id: doc.id, ...data });
+            }
         });
+        
+        currentStudents.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         
         // Load existing attendance data
         const attendanceRef = db.collection("attendance")
@@ -236,13 +241,14 @@ function renderStudentList() {
     
     currentStudents.forEach(student => {
         const attendance = attendanceData.students ? (attendanceData.students[student.id] || 0) : 0;
+        const regNo = student.regno || student.number || "N/A";
         
         const item = document.createElement('div');
         item.className = 'student-item';
         item.innerHTML = `
             <div class="student-info">
                 <div class="student-name">${student.name}</div>
-                <div class="student-class">Reg: ${student.regno}</div>
+                <div class="student-class">Reg: ${regNo}</div>
             </div>
             <input type="number" class="attendance-input" 
                    data-student-id="${student.id}" 
