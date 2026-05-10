@@ -105,10 +105,22 @@
                 <input type="number" id="payAmt" placeholder="₹">
             </div>
             <div class="form-group">
-                <label>ക്ലാസ്സ്</label>
                 <select id="classSel" onchange="loadStudents()">
                     <option value="All">എല്ലാം</option>
                     <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">ക്ലാസ് ${i}</option>`)</script>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ഡിവിഷൻ</label>
+                <select id="divisionSel" onchange="loadStudents()">
+                    <option value="">ഡിവിഷൻ (All)</option>
+                    <option value="None">ഡിവിഷനില്ല (None)</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
                 </select>
             </div>
         </div>
@@ -146,12 +158,27 @@
             <input type="hidden" id="trackProgram" value="">
         </div>
 
-        <div class="form-group">
-            <label>ക്ലാസ്സ് പ്രകാരം കാണുക</label>
-            <select id="trackClass" onchange="calculateStats()">
-                <option value="All">എല്ലാ ക്ലാസ്സും</option>
-                <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">ക്ലാസ് ${i}</option>`)</script>
-            </select>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="form-group">
+                <label>ക്ലാസ്സ്</label>
+                <select id="trackClass" onchange="calculateStats()">
+                    <option value="All">എല്ലാ ക്ലാസ്സും</option>
+                    <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">ക്ലാസ് ${i}</option>`)</script>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ഡിവിഷൻ</label>
+                <select id="trackDivision" onchange="calculateStats()">
+                    <option value="">എല്ലാ ഡിവിഷനും</option>
+                    <option value="None">ഡിവിഷനില്ലാത്തവ</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                </select>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -200,6 +227,7 @@ const mID = new URLSearchParams(window.location.search).get('id');
 // Load Students for request
 async function loadStudents() {
     const cls = document.getElementById('classSel').value;
+    const div = document.getElementById('divisionSel').value;
     const list = document.getElementById('stuList');
     list.innerHTML = "<tr><td colspan='3' style='text-align:center'>Loading...</td></tr>";
     
@@ -215,13 +243,21 @@ async function loadStudents() {
         snap.forEach(doc => {
             const s = doc.data();
             // Robust class matching
-            if(cls !== "All" && String(s.class).trim() !== String(cls).trim()) return;
+            const matchesClass = cls === "All" || String(s.class).trim() === String(cls).trim();
+            let matchesDivision = true;
+            if (div === "None") {
+                if (s.division && s.division !== "") matchesDivision = false;
+            } else if (div && s.division !== div) {
+                matchesDivision = false;
+            }
+
+            if(!matchesClass || !matchesDivision) return;
             
             const reg = s.regno || s.number || "No-Reg";
             list.innerHTML += `<tr>
-                <td><input type="checkbox" class="sc" value="${doc.id}" data-reg="${reg}" data-name="${s.name}" data-cls="${s.class}" checked></td>
+                <td><input type="checkbox" class="sc" value="${doc.id}" data-reg="${reg}" data-name="${s.name}" data-cls="${s.class}" data-div="${s.division || ''}" checked></td>
                 <td>${s.name}</td>
-                <td>${s.class}</td>
+                <td>${s.division ? s.class + '-' + s.division : s.class}</td>
             </tr>`;
             count++;
         });
@@ -322,6 +358,7 @@ async function requestPayment() {
                 date: new Date().toLocaleDateString('en-GB'),
                 sName: c.getAttribute('data-name'), 
                 sClass: c.getAttribute('data-cls'),
+                sDivision: c.getAttribute('data-div'),
                 sReg: c.getAttribute('data-reg')
             });
             addedCount++;
@@ -458,6 +495,7 @@ async function deleteEntireProgram(title) {
 function calculateStats() {
     const prog = document.getElementById('trackProgram').value;
     const trackCls = document.getElementById('trackClass').value;
+    const trackDiv = document.getElementById('trackDivision').value;
     if(!prog) return;
 
     let totalNeed = 0, totalGot = 0;
@@ -473,6 +511,13 @@ function calculateStats() {
                 if(p.title && p.title.trim() === prog.trim()) {
                     // Class Filter - Convert both to string for robust comparison
                     if(trackCls !== "All" && String(p.sClass) !== String(trackCls)) return;
+                    
+                    // Division Filter
+                    if (trackDiv === "None") {
+                        if (p.sDivision && p.sDivision !== "") return;
+                    } else if (trackDiv && p.sDivision !== trackDiv) {
+                        return;
+                    }
 
                     totalNeed += parseInt(p.amount) || 0;
                     const isPaid = p.status === "Paid";
@@ -481,7 +526,7 @@ function calculateStats() {
                     list.innerHTML += `
     <tr>
         <td>${p.sName || 'Unknown'}</td>
-        <td>${p.sClass || '-'}</td>
+        <td>${p.sDivision ? p.sClass + '-' + p.sDivision : p.sClass}</td>
         <td><span class="status-badge ${isPaid ? 'bg-paid' : 'bg-pending'}">${p.status}</span></td>
         <td>
             <div style="display: flex; gap: 5px;">

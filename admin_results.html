@@ -152,7 +152,7 @@
             <tr>
                 <td>${i+1}</td>
                 <td>${r.studentName} (${r.regNo})</td>
-                <td>${r.class}</td>
+                <td>${r.division ? r.class + '-' + r.division : r.class}</td>
                 <td>${r.score}/${r.totalQuestions || ''}</td>
                 <td>${formatSubmitTime(r.submitTime)}</td>
             </tr>
@@ -170,7 +170,7 @@
                 <div class="rank">${i+1}<sup>st</sup> Place</div>
                 <img src="${w.photo || 'https://via.placeholder.com/100'}">
                 <h3 style="margin: 10px 0 5px 0;">${w.studentName}</h3>
-                <p style="font-size: 12px; margin: 0;">Class: ${w.class}</p>
+                <p style="font-size: 12px; margin: 0;">Class: ${w.division ? w.class + '-' + w.division : w.class}</p>
                 <p style="font-size: 11px; color: #d4af37;">Mentor: ${w.mentor}</p>
             </div>
         `).join('');

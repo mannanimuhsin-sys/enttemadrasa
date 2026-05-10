@@ -188,7 +188,7 @@ function loadStudentInfo() {
     const regNo = currentStudent.regno || currentStudent.number || currentStudent.id;
     info.innerHTML = `
         <div class="student-name">${currentStudent.name}</div>
-        <div class="student-details">ക്ലാസ്: ${currentStudent.class} | രജിസ്റ്റർ നമ്പർ: ${regNo}</div>
+        <div class="student-details">ക്ലാസ്: ${currentStudent.division ? currentStudent.class + '-' + currentStudent.division : currentStudent.class} | രജിസ്റ്റർ നമ്പർ: ${regNo}</div>
     `;
 }
 
@@ -247,7 +247,7 @@ async function loadAttendance() {
                 <div class="summary-label">മൊത്തം ശതമാനം</div>
             </div>
             <div class="summary-item">
-                <div class="summary-value">${currentStudent.class || '-'}</div>
+                <div class="summary-value">${currentStudent.division ? currentStudent.class + '-' + currentStudent.division : currentStudent.class}</div>
                 <div class="summary-label">ക്ലാസ്</div>
             </div>
             <div class="summary-item">

@@ -28,6 +28,7 @@
     <div class="row"><span>Date:</span> <b id="rDate">--</b></div>
     <hr>
     <div class="row"><span>Student Name:</span> <b id="sName">--</b></div>
+    <div class="row"><span>Class:</span> <b id="sClass">--</b></div>
     <div class="row"><span>Reg Number:</span> <b id="sReg">--</b></div>
     <div class="row"><span>Purpose:</span> <b id="rCat">--</b></div>
     
@@ -56,6 +57,7 @@
         document.getElementById('rId').innerText = data.receiptId || "N/A";
         document.getElementById('rDate').innerText = data.date;
         document.getElementById('sName').innerText = data.sName;
+        document.getElementById('sClass').innerText = data.sDivision ? data.sClass + '-' + data.sDivision : data.sClass;
         document.getElementById('sReg').innerText = data.reg;
         document.getElementById('rCat').innerText = data.category || data.title;
         document.getElementById('rAmt').innerText = data.amount;

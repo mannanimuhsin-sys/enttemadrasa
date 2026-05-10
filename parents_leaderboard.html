@@ -136,6 +136,7 @@
                     name: data.name,
                     reg: doc.id,
                     cls: data.class,
+                    division: data.division || "",
                     score: data.totalPoints || 0
                 });
             });
@@ -155,6 +156,7 @@
                         winners[index].name = sData.name; // ഐഡി കാർഡിലെ ഒറിജിനൽ പേര്
                         winners[index].photo = sData.photo || "";
                         winners[index].cls = sData.class;
+                        winners[index].division = sData.division || "";
                         winners[index].reg = sData.regno || sData.number || winner.reg;
                     }
                 } catch(e) { console.error("Error fetching details for " + winner.reg, e); }
@@ -190,7 +192,7 @@
                     <div class="list-rank">${i+1}</div>
                     <div class="student-info">
                         <b>${s.name}</b>
-                        <small>Reg: ${s.reg} | Class: ${s.cls}</small>
+                        <small>Reg: ${s.reg} | Class: ${s.division ? s.cls + '-' + s.division : s.cls}</small>
                     </div>
                     <div class="points-info">
                         <span class="points-now">${s.score}</span>

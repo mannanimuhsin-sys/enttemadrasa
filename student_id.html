@@ -69,7 +69,19 @@
             <div id="regTab">
                 <input id="name" placeholder="Full Name (English)">
                 <input id="regno" placeholder="Register Number">
-                <input id="classN" placeholder="Class">
+                <select id="classN">
+                    <option value="">Select Class</option>
+                    <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+                </select>
+                <select id="division">
+                    <option value="">ഡിവിഷനില്ല (None)</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                </select>
                 <input id="father" placeholder="Father Name">
                 <input id="mentor" placeholder="Mentor">
                 <input id="phone" placeholder="Phone Number" type="tel">
@@ -232,7 +244,7 @@
         async function saveStudent() {
             const btn = document.getElementById('saveBtn');
             const fields = {
-                name: 'name', regno: 'regno', classN: 'classN', father: 'father', 
+                name: 'name', regno: 'regno', classN: 'classN', division: 'division', father: 'father', 
                 mentor: 'mentor', phone: 'phone', gender: 'gender', blood: 'blood', 
                 dob: 'dob', pass: 'regPass', conf: 'regPassConf'
             };
@@ -240,7 +252,7 @@
             const vals = {};
             for (let key in fields) {
                 vals[key] = document.getElementById(fields[key]).value.trim();
-                if (!vals[key]) { alert("എല്ലാ വിവരങ്ങളും നൽകുക!"); return; }
+                if (key !== 'division' && !vals[key]) { alert("എല്ലാ വിവരങ്ങളും നൽകുക!"); return; }
             }
 
             if (vals.pass !== vals.conf) { alert("പാസ്‌വേഡുകൾ തമ്മിൽ യോജിക്കുന്നില്ല!"); return; }
@@ -282,6 +294,7 @@
                     name: vals.name,
                     regno: vals.regno,
                     class: vals.classN,
+                    division: vals.division || "",
                     father: vals.father,
                     mentor: vals.mentor,
                     phone: vals.phone,
@@ -387,7 +400,7 @@
             document.getElementById('pName').innerText = displayData.name;
             document.getElementById('pFather').innerText = displayData.father;
             document.getElementById('pGender').innerText = displayData.gender;
-            document.getElementById('pClass').innerText = displayData.class;
+            document.getElementById('pClass').innerText = displayData.division ? `${displayData.class}-${displayData.division}` : displayData.class;
             document.getElementById('pMentor').innerText = displayData.mentor;
             document.getElementById('pBlood').innerText = displayData.blood;
             document.getElementById('pPhone').innerText = displayData.phone;

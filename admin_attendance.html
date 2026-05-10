@@ -99,6 +99,19 @@
                     <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
                 </select>
             </div>
+            <div class="control-group">
+                <label>ഡിവിഷൻ</label>
+                <select id="divisionSelect">
+                    <option value="">ഡിവിഷൻ തെരഞ്ഞെടുക്കുക (All)</option>
+                    <option value="None">ഡിവിഷനില്ല (None)</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                </select>
+            </div>
         </div>
     </div>
     
@@ -178,6 +191,7 @@ async function loadStudents() {
     const year = document.getElementById('yearSelect').value;
     const month = document.getElementById('monthSelect').value;
     const classNum = document.getElementById('classSelect').value;
+    const division = document.getElementById('divisionSelect').value;
     
     if(!year || !month || !classNum) {
         alert("ദയവായി എല്ലാ ഫീൽഡുകളും പൂരിപ്പിക്കുക!");
@@ -196,7 +210,15 @@ async function loadStudents() {
         snap.forEach(doc => {
             const data = doc.data();
             // Robust class matching (string/number and trim)
-            if (String(data.class).trim() === String(classNum).trim()) {
+            const matchesClass = String(data.class).trim() === String(classNum).trim();
+            let matchesDivision = true;
+            if (division === "None") {
+                if (data.division && data.division !== "") matchesDivision = false;
+            } else if (division && data.division !== division) {
+                matchesDivision = false;
+            }
+
+            if (matchesClass && matchesDivision) {
                 currentStudents.push({ id: doc.id, ...data });
             }
         });
@@ -208,7 +230,8 @@ async function loadStudents() {
             .where("madrasa_id", "==", madrasaId)
             .where("year", "==", parseInt(year))
             .where("month", "==", parseInt(month))
-            .where("class", "==", classNum);
+            .where("class", "==", classNum)
+            .where("division", "==", division);
         
         const attendanceSnap = await attendanceRef.get();
         attendanceData = {};
@@ -248,7 +271,7 @@ function renderStudentList() {
         item.innerHTML = `
             <div class="student-info">
                 <div class="student-name">${student.name}</div>
-                <div class="student-class">Reg: ${regNo}</div>
+                <div class="student-class">Reg: ${regNo} ${student.division ? '(' + student.division + ')' : ''}</div>
             </div>
             <input type="number" class="attendance-input" 
                    data-student-id="${student.id}" 
@@ -264,6 +287,7 @@ async function saveAttendance() {
     const year = parseInt(document.getElementById('yearSelect').value);
     const month = parseInt(document.getElementById('monthSelect').value);
     const classNum = document.getElementById('classSelect').value;
+    const division = document.getElementById('divisionSelect').value;
     const totalDays = parseInt(document.getElementById('totalAttendance').value);
     
     if(!totalDays || totalDays < 1) {
@@ -286,6 +310,7 @@ async function saveAttendance() {
         year: year,
         month: month,
         class: classNum,
+        division: division,
         total_days: totalDays,
         students: studentAttendance,
         updated_at: new Date(),
@@ -298,7 +323,8 @@ async function saveAttendance() {
             .where("madrasa_id", "==", madrasaId)
             .where("year", "==", year)
             .where("month", "==", month)
-            .where("class", "==", classNum);
+            .where("class", "==", classNum)
+            .where("division", "==", division);
         
         const existingSnap = await existingQuery.get();
         
@@ -321,11 +347,12 @@ async function saveAttendance() {
                         year: year,
                         month: month,
                         class: classNum,
+                        division: division,
                         total_days: totalDays,
                         students: studentAttendance,
                         updated_at: new Date().toISOString(),
                         updated_by: "admin"
-                    }, { onConflict: 'madrasa_id,year,month,class' });
+                    }, { onConflict: 'madrasa_id,year,month,class,division' });
                 
                 if (error) throw error;
             }

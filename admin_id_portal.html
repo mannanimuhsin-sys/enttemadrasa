@@ -89,6 +89,18 @@
         </select>
     </div>
     <div style="width:150px;">
+        <select id="filterDivision" onchange="loadStudents()">
+            <option value="">All Divisions</option>
+            <option value="None">No Division</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+        </select>
+    </div>
+    <div style="width:150px;">
         <select id="filterGender" onchange="loadStudents()">
             <option value="">All Genders</option>
             <option value="Male">Male</option>
@@ -130,7 +142,20 @@
 
         <label>Register Number</label><input type="text" id="editRegNo">
         <label>Name</label><input type="text" id="editName">
-        <label>Class</label><input type="text" id="editClass">
+        <label>Class</label>
+        <select id="editClass">
+            <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+        </select>
+        <label>Division</label>
+        <select id="editDivision">
+            <option value="">None</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+        </select>
         <label>Phone</label><input type="tel" id="editPhone">
         
         <div style="display: flex; gap: 10px;">
@@ -285,8 +310,14 @@ function renderStudents(students) {
     const filterGender = document.getElementById('filterGender').value;
 
     students.forEach(s => {
+        const filterDivision = document.getElementById('filterDivision').value;
         // Robust class matching (string/number and trim)
         if(filterClass && String(s.class).trim() !== String(filterClass).trim()) return;
+        if(filterDivision === "None") {
+            if(s.division && s.division !== "") return;
+        } else if(filterDivision && s.division !== filterDivision) {
+            return;
+        }
         if(filterGender && s.gender != filterGender) return;
 
         allStudents.push(s);
@@ -308,7 +339,7 @@ function renderStudents(students) {
                 <td><img src="${s.photo}" class="student-img"></td>
                 <td><b>${displayRegNo}</b></td>
                 <td>${s.name}</td>
-                <td>${s.class}</td>
+                <td>${s.division ? s.class + '-' + s.division : s.class}</td>
                 <td>${s.phone}</td>
                 <td><code title="${s.password}">${passDisplay}</code></td>
                 <td><span class="status-badge ${s.status}">${statusText}</span></td>
@@ -344,6 +375,7 @@ function openEdit(student) {
     document.getElementById('editRegNo').value = student.regno || student.number;
     document.getElementById('editName').value = student.name;
     document.getElementById('editClass').value = student.class;
+    document.getElementById('editDivision').value = student.division || "";
     document.getElementById('editPhone').value = student.phone || "";
     document.getElementById('editGender').value = student.gender || "Male";
     document.getElementById('editBlood').value = student.blood || "A+";
@@ -384,6 +416,7 @@ async function updateStudent() {
             number: newRegno,
             name: document.getElementById('editName').value,
             class: document.getElementById('editClass').value,
+            division: document.getElementById('editDivision').value,
             phone: document.getElementById('editPhone').value,
             gender: document.getElementById('editGender').value,
             blood: document.getElementById('editBlood').value,

@@ -88,10 +88,20 @@
             <select id="classSelect" onchange="loadStudents()">
                 <option value="">ക്ലാസ് സെലക്ട് ചെയ്യുക</option>
                 <script>
-                    for(let i=1; i<=10; i++) document.write(`<option value="${i}">Class ${i}</option>`);
-                    document.write(`<option value="11">Plus One (+1)</option>`);
-                    document.write(`<option value="12">Plus Two (+2)</option>`);
+                    for(let i=1; i<=12; i++) document.write(`<option value="${i}">Class ${i}</option>`);
                 </script>
+            </select>
+
+            <label><i class="fa fa-layer-group"></i> ഡിവിഷൻ തിരഞ്ഞെടുക്കുക:</label>
+            <select id="divisionSelect" onchange="loadStudents()">
+                <option value="">ഡിവിഷൻ തെരഞ്ഞെടുക്കുക (All)</option>
+                <option value="None">ഡിവിഷനില്ല (None)</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
             </select>
         </div>
 
@@ -154,6 +164,7 @@
 
     async function loadStudents() {
         const cls = document.getElementById('classSelect').value;
+        const div = document.getElementById('divisionSelect').value;
         const date = document.getElementById('salahDate').value;
         if(!cls || !date || !mId) return;
 
@@ -176,12 +187,20 @@
             const promises = snap.docs.map(async doc => {
                 const s = doc.data();
                 // Robust class matching
-                if (String(s.class).trim() === String(cls).trim()) {
+                const matchesClass = String(s.class).trim() === String(cls).trim();
+                let matchesDivision = true;
+                if (div === "None") {
+                    if (s.division && s.division !== "") matchesDivision = false;
+                } else if (div && s.division !== div) {
+                    matchesDivision = false;
+                }
+
+                if (matchesClass && matchesDivision) {
                     const sid = doc.id;
                     const sDoc = await db.collection("salah_records").doc(mId).collection("students").doc(sid).collection("days").doc(date).get();
                     const dayData = sDoc.exists ? sDoc.data() : {f:0, d:0, a:0, m:0, i:0};
                     
-                    students.push({ id: sid, name: s.name, reg: s.regno || s.number || '-' });
+                    students.push({ id: sid, name: s.name, reg: s.regno || s.number || '-', division: s.division });
                     currentSalahs[sid] = dayData;
                 }
             });
@@ -217,7 +236,7 @@
                     <div class="student-item" onclick="toggle('${s.id}', '${prayer.id}')">
                         <div class="student-info">
                             <b>${s.name}</b>
-                            <small>Reg: ${s.reg}</small>
+                            <small>Reg: ${s.reg} ${s.division ? '(' + s.division + ')' : ''}</small>
                         </div>
                         <div class="check-box ${isActive}" id="chk_${prayer.id}_${s.id}">
                             <i class="fa fa-check"></i>
@@ -278,6 +297,7 @@
         await totalRef.set({
             name: sInfo.name,
             class: document.getElementById('classSelect').value,
+            division: sInfo.division || "",
             totalPoints: grandTotal,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
