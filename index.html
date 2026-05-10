@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>എന്‍റെ മദ്റസ | Smart Management</title>
 
     <link rel="manifest" href="manifest.json">
@@ -27,11 +27,15 @@
 
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         html, body {
             width: 100%;
             min-height: 100%;
+            -webkit-text-size-adjust: 100%;
+            overscroll-behavior-y: contain;
         }
 
         body {
