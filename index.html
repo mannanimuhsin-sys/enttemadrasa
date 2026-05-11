@@ -920,27 +920,27 @@
             <div id="profileArea"></div>
 
             <div class="card-grid">
-                <div class="portal-card c-green" onclick="openDashboard()">
+                <div id="btn_dash" class="portal-card c-green" onclick="openDashboard()">
                     <i class="fa fa-chart-line"></i><span>Dashboard</span>
                 </div>
 
-                <div class="portal-card c-blue" id="btnPayment" onclick="openPaymentPortal()">
+                <div id="btn_payment" class="portal-card c-blue" onclick="openPaymentPortal()">
                     <i class="fa fa-file-invoice-dollar"></i><span>Payments</span>
                 </div>
 
-                <div class="portal-card c-gold" onclick="openIDPortal()">
+                <div id="btn_id_card" class="portal-card c-gold" onclick="openIDPortal()">
                     <i class="fa fa-id-badge"></i><span>ID Card</span>
                 </div>
 
-                <div class="portal-card c-red" onclick="openQuizPortal()">
+                <div id="btn_quiz" class="portal-card c-red" onclick="openQuizPortal()">
                     <i class="fa fa-question-circle"></i><span>Special Quiz</span>
                 </div>
 
-                <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()" style="display: none;">
+                <div id="btn_salah" class="portal-card c-purple" onclick="openSalahTracker()">
                     <i class="fa fa-mosque"></i><span>Salah Tracker</span>
                 </div>
 
-                <div class="portal-card c-red" onclick="openAttendancePortal()">
+                <div id="btn_hajar" class="portal-card c-red" onclick="openAttendancePortal()">
                     <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
                 </div>
             </div>
@@ -1411,10 +1411,22 @@
     if (sid) {
         firestore.collection('settings').doc(sid).onSnapshot(doc => {
             const settings = doc.data() || {};
-            const salahBtn = document.getElementById('btn_salah');
-            if (salahBtn) {
-                salahBtn.style.display = (settings.salah !== false) ? 'flex' : 'none';
-            }
+            const role = window.currentRole || localStorage.getItem("userRole");
+            
+            // ലിസ്റ്റിലുള്ള ഓരോ പോർട്ടലും കാണിക്കണോ എന്ന് തീരുമാനിക്കുന്നു
+            const keys = ['dash', 'id_card', 'quiz', 'payment', 'salah', 'hajar'];
+            keys.forEach(key => {
+                const btn = document.getElementById('btn_' + key);
+                if (btn) {
+                    if (role === 'admin') {
+                        // അഡ്മിന് എല്ലാ ഓപ്ഷനുകളും കാണാം
+                        btn.style.display = 'flex';
+                    } else {
+                        // പാരന്റ്സിന് സെറ്റിംഗ്സ് അനുസരിച്ച് മാത്രം
+                        btn.style.display = (settings[key] !== false) ? 'flex' : 'none';
+                    }
+                }
+            });
         });
     }
 
