@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ml">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>എന്‍റെ മദ്റസ | Smart Management</title>
+    <title>à´Žà´¨àµâ€à´±àµ† à´®à´¦àµà´±à´¸ | Smart Management</title>
 
     <link rel="manifest" href="manifest.json">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -13,7 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-storage-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- ✅ കറക്റ്റ് അപ്ഡേഷൻ ലഭിക്കാൻ താഴെ ഉള്ളത് സഹായിക്കും -->
+    <!-- âœ… à´•à´±à´•àµà´±àµà´±àµ à´…à´ªàµà´¡àµ‡à´·àµ» à´²à´­à´¿à´•àµà´•à´¾àµ» à´¤à´¾à´´àµ† à´‰à´³àµà´³à´¤àµ à´¸à´¹à´¾à´¯à´¿à´•àµà´•àµà´‚ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -250,7 +250,7 @@
             display: flex !important;
         }
 
-        /* ✅ ലോഡിംഗ് സ്ക്രീൻ */
+        /* âœ… à´²àµ‹à´¡à´¿à´‚à´—àµ à´¸àµà´•àµà´°àµ€àµ» */
         #loadingOverlay {
             position: fixed;
             top: 0;
@@ -491,7 +491,7 @@
             transform: translateY(1px);
         }
 
-        /* ✅ ഗ്രിഡ് ലേഔട്ട് */
+        /* âœ… à´—àµà´°à´¿à´¡àµ à´²àµ‡à´”à´Ÿàµà´Ÿàµ */
         .card-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -500,7 +500,7 @@
             perspective: 1200px;
         }
 
-        /* ✅ മനോഹരമായ കാർഡ് ഡിസൈൻ */
+        /* âœ… à´®à´¨àµ‹à´¹à´°à´®à´¾à´¯ à´•à´¾àµ¼à´¡àµ à´¡à´¿à´¸àµˆàµ» */
         .portal-card {
             background: white;
             border-radius: 20px;
@@ -670,7 +670,7 @@
             margin: 0 5px;
         }
 
-        /* ✅ Footer Credits */
+        /* âœ… Footer Credits */
         .footer-credits {
             margin-top: auto;
             padding: 20px 0 10px 0;
@@ -895,7 +895,7 @@
     <div id="loadingOverlay">
         <div style="text-align: center;">
             <img src="logo.png" style="width: 80px; animation: pulse 1.5s infinite;">
-            <p style="color: var(--primary); font-weight: bold; margin-top: 10px;">ലോഡ് ചെയ്യുന്നു...</p>
+            <p style="color: var(--primary); font-weight: bold; margin-top: 10px;">à´²àµ‹à´¡àµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ...</p>
         </div>
     </div>
 
@@ -945,7 +945,7 @@
 
         <div id="regPage" class="page">
             <div class="login-box" style="margin-top: 20px;">
-                <h2 style="text-align: center; color: var(--primary); font-weight: 900; margin-bottom: 25px;">പുതിയ രജിസ്‌ട്രേഷൻ</h2>
+                <h2 style="text-align: center; color: var(--primary); font-weight: 900; margin-bottom: 25px;">à´ªàµà´¤à´¿à´¯ à´°à´œà´¿à´¸àµâ€Œà´Ÿàµà´°àµ‡à´·àµ»</h2>
                 
                 <div style="text-align: center; margin-bottom: 20px;">
                     <div style="position: relative; display: inline-block;">
@@ -954,18 +954,18 @@
                             <i class="fa fa-camera"></i>
                         </label>
                     </div>
-                    <p style="font-size: 12px; color: #666; margin-top: 10px;">മദ്റസ ഫോട്ടോ ചേർക്കുക</p>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">à´®à´¦àµà´±à´¸ à´«àµ‹à´Ÿàµà´Ÿàµ‹ à´šàµ‡àµ¼à´•àµà´•àµà´•</p>
                     <input type="file" id="mPhoto" accept="image/*" style="display: none;" onchange="previewImage(this)">
                 </div>
 
                 <div style="text-align: left;">
-                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസയുടെ പേര്</label>
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">à´®à´¦àµà´±à´¸à´¯àµà´Ÿàµ† à´ªàµ‡à´°àµ</label>
                     <input type="text" id="rName" placeholder="Enter Madrasa Name">
                     
-                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">സ്ഥലം</label>
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">à´¸àµà´¥à´²à´‚</label>
                     <input type="text" id="rPlace" placeholder="Enter Location">
                     
-                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">മദ്റസ രജിസ്റ്റർ നമ്പർ</label>
+                    <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">à´®à´¦àµà´±à´¸ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªàµ¼</label>
                     <input type="text" id="rReg" placeholder="Enter Reg Number">
                     
                     <label style="font-size: 12px; color: var(--primary); font-weight: bold; margin-left: 5px;">User ID</label>
@@ -973,11 +973,11 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div>
-                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">ഉസ്താദ് പാസ്‌വേഡ്</label>
+                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">à´‰à´¸àµà´¤à´¾à´¦àµ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµ</label>
                             <input type="password" id="rUsthad" placeholder="Password">
                         </div>
                         <div>
-                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">പാരന്റ് പാസ്‌വേഡ്</label>
+                            <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-left: 5px;">à´ªà´¾à´°à´¨àµà´±àµ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµ</label>
                             <input type="password" id="rParent" placeholder="Password">
                         </div>
                     </div>
@@ -1021,7 +1021,7 @@
                 </div>
 
                 <div id="btn_dictionary" class="portal-card c-blue" onclick="window.location.href='dictionary.html'" style="border-left-color: #0277bd;">
-                    <i class="fa fa-book-quran"></i><span>അറബിക് ഡിഷ്ണറി</span>
+                    <i class="fa fa-book-quran"></i><span>à´…à´±à´¬à´¿à´•àµ à´¡à´¿à´·àµà´£à´±à´¿</span>
                 </div>
             </div>
 
@@ -1038,7 +1038,7 @@
                 </button>
             <div style="text-align: center; padding: 50px 20px;">
                 <i class="fa fa-clock" style="font-size: 60px; color: orange;"></i>
-                <h3>അപ്രൂവൽ കാത്തിരിക്കുന്നു</h3>
+                <h3>à´…à´ªàµà´°àµ‚à´µàµ½ à´•à´¾à´¤àµà´¤à´¿à´°à´¿à´•àµà´•àµà´¨àµà´¨àµ</h3>
                 <button class="btn btn-primary" onclick="location.reload()">BACK</button>
             </div>
         </div>
@@ -1059,16 +1059,16 @@
         <h3 style="margin:0 0 10px 0; color:#333;">Get Our App</h3>
 
         <div id="androidView" style="display:none;">
-            <p style="font-size:13px; color:#666;">പ്ലേസ്റ്റോറിൽ പോകാതെ തന്നെ ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യാം.</p>
+            <p style="font-size:13px; color:#666;">à´ªàµà´²àµ‡à´¸àµà´±àµà´±àµ‹à´±à´¿àµ½ à´ªàµ‹à´•à´¾à´¤àµ† à´¤à´¨àµà´¨àµ† à´†à´ªàµà´ªàµ à´‡àµ»à´¸àµà´±àµà´±à´¾àµ¾ à´šàµ†à´¯àµà´¯à´¾à´‚.</p>
             <button id="pwaInstallBtn" class="install-btn">INSTALL NOW</button>
         </div>
 
 
         <div id="iosView" style="display:none;">
             <div class="ios-msg">
-                ഐഫോണിൽ ഇൻസ്റ്റാൾ ചെയ്യാൻ താഴെ കാണുന്ന <b>'Share'</b>
+                à´à´«àµ‹à´£à´¿àµ½ à´‡àµ»à´¸àµà´±àµà´±à´¾àµ¾ à´šàµ†à´¯àµà´¯à´¾àµ» à´¤à´¾à´´àµ† à´•à´¾à´£àµà´¨àµà´¨ <b>'Share'</b>
                 <img src="https://img.icons8.com/ios/50/000000/export.png" class="ios-icon">
-                ബട്ടൺ അമർത്തി <b>'Add to Home Screen'</b> എന്നത് തിരഞ്ഞെടുക്കുക.
+                à´¬à´Ÿàµà´Ÿàµº à´…à´®àµ¼à´¤àµà´¤à´¿ <b>'Add to Home Screen'</b> à´Žà´¨àµà´¨à´¤àµ à´¤à´¿à´°à´žàµà´žàµ†à´Ÿàµà´•àµà´•àµà´•.
             </div>
         </div>
 
@@ -1078,7 +1078,7 @@
 
     <script>
         console.log("JS loaded");
-        // ✅ ഫോഴ്സ് അപ്ഡേറ്റ് ലോജിക് (പഴയ പതിപ്പിൽ കുടുങ്ങിപ്പോയവർക്ക് വേണ്ടി)
+        // âœ… à´«àµ‹à´´àµà´¸àµ à´…à´ªàµà´¡àµ‡à´±àµà´±àµ à´²àµ‹à´œà´¿à´•àµ (à´ªà´´à´¯ à´ªà´¤à´¿à´ªàµà´ªà´¿àµ½ à´•àµà´Ÿàµà´™àµà´™à´¿à´ªàµà´ªàµ‹à´¯à´µàµ¼à´•àµà´•àµ à´µàµ‡à´£àµà´Ÿà´¿)
         const CURRENT_VERSION = '2.1';
         const previousVersion = localStorage.getItem('app_version');
         if (previousVersion !== CURRENT_VERSION) {
@@ -1106,18 +1106,7 @@
         }
     </script>
     <script type="module">
-        function hideLoader() {
-            const loader = document.getElementById('loadingOverlay');
-            if(loader) {
-                loader.style.transition = 'opacity 0.5s ease';
-                loader.style.opacity = '0';
-                setTimeout(() => { loader.style.display = 'none'; }, 500);
-            }
-        }
-        setTimeout(hideLoader, 5000);
-        
-        import { supabase } from './supabase_client.js';
-        window.supabaseClient = supabase;
+        import { supabase } from './supabase_client.js'; window.supabaseClient = supabase; function hideLoader() { const loader = document.getElementById('loadingOverlay'); if(loader) { loader.style.transition = 'opacity 0.5s ease'; loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 500); } } setTimeout(hideLoader, 5000);
         console.log("Supabase client imported", window.supabaseClient);
         if (window.supabaseClient) {
             window.supabaseClient.from('madrasa_requests').select('reg').limit(1)
@@ -1177,11 +1166,11 @@
         }
 
         function checkAdminPassword() {
-            const password = prompt("ദയവായി പാസ്‌വേഡ് നൽകുക:");
+            const password = prompt("à´¦à´¯à´µà´¾à´¯à´¿ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµ à´¨àµ½à´•àµà´•:");
             if (password === "4321") {
                 showPage('regPage');
             } else if (password !== null) {
-                alert("തെറ്റായ പാസ്‌വേഡ്!");
+                alert("à´¤àµ†à´±àµà´±à´¾à´¯ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµ!");
             }
         }
 
@@ -1212,16 +1201,16 @@
     const mPlace = document.getElementById('rPlace').value.trim();
     const regBtn = document.getElementById('regBtn');
 
-    if (!regNo || !uId || !uPass || !mName) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
+    if (!regNo || !uId || !uPass || !mName) return alert("à´¦à´¯à´µà´¾à´¯à´¿ à´Žà´²àµà´²à´¾ à´µà´¿à´µà´°à´™àµà´™à´³àµà´‚ à´¨àµ½à´•àµà´•!");
 
-    regBtn.innerText = "പ്രോസസ്സ് ചെയ്യുന്നു...";
+    regBtn.innerText = "à´ªàµà´°àµ‹à´¸à´¸àµà´¸àµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ...";
     regBtn.disabled = true;
 
     try {
-        // ✅ ഈ രജിസ്റ്റർ നമ്പർ നിലവിലുണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+        // âœ… à´ˆ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªàµ¼ à´¨à´¿à´²à´µà´¿à´²àµà´£àµà´Ÿàµ‹ à´Žà´¨àµà´¨àµ à´ªà´°à´¿à´¶àµ‹à´§à´¿à´•àµà´•àµà´¨àµà´¨àµ
         const checkSnap = await db.ref('madrasa_requests/' + regNo).once('value');
         if (checkSnap.exists()) {
-            alert("ഈ രജിസ്റ്റർ നമ്പറിൽ ഇതിനകം ഒരു മദ്റസ രജിസ്റ്റർ ചെയ്തിട്ടുണ്ട്! നിലവിലുള്ളത് ഡിലീറ്റ് ചെയ്താൽ മാത്രമേ പുതിയത് ചെയ്യാൻ സാധിക്കൂ.");
+            alert("à´ˆ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªà´±à´¿àµ½ à´‡à´¤à´¿à´¨à´•à´‚ à´’à´°àµ à´®à´¦àµà´±à´¸ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´šàµ†à´¯àµà´¤à´¿à´Ÿàµà´Ÿàµà´£àµà´Ÿàµ! à´¨à´¿à´²à´µà´¿à´²àµà´³àµà´³à´¤àµ à´¡à´¿à´²àµ€à´±àµà´±àµ à´šàµ†à´¯àµà´¤à´¾àµ½ à´®à´¾à´¤àµà´°à´®àµ‡ à´ªàµà´¤à´¿à´¯à´¤àµ à´šàµ†à´¯àµà´¯à´¾àµ» à´¸à´¾à´§à´¿à´•àµà´•àµ‚.");
             regBtn.innerText = "REGISTER NOW";
             regBtn.disabled = false;
             return;
@@ -1230,13 +1219,13 @@
         const pHash = await hashPassword(pPass);
         let photoUrl = "";
 
-        // ✅ 1. ImgBB-യിലേക്ക് ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുന്നു
+        // âœ… 1. ImgBB-à´¯à´¿à´²àµ‡à´•àµà´•àµ à´«àµ‹à´Ÿàµà´Ÿàµ‹ à´…à´ªàµâ€Œà´²àµ‹à´¡àµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ
         const photoInput = document.getElementById('mPhoto');
         if (photoInput.files && photoInput.files[0]) {
             const formData = new FormData();
             formData.append("image", photoInput.files[0]);
 
-            // നിങ്ങളുടെ ImgBB API Key ഇവിടെ ചേർത്തു
+            // à´¨à´¿à´™àµà´™à´³àµà´Ÿàµ† ImgBB API Key à´‡à´µà´¿à´Ÿàµ† à´šàµ‡àµ¼à´¤àµà´¤àµ
             const imgbbKey = "A0ec42450bb0e87699896f33dbd7c471"; 
 
             const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
@@ -1264,13 +1253,13 @@
             createdAt: new Date().toISOString()
         };
 
-        // ✅ 2. ഫയർസ്റ്റോറിലേക്ക് സേവ് ചെയ്യുന്നു
+        // âœ… 2. à´«à´¯àµ¼à´¸àµà´±àµà´±àµ‹à´±à´¿à´²àµ‡à´•àµà´•àµ à´¸àµ‡à´µàµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ
         await firestore.collection('madrasa_requests').doc(regNo).set(data);
 
-        // ✅ 3. റിയൽടൈം ഡാറ്റാബേസിലേക്ക് (RTDB) സേവ് ചെയ്യുന്നു (അഡ്മിൻ പാനലിന് വേണ്ടി)
+        // âœ… 3. à´±à´¿à´¯àµ½à´Ÿàµˆà´‚ à´¡à´¾à´±àµà´±à´¾à´¬àµ‡à´¸à´¿à´²àµ‡à´•àµà´•àµ (RTDB) à´¸àµ‡à´µàµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ (à´…à´¡àµà´®à´¿àµ» à´ªà´¾à´¨à´²à´¿à´¨àµ à´µàµ‡à´£àµà´Ÿà´¿)
         await db.ref('madrasa_requests/' + regNo).set(data);
 
-        // ✅ 4. സുപാബേസിലേക്ക് സിങ്ക് ചെയ്യുന്നു
+        // âœ… 4. à´¸àµà´ªà´¾à´¬àµ‡à´¸à´¿à´²àµ‡à´•àµà´•àµ à´¸à´¿à´™àµà´•àµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ
         if (window.supabaseClient) {
             await window.supabaseClient.from('madrasa_requests').upsert({
                 reg: regNo,
@@ -1285,12 +1274,12 @@
             });
         }
 
-        alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക. ✅");
+        alert("à´µà´¿à´œà´¯à´¿à´šàµà´šàµ! à´…à´ªàµà´°àµ‚à´µàµ½ à´•à´¾à´¤àµà´¤à´¿à´°à´¿à´•àµà´•àµà´•. âœ…");
         location.reload();
 
     } catch (error) {
         console.error("Registration Error:", error);
-        alert("പിശക് സംഭവിച്ചു: " + error.message);
+        alert("à´ªà´¿à´¶à´•àµ à´¸à´‚à´­à´µà´¿à´šàµà´šàµ: " + error.message);
         regBtn.innerText = "REGISTER NOW";
         regBtn.disabled = false;
     }
@@ -1302,12 +1291,12 @@
             const btn = document.getElementById('loginBtn');
 
             if (!reg || !pass) {
-                alert("ദയവായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+                alert("à´¦à´¯à´µà´¾à´¯à´¿ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªà´±àµà´‚ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµà´‚ à´¨àµ½à´•àµà´•!");
                 return;
             }
 
             if (btn) {
-                btn.innerText = "ലോഗിൻ ചെയ്യുന്നു...";
+                btn.innerText = "à´²àµ‹à´—à´¿àµ» à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ...";
                 btn.disabled = true;
             }
 
@@ -1379,7 +1368,7 @@
                         btn.innerText = "LOGIN";
                         btn.disabled = false;
                     }
-                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                    alert("à´¤àµ†à´±àµà´±à´¾à´¯ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªà´±àµà´‚ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµà´‚!");
                 }
 
             } catch (e) {
@@ -1417,7 +1406,7 @@
                 
                 const results = await Promise.all(promises);
                 
-                // ഡാറ്റ മെർജ് ചെയ്യുന്നു
+                // à´¡à´¾à´±àµà´± à´®àµ†àµ¼à´œàµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ
                 let freshData = null;
                 for (const data of results) {
                     if (!data) continue;
@@ -1433,7 +1422,7 @@
                     // Normalize data structure if needed
                     freshData.reg = freshData.reg || sid;
                     
-                    // സ്റ്റാറ്റസ് പെൻഡിങ് ആണെങ്കിൽ മാത്രം പേജ് മാറ്റുക
+                    // à´¸àµà´±àµà´±à´¾à´±àµà´±à´¸àµ à´ªàµ†àµ»à´¡à´¿à´™àµ à´†à´£àµ†à´™àµà´•à´¿àµ½ à´®à´¾à´¤àµà´°à´‚ à´ªàµ‡à´œàµ à´®à´¾à´±àµà´±àµà´•
                     if (freshData.status !== 'approved' && !cached) {
                         showPage('pendingPage');
                         return;
@@ -1463,11 +1452,11 @@
        function renderProfile(d) {
     if (!d) return;
 
-    // 🛑 പ്രശ്നമുണ്ടാക്കുന്ന ഈ ഭാഗം ഞാൻ മാറ്റം വരുത്തിയിട്ടുണ്ട്. 
-    // ലോഗിൻ ചെയ്യുമ്പോൾ മാത്രം സ്റ്റാറ്റസ് നോക്കിയാൽ മതി.
-    // യൂസ് ചെയ്തുകൊണ്ടിരിക്കുമ്പോൾ ഇത് വീണ്ടും ചെക്ക് ചെയ്യുന്നത് ഒഴിവാക്കി.
+    // ðŸ›‘ à´ªàµà´°à´¶àµà´¨à´®àµà´£àµà´Ÿà´¾à´•àµà´•àµà´¨àµà´¨ à´ˆ à´­à´¾à´—à´‚ à´žà´¾àµ» à´®à´¾à´±àµà´±à´‚ à´µà´°àµà´¤àµà´¤à´¿à´¯à´¿à´Ÿàµà´Ÿàµà´£àµà´Ÿàµ. 
+    // à´²àµ‹à´—à´¿àµ» à´šàµ†à´¯àµà´¯àµà´®àµà´ªàµ‹àµ¾ à´®à´¾à´¤àµà´°à´‚ à´¸àµà´±àµà´±à´¾à´±àµà´±à´¸àµ à´¨àµ‹à´•àµà´•à´¿à´¯à´¾àµ½ à´®à´¤à´¿.
+    // à´¯àµ‚à´¸àµ à´šàµ†à´¯àµà´¤àµà´•àµŠà´£àµà´Ÿà´¿à´°à´¿à´•àµà´•àµà´®àµà´ªàµ‹àµ¾ à´‡à´¤àµ à´µàµ€à´£àµà´Ÿàµà´‚ à´šàµ†à´•àµà´•àµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨à´¤àµ à´’à´´à´¿à´µà´¾à´•àµà´•à´¿.
 
-    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
+    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "à´®à´¦àµà´°à´¸";
     const madrasaPlace = (d.place || d.location || "").trim();
 
                 name: mName,
@@ -1480,12 +1469,12 @@
             });
         }
 
-        alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക. ✅");
+        alert("à´µà´¿à´œà´¯à´¿à´šàµà´šàµ! à´…à´ªàµà´°àµ‚à´µàµ½ à´•à´¾à´¤àµà´¤à´¿à´°à´¿à´•àµà´•àµà´•. âœ…");
         location.reload();
 
     } catch (error) {
         console.error("Registration Error:", error);
-        alert("പിശക് സംഭവിച്ചു: " + error.message);
+        alert("à´ªà´¿à´¶à´•àµ à´¸à´‚à´­à´µà´¿à´šàµà´šàµ: " + error.message);
         regBtn.innerText = "REGISTER NOW";
         regBtn.disabled = false;
     }
@@ -1497,12 +1486,12 @@
             const btn = document.getElementById('loginBtn');
 
             if (!reg || !pass) {
-                alert("ദയവായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+                alert("à´¦à´¯à´µà´¾à´¯à´¿ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªà´±àµà´‚ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµà´‚ à´¨àµ½à´•àµà´•!");
                 return;
             }
 
             if (btn) {
-                btn.innerText = "ലോഗിൻ ചെയ്യുന്നു...";
+                btn.innerText = "à´²àµ‹à´—à´¿àµ» à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ...";
                 btn.disabled = true;
             }
 
@@ -1574,7 +1563,7 @@
                         btn.innerText = "LOGIN";
                         btn.disabled = false;
                     }
-                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                    alert("à´¤àµ†à´±àµà´±à´¾à´¯ à´°à´œà´¿à´¸àµà´±àµà´±àµ¼ à´¨à´®àµà´ªà´±àµà´‚ à´ªà´¾à´¸àµâ€Œà´µàµ‡à´¡àµà´‚!");
                 }
 
             } catch (e) {
@@ -1612,7 +1601,7 @@
                 
                 const results = await Promise.all(promises);
                 
-                // ഡാറ്റ മെർജ് ചെയ്യുന്നു
+                // à´¡à´¾à´±àµà´± à´®àµ†àµ¼à´œàµ à´šàµ†à´¯àµà´¯àµà´¨àµà´¨àµ
                 let freshData = null;
                 for (const data of results) {
                     if (!data) continue;
@@ -1628,7 +1617,7 @@
                     // Normalize data structure if needed
                     freshData.reg = freshData.reg || sid;
                     
-                    // സ്റ്റാറ്റസ് പെൻഡിങ് ആണെങ്കിൽ മാത്രം പേജ് മാറ്റുക
+                    // à´¸àµà´±àµà´±à´¾à´±àµà´±à´¸àµ à´ªàµ†àµ»à´¡à´¿à´™àµ à´†à´£àµ†à´™àµà´•à´¿àµ½ à´®à´¾à´¤àµà´°à´‚ à´ªàµ‡à´œàµ à´®à´¾à´±àµà´±àµà´•
                     if (freshData.status !== 'approved' && !cached) {
                         showPage('pendingPage');
                         return;
@@ -1658,7 +1647,7 @@
        function renderProfile(d) {
     if (!d) return;
 
-    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
+    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "à´®à´¦àµà´°à´¸";
     const madrasaPlace = (d.place || d.location || "").trim();
 
     const profileArea = document.getElementById('profileArea');
@@ -1843,3 +1832,4 @@
     </script>
 </body>
 </html>
+
