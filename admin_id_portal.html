@@ -513,12 +513,12 @@ function exportExcel() {
         "Name": s.name || "",
         "Class": s.class || "",
         "Division": s.division || "",
+        "Father": s.father || "",
+        "Mentor": s.mentor || "",
         "Gender": s.gender || "",
         "DOB": s.dob || "",
         "Blood Group": s.blood || "",
-        "Phone": s.phone || "",
-        "Password": s.password || "",
-        "Status": s.status || ""
+        "Phone": s.phone || ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -528,10 +528,26 @@ function exportExcel() {
 
 function exportPDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF('l'); // Landscape orientation to fit all columns
     doc.text("Madrasa Student List", 14, 15);
-    const rows = allStudents.map(s => [s.regno || s.number, s.name, s.class, s.phone, s.status]);
-    doc.autoTable({ head: [['Reg', 'Name', 'Class', 'Phone', 'Status']], body: rows, startY: 20 });
+    const rows = allStudents.map(s => [
+        s.regno || s.number || "", 
+        s.name || "", 
+        s.class || "", 
+        s.division || "", 
+        s.father || "", 
+        s.mentor || "", 
+        s.gender || "", 
+        s.dob || "", 
+        s.blood || "", 
+        s.phone || ""
+    ]);
+    doc.autoTable({ 
+        head: [['Reg No', 'Name', 'Class', 'Div', 'Father', 'Mentor', 'Gender', 'DOB', 'Blood', 'Phone']], 
+        body: rows, 
+        startY: 20,
+        styles: { fontSize: 8 }
+    });
     doc.save("Student_List.pdf");
 }
 
