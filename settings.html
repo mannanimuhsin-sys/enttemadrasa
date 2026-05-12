@@ -56,6 +56,11 @@
             <button id="hajar" class="toggle-btn btn-on" onclick="toggle('hajar')">SHOWING</button>
         </div>
 
+        <div class="control-item" style="background: #e1f5fe; border-color: #b3e5fc;">
+            <span style="color: #0277bd; font-weight: bold;">Arabic Dictionary</span>
+            <button id="dictionary" class="toggle-btn btn-on" onclick="toggle('dictionary')">SHOWING</button>
+        </div>
+
         <button class="save-btn" onclick="window.history.back()">SAVE & BACK</button>
     </div>
 
@@ -71,7 +76,7 @@
         firebase.initializeApp(conf);
         const fs = firebase.firestore();
         const mID = new URLSearchParams(window.location.search).get('id');
-        let settings = { dash:true, id_card:true, quiz:true, payment:true, salah:true, hajar:true };
+        let settings = { dash:true, id_card:true, quiz:true, payment:true, salah:true, hajar:true, dictionary:true };
 
         if (mID) {
             document.getElementById('status').innerText = "Madrasa ID: " + mID;
