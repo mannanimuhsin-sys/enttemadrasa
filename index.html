@@ -1019,7 +1019,7 @@
                 <div id="btn_hajar" class="portal-card c-red" onclick="openAttendancePortal()">
                     <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
                 </div>
-
+            </div>
 
         <footer class="footer-credits">
             Created by <b style="letter-spacing: 0.5px;">MUHSIN MANNANI</b>
@@ -1032,6 +1032,7 @@
                 </a>
             </div>
         </footer>
+    </div>
     </div>
     <div id="appInstallOverlay" class="install-overlay">
         <h3 style="margin:0 0 10px 0; color:#333;">Get Our App</h3>
@@ -1083,9 +1084,24 @@
             });
         }
     </script>
-    <script type="module">
-        import { supabase } from './supabase_client.js';
-        window.supabaseClient = supabase;
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+    <script>
+        console.log("Supabase global loader started");
+        const SUPABASE_URL = "https://rjpizlfrpostnfunkxhb.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_YAYIWDygOJh_rrOh6C1dqg_Qa9j_bgl";
+
+        if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+            try {
+                window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase client initialized', window.supabaseClient);
+            } catch (error) {
+                console.error('Supabase initialization failed:', error);
+                window.supabaseClient = null;
+            }
+        } else {
+            console.warn('Supabase global is not available. Continuing without Supabase.');
+            window.supabaseClient = null;
+        }
 
         function hideLoader() {
             const loader = document.getElementById('loadingOverlay');
@@ -1097,20 +1113,7 @@
         }
         setTimeout(hideLoader, 5000);
         
-        console.log("Supabase client imported", window.supabaseClient);
-        if (window.supabaseClient) {
-            window.supabaseClient.from('madrasa_requests').select('reg').limit(1)
-                .then(res => {
-                    if (res.error) {
-                        console.error('Supabase connection test failed:', res.error);
-                    } else {
-                        console.log('Supabase connection test succeeded.', res.data);
-                    }
-                })
-                .catch(err => console.error('Supabase connectivity error:', err));
-        } else {
-            console.warn('Supabase client not available');
-        }
+        console.log("Supabase client import started");
 
         let currentId = "";
         let currentRole = "";
@@ -1730,7 +1733,10 @@
         const globalExports = { showPage, checkAdminPassword, previewImage, register, handleLogin, loadProfile, togglePass, renderProfile, openDashboard, openIDPortal, openQuizPortal, openPaymentPortal, openSalahTracker, openAdminSalah, openAttendancePortal, logout, toggleSidebar, sidebarLogout };
         Object.entries(globalExports).forEach(([name, fn]) => { window[name] = fn; });
 
-        window.onload = () => {
+        let appInitialized = false;
+        const initApp = () => {
+            if (appInitialized) return;
+            appInitialized = true;
             try {
                 const sid = localStorage.getItem("madrasaId");
                 const role = localStorage.getItem("userRole");
@@ -1739,23 +1745,30 @@
                     window.currentId = sid;
                     window.currentRole = role || "";
                     showPage('portalPage');
-                    hideLoader();
-                    if (container) container.classList.add('visible');
                     loadUserPreferences();
                     loadProfile(sid);
+                    if (container) container.classList.add('visible');
+                    hideLoader();
                     return;
                 }
                 showPage('loginPage');
                 loadUserPreferences();
-                hideLoader();
                 if (container) container.classList.add('visible');
+                hideLoader();
             } catch (e) {
-                console.error("Onload error:", e);
+                console.error("Init error:", e);
                 hideLoader();
                 const container = document.querySelector('.container');
                 if (container) container.classList.add('visible');
             }
         };
+
+        window.addEventListener('load', initApp);
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                initApp();
+            }
+        });
 
         let deferredPrompt;
         const overlay = document.getElementById('appInstallOverlay');
@@ -1788,6 +1801,16 @@
                 registrations.forEach(registration => registration.unregister());
             });
         }
+
+        window.addEventListener('error', (event) => {
+            console.error('Global error detected:', event.error || event.message);
+            hideLoader();
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            hideLoader();
+        });
     </script>
 </body>
 </html>
