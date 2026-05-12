@@ -1106,6 +1106,16 @@
         }
     </script>
     <script type="module">
+        function hideLoader() {
+            const loader = document.getElementById('loadingOverlay');
+            if(loader) {
+                loader.style.transition = 'opacity 0.5s ease';
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+        }
+        setTimeout(hideLoader, 5000);
+        
         import { supabase } from './supabase_client.js';
         window.supabaseClient = supabase;
         console.log("Supabase client imported", window.supabaseClient);
@@ -1714,13 +1724,6 @@
         function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
         function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
 
-        function hideLoader() {
-            const loader = document.getElementById('loadingOverlay');
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 500);
-            }
-        }
 
         function logout() { 
             localStorage.clear(); 
