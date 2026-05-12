@@ -302,7 +302,22 @@ async function loadStudents() {
     if(!mId) return;
     const query = db.collection("students").where("madrasa_id", "==", mId);
     const snap = await query.get();
-    const students = snap.docs.map(doc => doc.data());
+    let students = snap.docs.map(doc => doc.data());
+    
+    // Sort students: Boys first, then Girls. Within each, ascending by Register Number.
+    students.sort((a, b) => {
+        const genderA = (a.gender === 'Male' || a.gender === 'boy' || a.gender === 'Boy') ? 1 : ((a.gender === 'Female' || a.gender === 'girl' || a.gender === 'Girl') ? 2 : 3);
+        const genderB = (b.gender === 'Male' || b.gender === 'boy' || b.gender === 'Boy') ? 1 : ((b.gender === 'Female' || b.gender === 'girl' || b.gender === 'Girl') ? 2 : 3);
+        
+        if (genderA !== genderB) {
+            return genderA - genderB;
+        }
+        
+        const numA = parseInt(a.regno || a.number) || 0;
+        const numB = parseInt(b.regno || b.number) || 0;
+        return numA - numB;
+    });
+
     renderStudents(students);
 }
 
@@ -494,7 +509,16 @@ async function deleteStudent(regno) {
 
 function exportExcel() {
     const data = allStudents.map(s => ({
-        "Reg No": s.regno || s.number, "Name": s.name, "Class": s.class, "Phone": s.phone, "Status": s.status
+        "Reg No": s.regno || s.number || "",
+        "Name": s.name || "",
+        "Class": s.class || "",
+        "Division": s.division || "",
+        "Gender": s.gender || "",
+        "DOB": s.dob || "",
+        "Blood Group": s.blood || "",
+        "Phone": s.phone || "",
+        "Password": s.password || "",
+        "Status": s.status || ""
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
