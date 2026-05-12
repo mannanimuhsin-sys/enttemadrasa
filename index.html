@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ml">
 
 <head>
@@ -1518,28 +1518,82 @@
         function openIDPortal() {
             const id = currentId || localStorage.getItem("madrasaId");
             if (!id) return alert("Madrasa ID missing. Please login again.");
-            window.location.href = (currentRole === "admin") ? `admin_id_portal.html?id=${id}` : `student_id.html?mid=${id}`;
+        function openQuizPortal() { window.location.href = (currentRole === "admin") ? dmin_quiz.html?id= : student_quiz.html?mid=; }
+        function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? payment_admin.html?id= : payment_login.html?id=; }
+        function openSalahTracker() { window.location.href = parents_leaderboard.html?mid=; }
+        function openAdminSalah() { window.location.href = dmin_salah.html?id=; }
+        function openAttendancePortal() { window.location.href = (currentRole === "admin") ? dmin_attendance.html?id= : parent_attendance.html?mid=; }
+
+        function hideLoader() {
+            const loader = document.getElementById('loadingOverlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
         }
-        function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
-        function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
-        function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
-        function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
-        function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
+
+        function logout() { 
+            localStorage.clear(); 
+            location.reload(); 
+        }
+
+        function sidebarLogout() { logout(); }
         
-        async function searchDictionary() {
-            const query = document.getElementById('dictQuery').value.trim();
-            const resultArea = document.getElementById('dictResult');
-            const btn = document.getElementById('dictSearchBtn');
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 300);
+            } else {
+                overlay.style.display = 'block';
+                setTimeout(() => {
+                    overlay.style.opacity = '1';
+                    sidebar.classList.add('open');
+                }, 10);
+            }
+        }
 
-            if (!query) return alert("ദയവായി ഒരു വാക്ക് നൽകുക!");
+        function setTheme(theme) {
+            const body = document.body;
+            if (!body) return;
+            body.classList.remove('light-theme', 'dark-theme');
+            body.classList.add(theme + '-theme');
+            localStorage.setItem('siteTheme', theme);
+            updateThemeButtons(theme);
+        }
 
-            resultArea.style.display = "block";
-        ) => {
+        function updateThemeButtons(theme) {
+            const lightBtn = document.getElementById('lightBtn');
+            const darkBtn = document.getElementById('darkBtn');
+            if (lightBtn && darkBtn) {
+                lightBtn.classList.toggle('theme-btn-active', theme === 'light');
+                darkBtn.classList.toggle('theme-btn-active', theme === 'dark');
+            }
+        }
+
+        function setLanguage(lang) {
+            localStorage.setItem('siteLanguage', lang);
+            const select = document.getElementById('languageSelect');
+            if (select) select.value = lang;
+        }
+
+        function loadUserPreferences() {
+            const storedTheme = localStorage.getItem('siteTheme') || 'light';
+            const storedLanguage = localStorage.getItem('siteLanguage') || 'ml';
+            setTheme(storedTheme);
+            setLanguage(storedLanguage);
+        }
+
+        const globalExports = { showPage, checkAdminPassword, previewImage, register, handleLogin, loadProfile, togglePass, renderProfile, openDashboard, openIDPortal, openQuizPortal, openPaymentPortal, openSalahTracker, openAdminSalah, openAttendancePortal, logout, toggleSidebar, sidebarLogout };
+        Object.entries(globalExports).forEach(([name, fn]) => { window[name] = fn; });
+
+        window.onload = () => {
             try {
                 const sid = localStorage.getItem("madrasaId");
                 const role = localStorage.getItem("userRole");
                 const container = document.querySelector('.container');
-                
                 if (sid) {
                     window.currentId = sid;
                     window.currentRole = role || "";
@@ -1561,12 +1615,12 @@
                 if (container) container.classList.add('visible');
             }
         };
+
         let deferredPrompt;
         const overlay = document.getElementById('appInstallOverlay');
         const androidView = document.getElementById('androidView');
         const iosView = document.getElementById('iosView');
 
-        // 1. ആൻഡ്രോയിഡ് ഇൻസ്റ്റാൾ സപ്പോർട്ട് ഉണ്ടോ എന്ന് നോക്കുന്നു
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
@@ -1582,28 +1636,17 @@
             }
         });
 
-        // 2. ഐഫോൺ തിരിച്ചറിയുന്നു
         const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const isStandalone = window.navigator.standalone === true;
-
         if (isIos && !isStandalone) {
             overlay.style.display = 'block';
             iosView.style.display = 'block';
         }
-        // Disable service worker registration for now to prevent stale SW and load conflicts.
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations()
-                .then(registrations => {
-                    registrations.forEach(registration => {
-                        registration.unregister().then(() => {
-                            console.log('Unregistered old service worker.');
-                        }).catch(err => console.error('Service worker unregister failed:', err));
-                    });
-                })
-                .catch(error => console.error('Service worker cleanup failed:', error));
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => registration.unregister());
+            });
         }
-
     </script>
-    
 </body>
 </html>
