@@ -214,6 +214,10 @@ const rtdb = firebase.database();
 const urlParams = new URLSearchParams(window.location.search);
 const mId = urlParams.get('id');
 
+if (!mId) {
+    alert('Madrasa ID ഇല്ല. ദയവായി ലോഗിൻ ചെയ്യുകയും admin_id_portal.html?id=<your-id> അതിൽ നിന്ന് തുറക്കുകയും ചെയ്യുക.');
+}
+
 let allStudents = [];
 let newPhotoData = "";
 

@@ -1667,7 +1667,11 @@
         function openIDPortal() {
             const id = currentId || localStorage.getItem("madrasaId");
             if (!id) return alert("Madrasa ID missing. Please login again.");
-            window.location.href = `id_card.html?id=${id}`;
+            if (currentRole === "admin") {
+                window.location.href = `admin_id_portal.html?id=${id}`;
+            } else {
+                window.location.href = `student_id.html?mid=${id}`;
+            }
         }
         function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
         function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
