@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ml">
 
 <head>
@@ -1460,6 +1460,197 @@
     const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
     const madrasaPlace = (d.place || d.location || "").trim();
 
+                name: mName,
+                place: mPlace,
+                photo: photoUrl,
+                usthad_pass: uHash,
+                parent_pass: pHash,
+                status: "pending",
+                created_at: new Date().toISOString()
+            });
+        }
+
+        alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക. ✅");
+        location.reload();
+
+    } catch (error) {
+        console.error("Registration Error:", error);
+        alert("പിശക് സംഭവിച്ചു: " + error.message);
+        regBtn.innerText = "REGISTER NOW";
+        regBtn.disabled = false;
+    }
+}
+
+        async function handleLogin() {
+            const reg = document.getElementById('logReg').value.trim();
+            const pass = document.getElementById('logPass').value.trim();
+            const btn = document.getElementById('loginBtn');
+
+            if (!reg || !pass) {
+                alert("ദയവായി രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും നൽകുക!");
+                return;
+            }
+
+            if (btn) {
+                btn.innerText = "ലോഗിൻ ചെയ്യുന്നു...";
+                btn.disabled = true;
+            }
+
+            try {
+                const passHash = await hashPassword(pass);
+                console.log("Login attempt for:", reg);
+
+                let loginFound = false;
+                
+                const validateSource = (res) => {
+                    if (loginFound || !res || !res.data) return;
+                    const data = res.data;
+                    const uPass = data.usthad_pass || data.usthadPass;
+                    const pPass = data.parent_pass || data.parentPass;
+
+                    if (uPass === passHash || pPass === passHash) {
+                        loginFound = true;
+                        window.currentRole = (uPass === passHash) ? "admin" : "parent";
+                        window.currentId = reg;
+                        
+                        if (data.status !== 'approved') {
+                            showPage('pendingPage');
+                        } else {
+                            localStorage.setItem("madrasaId", window.currentId);
+                            localStorage.setItem("userRole", window.currentRole);
+                            localStorage.setItem("madrasaData", JSON.stringify(data));
+                            renderProfile(data);
+                        }
+                        
+                        if (btn) {
+                            btn.innerText = "SUCCESS";
+                            btn.disabled = false;
+                        }
+                    }
+                };
+
+                // Start all queries in parallel but handle them as they come
+                const promises = [];
+                
+                if (window.supabaseClient) {
+                    promises.push(
+                        window.supabaseClient.from('madrasa_requests').select('*').eq('reg', reg).single()
+                            .then(res => validateSource({ source: 'supabase', data: res.data }))
+                            .catch(() => {})
+                    );
+                }
+                
+                if (firestore) {
+                    promises.push(
+                        firestore.collection('madrasa_requests').doc(reg).get()
+                            .then(doc => validateSource({ source: 'firestore', data: doc.exists ? doc.data() : null }))
+                            .catch(() => {})
+                    );
+                }
+                
+                if (db) {
+                    promises.push(
+                        db.ref('madrasa_requests/' + reg).once('value')
+                            .then(snap => validateSource({ source: 'rtdb', data: snap.exists() ? snap.val() : null }))
+                            .catch(() => {})
+                    );
+                }
+
+                // Wait for either success or all to fail/timeout
+                await Promise.all(promises);
+
+                if (!loginFound) {
+                    if (btn) {
+                        btn.innerText = "LOGIN";
+                        btn.disabled = false;
+                    }
+                    alert("തെറ്റായ രജിസ്റ്റർ നമ്പറും പാസ്‌വേഡും!");
+                }
+
+            } catch (e) {
+                console.error("Login Error:", e);
+                if (btn) {
+                    btn.innerText = "LOGIN";
+                    btn.disabled = false;
+                }
+                alert("Login error: " + e.message);
+            }
+        }
+        window.handleLogin = handleLogin;
+        async function loadProfile(sid) {
+            if (!sid) return;
+
+            // Try to load from cache first for instant feel
+            const cached = localStorage.getItem("madrasaData");
+            if (cached) {
+                try {
+                    const cachedObj = JSON.parse(cached);
+                    renderProfile(cachedObj);
+                } catch (e) {
+                    console.error("Cache parse error:", e);
+                }
+            }
+
+            try {
+                // Fetch from all sources (Supabase, Firestore, RTDB)
+                const promises = [];
+                if (window.supabaseClient) {
+                    promises.push(window.supabaseClient.from('madrasa_requests').select('*').eq('reg', sid).single().then(r => r.data));
+                }
+                promises.push(firestore.collection('madrasa_requests').doc(sid).get().then(doc => doc.data()));
+                promises.push(db.ref('madrasa_requests/' + sid).once('value').then(snap => snap.val()));
+                
+                const results = await Promise.all(promises);
+                
+                // ഡാറ്റ മെർജ് ചെയ്യുന്നു
+                let freshData = null;
+                for (const data of results) {
+                    if (!data) continue;
+                    if (!freshData) {
+                        freshData = { ...data };
+                    } else {
+                        if (data.status === 'approved') freshData.status = 'approved';
+                        if (data.photo) freshData.photo = data.photo;
+                    }
+                }
+
+                if (freshData) {
+                    // Normalize data structure if needed
+                    freshData.reg = freshData.reg || sid;
+                    
+                    // സ്റ്റാറ്റസ് പെൻഡിങ് ആണെങ്കിൽ മാത്രം പേജ് മാറ്റുക
+                    if (freshData.status !== 'approved' && !cached) {
+                        showPage('pendingPage');
+                        return;
+                    }
+
+                    localStorage.setItem("madrasaData", JSON.stringify(freshData));
+                    renderProfile(freshData);
+                }
+            } catch (e) {
+                console.error("Profile load from remote error:", e);
+            }
+        }
+
+        function togglePass(event) {
+            const passInput = document.getElementById('logPass');
+            const eyeIcon = event.target;
+            if (!passInput || !eyeIcon) return;
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+       function renderProfile(d) {
+    if (!d) return;
+
+    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
+    const madrasaPlace = (d.place || d.location || "").trim();
+
     const profileArea = document.getElementById('profileArea');
     if (profileArea) {
         profileArea.innerHTML = `
@@ -1489,16 +1680,13 @@
             const settings = doc.data() || {};
             const role = window.currentRole || localStorage.getItem("userRole");
             
-            // ലിസ്റ്റിലുള്ള ഓരോ പോർട്ടലും കാണിക്കണോ എന്ന് തീരുമാനിക്കുന്നു
             const keys = ['dash', 'id_card', 'quiz', 'payment', 'salah', 'hajar', 'dictionary'];
             keys.forEach(key => {
                 const btn = document.getElementById('btn_' + key);
                 if (btn) {
                     if (role === 'admin') {
-                        // അഡ്മിന് എല്ലാ ഓപ്ഷനുകളും കാണാം
                         btn.style.display = 'flex';
                     } else {
-                        // പാരന്റ്സിന് സെറ്റിംഗ്സ് അനുസരിച്ച് മാത്രം
                         btn.style.display = (settings[key] !== false) ? 'flex' : 'none';
                     }
                 }
@@ -1518,11 +1706,13 @@
         function openIDPortal() {
             const id = currentId || localStorage.getItem("madrasaId");
             if (!id) return alert("Madrasa ID missing. Please login again.");
-        function openQuizPortal() { window.location.href = (currentRole === "admin") ? dmin_quiz.html?id= : student_quiz.html?mid=; }
-        function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? payment_admin.html?id= : payment_login.html?id=; }
-        function openSalahTracker() { window.location.href = parents_leaderboard.html?mid=; }
-        function openAdminSalah() { window.location.href = dmin_salah.html?id=; }
-        function openAttendancePortal() { window.location.href = (currentRole === "admin") ? dmin_attendance.html?id= : parent_attendance.html?mid=; }
+            window.location.href = `id_card.html?id=${id}`;
+        }
+        function openQuizPortal() { window.location.href = (currentRole === "admin") ? `admin_quiz.html?id=${currentId}` : `student_quiz.html?mid=${currentId}`; }
+        function openPaymentPortal() { window.location.href = (currentRole === 'admin') ? `payment_admin.html?id=${currentId}` : `payment_login.html?id=${currentId}`; }
+        function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
+        function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
+        function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
 
         function hideLoader() {
             const loader = document.getElementById('loadingOverlay');
