@@ -1020,28 +1020,6 @@
                     <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
                 </div>
 
-                <div id="btn_dictionary" class="portal-card c-blue" onclick="window.location.href='dictionary.html'" style="border-left-color: #0277bd;">
-                    <i class="fa fa-book-quran"></i><span>അറബിക് ഡിഷ്ണറി</span>
-                </div>
-            </div>
-
-            <div id="adminArea" class="admin-section" style="display: none;">
-                <p style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 10px;">ADMIN CONTROLS</p>
-
-                <button class="admin-btn" style="background: #2e7d32;" onclick="openAdminSalah()">
-                    <i class="fa fa-check-double"></i> MARK SALAH (ADMIN)
-                </button>
-
-                <button class="admin-btn" style="background: #607d8b;"
-                    onclick="window.location.href='settings.html?id='+currentId">
-                    <i class="fa fa-cog"></i> SETTINGS
-                </button>
-            <div style="text-align: center; padding: 50px 20px;">
-                <i class="fa fa-clock" style="font-size: 60px; color: orange;"></i>
-                <h3>അപ്രൂവൽ കാത്തിരിക്കുന്നു</h3>
-                <button class="btn btn-primary" onclick="location.reload()">BACK</button>
-            </div>
-        </div>
 
         <footer class="footer-credits">
             Created by <b style="letter-spacing: 0.5px;">MUHSIN MANNANI</b>
@@ -1460,37 +1438,6 @@
                 eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
-
-       function renderProfile(d) {
-    if (!d) return;
-
-    // 🛑 പ്രശ്നമുണ്ടാക്കുന്ന ഈ ഭാഗം ഞാൻ മാറ്റം വരുത്തിയിട്ടുണ്ട്. 
-    // ലോഗിൻ ചെയ്യുമ്പോൾ മാത്രം സ്റ്റാറ്റസ് നോക്കിയാൽ മതി.
-    // യൂസ് ചെയ്തുകൊണ്ടിരിക്കുമ്പോൾ ഇത് വീണ്ടും ചെക്ക് ചെയ്യുന്നത് ഒഴിവാക്കി.
-
-    const madrasaName = (d.name || d.madrasaName || d.madarsaName || d.title || d.madrasa || "").trim() || "മദ്രസ";
-    const madrasaPlace = (d.place || d.location || "").trim();
-
-                name: mName,
-                place: mPlace,
-                photo: photoUrl,
-                usthad_pass: uHash,
-                parent_pass: pHash,
-                status: "pending",
-                created_at: new Date().toISOString()
-            });
-        }
-
-        alert("വിജയിച്ചു! അപ്രൂവൽ കാത്തിരിക്കുക. ✅");
-        location.reload();
-
-    } catch (error) {
-        console.error("Registration Error:", error);
-        alert("പിശക് സംഭവിച്ചു: " + error.message);
-        regBtn.innerText = "REGISTER NOW";
-        regBtn.disabled = false;
-    }
-}
 
         async function handleLogin() {
             const reg = document.getElementById('logReg').value.trim();
