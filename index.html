@@ -1022,7 +1022,12 @@
 
                 <!-- ഉസ്താദ് (Settings) - Admin only -->
                 <div id="btn_usthad" class="portal-card" style="background: linear-gradient(135deg, #1a237e, #283593); display:none;" onclick="openUsthadPortal()">
-                    <i class="fa fa-user-tie"></i><span>ഉസ്താദ്</span>
+                    <i class="fa fa-user-tie"></i><span></span>
+                </div>
+
+                <!-- Salah Admin - Admin only (8th button) -->
+                <div id="btn_salah_admin" class="portal-card" style="background: linear-gradient(135deg, #1b5e20, #2e7d32); display:none;" onclick="openAdminSalah()">
+                    <i class="fa fa-star-and-crescent"></i><span>Salah Admin</span>
                 </div>
             </div>
 
@@ -1510,6 +1515,11 @@
             if (usthadBtn) {
                 usthadBtn.style.display = (role === 'admin') ? 'flex' : 'none';
             }
+            // Salah Admin button - admin മാത്രം കാണിക്കുക
+            const salahAdminBtn = document.getElementById('btn_salah_admin');
+            if (salahAdminBtn) {
+                salahAdminBtn.style.display = (role === 'admin') ? 'flex' : 'none';
+            }
         });
     }
 
@@ -1518,11 +1528,15 @@
         adminBox.style.display = (currentRole === 'admin') ? 'block' : 'none';
     }
 
-    // ഉസ്താദ് button initial show/hide (settings load ആകുന്നതിന് മുമ്പ്)
+    // ഉസ്താദ് + Salah Admin buttons initial show/hide (settings load ആകുന്നതിന് മുമ്പ്)
     const usthadBtnInit = document.getElementById('btn_usthad');
+    const salahAdminBtnInit = document.getElementById('btn_salah_admin');
     const roleNow = window.currentRole || localStorage.getItem("userRole");
     if (usthadBtnInit) {
         usthadBtnInit.style.display = (roleNow === 'admin') ? 'flex' : 'none';
+    }
+    if (salahAdminBtnInit) {
+        salahAdminBtnInit.style.display = (roleNow === 'admin') ? 'flex' : 'none';
     }
 
     showPage('portalPage');
