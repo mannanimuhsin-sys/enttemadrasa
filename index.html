@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ml">
 
 <head>
@@ -599,6 +599,14 @@
             color: #6a1b9a;
         }
 
+        .c-yellow {
+            border-left-color: #fbc02d;
+        }
+
+        .c-yellow i {
+            color: #fbc02d;
+        }
+
         .admin-section {
             margin-top: 25px;
             padding-top: 15px;
@@ -1020,8 +1028,8 @@
                     <i class="fa fa-calendar-check"></i><span>Hajar Portal</span>
                 </div>
 
-                 <div id="btn_digital_slate" class="portal-card c-yellow" onclick="openAttendancePortal()">
-                    <i class="fa fa-slate"></i><span>DIGITAL SLATE</span>
+                 <div id="btn_digital_slate" class="portal-card c-yellow" onclick="openDigitalSlate()">
+                    <i class="fa fa-chalkboard"></i><span>DIGITAL SLATE</span>
                 </div>
 
                 <!-- ഉസ്താദ് (Settings) - Admin only -->
@@ -1502,7 +1510,7 @@
             const settings = doc.data() || {};
             const role = window.currentRole || localStorage.getItem("userRole");
             
-            const keys = ['dash', 'id_card', 'quiz', 'payment', 'salah', 'hajar', 'dictionary'];
+            const keys = ['dash', 'id_card', 'quiz', 'payment', 'salah', 'hajar', 'dictionary', 'digital_slate'];
             keys.forEach(key => {
                 const btn = document.getElementById('btn_' + key);
                 if (btn) {
@@ -1561,6 +1569,7 @@
         function openSalahTracker() { window.location.href = `parents_leaderboard.html?mid=${currentId}`; }
         function openAdminSalah() { window.location.href = `admin_salah.html?id=${currentId}`; }
         function openAttendancePortal() { window.location.href = (currentRole === "admin") ? `admin_attendance.html?id=${currentId}` : `parent_attendance.html?mid=${currentId}`; }
+        function openDigitalSlate() { window.location.href = `digital_slaite.html`; }
         function openUsthadPortal() {
             const id = currentId || localStorage.getItem("madrasaId");
             if (!id) return alert("മദ്റസ ID ലഭിച്ചില്ല. വീണ്ടും ലോഗിൻ ചെയ്യുക.");
@@ -1623,7 +1632,7 @@
             setLanguage(storedLanguage);
         }
 
-        const globalExports = { showPage, checkAdminPassword, previewImage, register, handleLogin, loadProfile, togglePass, renderProfile, openDashboard, openIDPortal, openQuizPortal, openPaymentPortal, openSalahTracker, openAdminSalah, openAttendancePortal, openUsthadPortal, logout, toggleSidebar, sidebarLogout };
+        const globalExports = { showPage, checkAdminPassword, previewImage, register, handleLogin, loadProfile, togglePass, renderProfile, openDashboard, openIDPortal, openQuizPortal, openPaymentPortal, openSalahTracker, openAdminSalah, openAttendancePortal, openUsthadPortal, openDigitalSlate, logout, toggleSidebar, sidebarLogout };
         Object.entries(globalExports).forEach(([name, fn]) => { window[name] = fn; });
 
         let appInitialized = false;
