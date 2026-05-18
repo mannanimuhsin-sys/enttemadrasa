@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ഡിജിറ്റൽ സ്ലേറ്റ്</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* മുകൾ ഭാഗം (Top Bar) */
+        .top-bar {
+            background-color: #0d0d0d;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #222;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* കളർ ബട്ടണുകൾ */
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-btn.active {
+            border-color: #ffc107;
+            transform: scale(1.15);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-green { background-color: #4CAF50; }
+        .btn-red { background-color: #F44336; }
+        .btn-white { background-color: #FFFFFF; }
+        .btn-grey { background-color: #9E9E9E; }
+
+        /* ടൂൾ ബട്ടണുകൾ (Eraser, Clear) */
+        .tool-btn {
+            background-color: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .tool-btn.active {
+            background-color: #ffc107;
+            color: #000;
+            border-color: #ffc107;
+        }
+
+        .btn-clear {
+            background-color: #d32f2f;
+            border-color: #d32f2f;
+        }
+
+        /* സ്ലേറ്റ് ഏരിയ */
+        .slate-container {
+            flex: 1;
+            margin: 10px;
+            position: relative;
+            background-color: #121212;
+            border: 2px solid #222;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            cursor: crosshair;
+        }
+
+        /* പശ്ചാത്തലത്തിലെ അക്ഷരം (Trace Text) */
+        .trace-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 180px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.12);
+            z-index: 1;
+            pointer-events: none;
+            font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* കാറ്റഗറി ടാബുകൾ */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 5px 0;
+        }
+
+        .tab-btn {
+            background-color: #1a1a1a;
+            color: #ccc;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .tab-btn.active {
+            background-color: #007bff;
+            color: #fff;
+            font-weight: bold;
+        }
+        /* അക്ഷരങ്ങളുടെ ലിസ്റ്റ് */
+        .letter-panel {
+            height: 85px;
+            margin: 5px 10px 15px 10px;
+            background-color: #050505;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            padding: 0 10px;
+            gap: 10px;
+        }
+
+        .letter-item {
+            min-width: 65px;
+            padding: 0 15px;
+            height: 65px;
+            background-color: #1f1f1f;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .letter-item.active {
+            background-color: #007bff;
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="title">ഡിജിറ്റൽ സ്ലേറ്റ്</div>
+        <div class="controls">
+            <div class="color-btn btn-green" onclick="changeColor('#4CAF50', this)"></div>
+            <div class="color-btn btn-red" onclick="changeColor('#F44336', this)"></div>
+            <div class="color-btn btn-white active" onclick="changeColor('#FFFFFF', this)"></div>
+            <div class="color-btn btn-grey" onclick="changeColor('#9E9E9E', this)"></div>
+            
+            <button class="tool-btn" id="eraserBtn" onclick="toggleEraser()">Eraser</button>
+            <button class="tool-btn btn-clear" onclick="clearSlate()">Clear All</button>
+        </div>
+    </div>
+
+    <div class="slate-container" id="slateContainer">
+        <div class="trace-text" id="traceText"></div>
+        <canvas id="slateCanvas"></canvas>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('arabic', this)">അറബി</button>
+        <button class="tab-btn" onclick="switchTab('arabimalayalam', this)">അറബി-മലയാളം</button>
+        <button class="tab-btn" onclick="switchTab('words', this)">പദങ്ങൾ</button>
+    </div>
+
+    <div class="letter-panel" id="letterPanel">
+        </div>
+
+    <script>
+        const canvas = document.getElementById('slateCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('slateContainer');
+        const traceDisplay = document.getElementById('traceText');
+        const letterPanel = document.getElementById('letterPanel');
+        const eraserBtn = document.getElementById('eraserBtn');
+
+        // അക്ഷരങ്ങളുടെ ഡാറ്റാബേസ്
+        const data = {
+            arabic: ["أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "هـ", "و", "ي"],
+            arabimalayalam: ["ച", "ജ", "പ", "ബ", "ങ", "ഞ", "ഴ", "റ്റ"],
+            words: ["بَيْتٌ", "قَلَمٌ", "كِتَابٌ", "مَدْرَسَةٌ", "أُمِّي", "أَبِي"]
+        };
+
+        let drawing = false;
+        let currentColor = '#FFFFFF';
+        let isEraser = false;
+        let strokeWidth = 5;
+
+        // കാൻവാസ് സൈസ് സെറ്റ് ചെയ്യൽ
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // എഴുതാനുള്ള പ്രധാന ഫങ്ഷനുകൾ (Mouse & Touch)
+        function startDrawing(e) {
+            drawing = true;
+            ctx.beginPath();
+            const pos = getPos(e);
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            
+            ctx.lineWidth = isEraser ? 30 : strokeWidth;
+            if (isEraser) {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            }
+            
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            drawing = false;
+        }
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // ഇവന്റ് ലിസണർമാർ ചേർക്കൽ
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+        // കളർ മാറ്റാൻ
+        function changeColor(color, element) {
+            currentColor = color;
+            isEraser = false;
+            eraserBtn.classList.remove('active');
+            
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // ഇറേസർ ടോഗിൾ ചെയ്യാൻ
+        function toggleEraser() {
+            isEraser = !isEraser;
+            if (isEraser) {
+                eraserBtn.classList.add('active');
+            } else {
+                eraserBtn.classList.remove('active');
+            }
+        }
+
+        // സ്ലേറ്റ് ക്ലിയർ ചെയ്യാൻ
+        function clearSlate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // ടാബ് മാറ്റാൻ
+        function switchTab(tabKey, element) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            loadLetters(tabKey);
+        }
+
+        // താഴെ അക്ഷരങ്ങൾ ലോഡ് ചെയ്യാൻ
+        function loadLetters(tabKey) {
+            letterPanel.innerHTML = '';
+            data[tabKey].forEach(letter => {
+                const item = document.createElement('div');
+                item.className = 'letter-item';
+                item.textContent = letter;
+                item.onclick = function() {
+                    document.querySelectorAll('.letter-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    traceDisplay.textContent = letter; // വാട്ടർമാർക്ക് ആയി അക്ഷരം കാണിക്കും
+                    
+                    // വാട്ടർമാർക്കിന്റെ വലിപ്പം ക്രമീകരിക്കൽ (വാക്കുകൾക്ക് അനുസരിച്ച്)
+                    if (letter.length > 5) {
+                        traceDisplay.style.fontSize = '80px';
+                    } else if (letter.length > 3) {
+                        traceDisplay.style.fontSize = '120px';
+                    } else {
+                        traceDisplay.style.fontSize = '180px';
+                    }
+                    
+                    clearSlate(); // പുതിയ അക്ഷരം എടുക്കുമ്പോൾ സ്ലേറ്റ് ക്ലിയറാകും
+                };
+                letterPanel.appendChild(item);
+            });
+        }
+
+        // ഡിഫോൾട്ടായി അറബി അക്ഷരങ്ങൾ ലോഡ് ചെയ്യുക
+        loadLetters('arabic');
+    </script>
+</body>
+</html>
