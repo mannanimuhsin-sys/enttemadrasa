@@ -22,6 +22,9 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
+            touch-action: none;
         }
 
         /* മുകൾ ഭാഗം (Top Bar) */
@@ -108,6 +111,7 @@
             height: 100%;
             z-index: 2;
             cursor: crosshair;
+            touch-action: none;
         }
 
         /* പശ്ചാത്തലത്തിലെ അക്ഷരം (Trace Text) */
@@ -249,6 +253,9 @@
 
         // എഴുതാനുള്ള പ്രധാന ഫങ്ഷനുകൾ (Mouse & Touch)
         function startDrawing(e) {
+            if (e.touches && e.cancelable) {
+                e.preventDefault();
+            }
             drawing = true;
             ctx.beginPath();
             const pos = getPos(e);
@@ -257,7 +264,9 @@
 
         function draw(e) {
             if (!drawing) return;
-            e.preventDefault();
+            if (e.cancelable) {
+                e.preventDefault();
+            }
             const pos = getPos(e);
             
             ctx.lineWidth = isEraser ? 30 : strokeWidth;
