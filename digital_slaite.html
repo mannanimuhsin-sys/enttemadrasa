@@ -2,66 +2,72 @@
 <html lang="ml">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ഡിജിറ്റൽ സ്ലേറ്റ്</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * {
+        /* മൊബൈൽ സ്ക്രീൻ അനങ്ങാതിരിക്കാനും സൂം ആവാതിരിക്കാനും (Fixed UI) */
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            touch-action: none;
+            -webkit-text-size-adjust: none;
+        }
+
+        * {
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         body {
-            background-color: #000;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            touch-action: none;
         }
 
         /* മുകൾ ഭാഗം (Top Bar) */
         .top-bar {
             background-color: #0d0d0d;
-            padding: 10px 15px;
+            padding: 12px 15px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid #222;
+            z-index: 10;
         }
 
         .title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
+            color: #e0e0e0;
         }
 
         .controls {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         /* കളർ ബട്ടണുകൾ */
         .color-btn {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.1s;
         }
 
         .color-btn.active {
             border-color: #ffc107;
             transform: scale(1.15);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
         }
 
         .btn-green { background-color: #4CAF50; }
@@ -69,15 +75,15 @@
         .btn-white { background-color: #FFFFFF; }
         .btn-grey { background-color: #9E9E9E; }
 
-        /* ടൂൾ ബട്ടണുകൾ (Eraser, Clear) */
+        /* ടൂൾ ബട്ടണുകൾ */
         .tool-btn {
             background-color: #222;
             color: #fff;
             border: 1px solid #444;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
         }
 
@@ -88,19 +94,20 @@
         }
 
         .btn-clear {
-            background-color: #d32f2f;
-            border-color: #d32f2f;
+            background-color: #b71c1c;
+            border-color: #b71c1c;
         }
 
         /* സ്ലേറ്റ് ഏരിയ */
         .slate-container {
             flex: 1;
-            margin: 10px;
+            margin: 8px;
             position: relative;
             background-color: #121212;
-            border: 2px solid #222;
+            border: 2px solid #262626;
             border-radius: 12px;
             overflow: hidden;
+            touch-action: none;
         }
 
         canvas {
@@ -120,81 +127,105 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 180px;
+            font-size: 160px;
             font-weight: bold;
-            color: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.15);
             z-index: 1;
             pointer-events: none;
-            font-family: 'Poppins', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            white-space: nowrap;
+            direction: rtl;
         }
 
         /* കാറ്റഗറി ടാബുകൾ */
         .tabs {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            padding: 5px 0;
+            gap: 6px;
+            padding: 4px 5px;
         }
 
         .tab-btn {
-            background-color: #1a1a1a;
-            color: #ccc;
-            border: none;
+            background-color: #161616;
+            color: #b3b3b3;
+            border: 1px solid #262626;
             padding: 8px 16px;
-            border-radius: 20px;
+            border-radius: 15px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
         }
 
         .tab-btn.active {
             background-color: #007bff;
             color: #fff;
+            border-color: #007bff;
             font-weight: bold;
         }
-        /* അക്ഷരങ്ങളുടെ ലിസ്റ്റ് */
+
+        /* അക്ഷരങ്ങളുടെ ലിസ്റ്റ് പാനൽ */
         .letter-panel {
             height: 85px;
-            margin: 5px 10px 15px 10px;
-            background-color: #050505;
+            margin: 4px 8px 15px 8px;
+            background-color: #080808;
             border-radius: 10px;
+            border: 1px solid #1a1a1a;
             display: flex;
             align-items: center;
             overflow-x: auto;
             padding: 0 10px;
             gap: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* സ്ക്രോൾബാർ ഹൈഡ് ചെയ്യാൻ */
+        .letter-panel::-webkit-scrollbar {
+            display: none;
         }
 
         .letter-item {
             min-width: 65px;
-            padding: 0 15px;
             height: 65px;
-            background-color: #1f1f1f;
+            background-color: #1c1c1e;
+            border: 1px solid #2c2c2e;
             border-radius: 8px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        /* അറബി അക്ഷര രൂപം */
+        .letter-item .char-text {
             font-size: 24px;
             font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
+            color: #fff;
+            direction: rtl;
+        }
+
+        /* താഴെയുള്ള മലയാളം ലേബൽ */
+        .letter-item .sub-label {
+            font-size: 11px;
+            color: #8e8e93;
+            margin-top: 2px;
+            font-weight: normal;
         }
 
         .letter-item.active {
             background-color: #007bff;
             border: 2px solid #fff;
         }
+        
+        .letter-item.active .sub-label {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
-        <div class="title" style="display: flex; align-items: center; gap: 12px;">
-            <button onclick="window.location.href='index.html'" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
-                <i class="fa fa-arrow-left"></i>
-            </button>
-            <span>ഡിജിറ്റൽ സ്ലേറ്റ്</span>
-        </div>
+        <div class="title">ഡിജിറ്റൽ സ്ലേറ്റ്</div>
         <div class="controls">
             <div class="color-btn btn-green" onclick="changeColor('#4CAF50', this)"></div>
             <div class="color-btn btn-red" onclick="changeColor('#F44336', this)"></div>
@@ -213,12 +244,11 @@
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('arabic', this)">അറബി</button>
-        <button class="tab-btn" onclick="switchTab('arabimalayalam', this)">അറബി-മലയാളം</button>
+        <button class="tab-btn" onclick="switchTab('arabimalayalam', this)">അറബി-മലയാളം ലിപി</button>
         <button class="tab-btn" onclick="switchTab('words', this)">പദങ്ങൾ</button>
     </div>
 
-    <div class="letter-panel" id="letterPanel">
-        </div>
+    <div class="letter-panel" id="letterPanel"></div>
 
     <script>
         const canvas = document.getElementById('slateCanvas');
@@ -228,11 +258,48 @@
         const letterPanel = document.getElementById('letterPanel');
         const eraserBtn = document.getElementById('eraserBtn');
 
-        // അക്ഷരങ്ങളുടെ ഡാറ്റാബേസ്
+        // നിങ്ങളുടെ പുസ്തകത്തിലെ ചിത്രങ്ങൾ പ്രകാരമുള്ള കൃത്യമായ ഡാറ്റാബേസ്
         const data = {
-            arabic: ["أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "هـ", "و", "ي"],
-            arabimalayalam: ["ച", "ജ", "പ", "ബ", "ങ", "ഞ", "ഴ", "റ്റ"],
-            words: ["بَيْتٌ", "قَلَمٌ", "كِتَابٌ", "مَدْرَسَةٌ", "أُمِّي", "أَبِي"]
+            arabic: [
+                {char: "أ", label: ""}, {char: "ب", label: ""}, {char: "ت", label: ""}, {char: "ث", label: ""}, 
+                {char: "ج", label: ""}, {char: "ح", label: ""}, {char: "خ", label: ""}, {char: "د", label: ""}, 
+                {char: "ذ", label: ""}, {char: "ر", label: ""}, {char: "ز", label: ""}, {char: "س", label: ""}, 
+                {char: "ش", label: ""}, {char: "ص", label: ""}, {char: "ض", label: ""}, {char: "ط", label: ""}, 
+                {char: "ظ", label: ""}, {char: "ع", label: ""}, {char: "غ", label: ""}, {char: "ف", label: ""}, 
+                {char: "ق", label: ""}, {char: "ك", label: ""}, {char: "ل", label: ""}, {char: "م", label: ""}, 
+                {char: "ن", label: ""}, {char: "هـ", label: ""}, {char: "و", label: ""}, {char: "ي", label: ""}
+            ],
+            // നിങ്ങൾ നൽകിയ ചിത്രത്തിൽ (മെല്ലെഴുത്തുകൾ / Consonants) ഉള്ള അതേ അറബി-മലയാളം ലിപികൾ
+            arabimalayalam: [
+                {char: "ضۡ", label: "ള്‍"}, 
+                {char: "ثٜ", label: "ഴ്‍"}, 
+                {char: "رۡ", label: "റ്‍"}, 
+                {char: "ڔّ", label: "റ്റ"}, 
+                {char: "شۡ", label: "ശ്"}, 
+                {char: "ثّۡ", label: "ഷ്"}, 
+                {char: "سۡ", label: "സ്"}, 
+                {char: "هـۡ", label: "ഹ്"},
+                {char: "كۡ", label: "ക്"},
+                {char: "كھۡ", label: "ഖ്"},
+                {char: "ڴۡ", label: "ഗ്"},
+                {char: "ڴھۡ", label: "ഘ്"},
+                {char: "غُۡ", label: "ങ്"},
+                {char: "چۡ", label: "ച്"},
+                {char: "چھۡ", label: "ഛ്"},
+                {char: "جۡ", label: "ജ്"},
+                {char: "جھۡ", label: "ഝ്"},
+                {char: "ڃۡ", label: "ഞ്"},
+                {char: "ٻۡ", label: "പ്"},
+                {char: "ٻھ", label: "ഫ്"},
+                {char: "بۡ", label: "ബ്"},
+                {char: "بھۡ", label: "ഭ്"},
+                {char: "൲", label: "മ്"}
+            ],
+            words: [
+                {char: "بَيْتٌ", label: "വീട്"}, {char: "قَلَمٌ", label: "പേന"}, 
+                {char: "كِتَابٌ", label: "പുസ്തകം"}, {char: "مَدْرَسَةٌ", label: "മദ്രസ"}, 
+                {char: "أُمِّي", label: "ഉമ്മ"}, {char: "أَبِي", label: "ഉപ്പ"}
+            ]
         };
 
         let drawing = false;
@@ -240,7 +307,7 @@
         let isEraser = false;
         let strokeWidth = 5;
 
-        // കാൻവാസ് സൈസ് സെറ്റ് ചെയ്യൽ
+        // കാൻവാസ് വലിപ്പം സ്ക്രീനിന് കൃത്യമാക്കുക
         function resizeCanvas() {
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
@@ -251,11 +318,8 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // എഴുതാനുള്ള പ്രധാന ഫങ്ഷനുകൾ (Mouse & Touch)
+        // ഡ്രോയിങ് ലോജിക്കുകൾ
         function startDrawing(e) {
-            if (e.touches && e.cancelable) {
-                e.preventDefault();
-            }
             drawing = true;
             ctx.beginPath();
             const pos = getPos(e);
@@ -264,14 +328,11 @@
 
         function draw(e) {
             if (!drawing) return;
-            if (e.cancelable) {
-                e.preventDefault();
-            }
             const pos = getPos(e);
+            ctx.lineWidth = isEraser ? 35 : strokeWidth;
             
-            ctx.lineWidth = isEraser ? 30 : strokeWidth;
             if (isEraser) {
-                ctx.globalCompositeOperation = 'destination-out';
+                ctx.globalCompositeOperation = 'destination-out'; // വാട്ടർമാർക്ക് മായാതെ എഴുതിയത് മാത്രം മായ്ക്കും
             } else {
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = currentColor;
@@ -284,6 +345,7 @@
         function stopDrawing() {
             drawing = false;
         }
+
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -294,15 +356,15 @@
             };
         }
 
-        // ഇവന്റ് ലിസണർമാർ ചേർക്കൽ
+        // ഇവന്റുകൾ ഫിക്സഡ് ആക്കുക (സ്ക്രീൻ അനങ്ങാതിരിക്കാൻ)
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseleave', stopDrawing);
 
-        canvas.addEventListener('touchstart', startDrawing, { passive: false });
-        canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        canvas.addEventListener('touchstart', (e) => { startDrawing(e); }, { passive: true });
+        canvas.addEventListener('touchmove', (e) => { draw(e); }, { passive: true });
+        canvas.addEventListener('touchend', stopDrawing, { passive: true });
 
         // കളർ മാറ്റാൻ
         function changeColor(color, element) {
@@ -314,7 +376,7 @@
             element.classList.add('active');
         }
 
-        // ഇറേസർ ടോഗിൾ ചെയ്യാൻ
+        // ഇറേസർ ടോഗിൾ
         function toggleEraser() {
             isEraser = !isEraser;
             if (isEraser) {
@@ -324,7 +386,7 @@
             }
         }
 
-        // സ്ലേറ്റ് ക്ലിയർ ചെയ്യാൻ
+        // സ്ലേറ്റ് പൂർണ്ണമായി ക്ലിയർ ചെയ്യാൻ
         function clearSlate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -336,34 +398,47 @@
             loadLetters(tabKey);
         }
 
-        // താഴെ അക്ഷരങ്ങൾ ലോഡ് ചെയ്യാൻ
+        // ലിസ്റ്റിൽ അക്ഷരങ്ങൾ ലോഡ് ചെയ്യാൻ
         function loadLetters(tabKey) {
             letterPanel.innerHTML = '';
-            data[tabKey].forEach(letter => {
+            data[tabKey].forEach(itemData => {
                 const item = document.createElement('div');
                 item.className = 'letter-item';
-                item.textContent = letter;
+                
+                // അക്ഷര രൂപം
+                const charSpan = document.createElement('span');
+                charSpan.className = 'char-text';
+                charSpan.textContent = itemData.char;
+                item.appendChild(charSpan);
+                
+                // മലയാളം ലേബൽ
+                if (itemData.label) {
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'sub-label';
+                    labelSpan.textContent = itemData.label;
+                    item.appendChild(labelSpan);
+                }
+
                 item.onclick = function() {
                     document.querySelectorAll('.letter-item').forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
-                    traceDisplay.textContent = letter; // വാട്ടർമാർക്ക് ആയി അക്ഷരം കാണിക്കും
                     
-                    // വാട്ടർമാർക്കിന്റെ വലിപ്പം ക്രമീകരിക്കൽ (വാക്കുകൾക്ക് അനുസരിച്ച്)
-                    if (letter.length > 5) {
+                    traceDisplay.textContent = itemData.char;
+                    
+                    // വലിപ്പം ക്രമീകരിക്കൽ
+                    if (itemData.char.length > 3) {
                         traceDisplay.style.fontSize = '80px';
-                    } else if (letter.length > 3) {
-                        traceDisplay.style.fontSize = '120px';
                     } else {
-                        traceDisplay.style.fontSize = '180px';
+                        traceDisplay.style.fontSize = '160px';
                     }
                     
-                    clearSlate(); // പുതിയ അക്ഷരം എടുക്കുമ്പോൾ സ്ലേറ്റ് ക്ലിയറാകും
+                    clearSlate();
                 };
                 letterPanel.appendChild(item);
             });
         }
 
-        // ഡിഫോൾട്ടായി അറബി അക്ഷരങ്ങൾ ലോഡ് ചെയ്യുക
+        // ആദ്യം ഓപ്പൺ ചെയ്യുമ്പോൾ ഡിഫോൾട്ടായി അറബി ലോഡ് ചെയ്യുക
         loadLetters('arabic');
     </script>
 </body>
